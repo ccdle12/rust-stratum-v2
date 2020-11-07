@@ -1,5 +1,5 @@
 [package]
-name = "rust-stratum-v2"
+name = "stratumv2"
 version = "0.1.0"
 authors = ["Christopher Coverdale <chris.coverdale24@gmail.com>"]
 edition = "2018"
