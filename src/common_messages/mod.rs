@@ -43,6 +43,27 @@ pub struct SetupConnection {
 
 impl SetupConnection {
     /// Constructor for the SetupConnection message.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// # use stratumv2::SetupConnection;
+    ///
+    /// let connection_msg = SetupConnection::new(
+    ///     0,
+    ///     2,
+    ///     2,
+    ///     123,
+    ///     "0.0.0.0",
+    ///     8545,
+    ///     "Bitmain",
+    ///     "S9i 13.5",
+    ///     "braiins-os-2018-09-22-1-hash",
+    ///     "some-uuid",
+    /// );
+    ///
+    /// assert_eq!(connection_msg.is_err(), false);
+    /// ```
     pub fn new<T: Into<String>>(
         protocol: u8,
         min_version: u16,
