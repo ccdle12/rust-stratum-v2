@@ -4,8 +4,7 @@
 
 #![allow(dead_code)]
 
+pub use common_messages::*;
+
 mod common_messages;
 mod error;
-
-pub use common_messages::*;
-pub use error::{Error, Result};
