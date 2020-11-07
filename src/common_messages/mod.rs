@@ -6,7 +6,7 @@ pub struct SetupConnection {
     /// Available protocols:
     ///   0 = Mining Protocol
     ///   1 = Job Negotiation Protocol
-    ///   2 = Tempalte Distribution Protocol
+    ///   2 = Template Distribution Protocol
     ///   3 = Job Distribution Protocol
     protocol: u8,
 
