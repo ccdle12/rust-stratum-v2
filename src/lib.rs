@@ -4,7 +4,7 @@
 
 #![allow(dead_code)]
 
-pub use common_messages::*;
-
-mod common_messages;
 mod error;
+
+/// Messages for all the Stratum V2 (sub) protocols.
+pub mod messages;
