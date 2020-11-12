@@ -6,6 +6,7 @@ use std::io;
 pub enum Error {
     VersionError(String),
     IOErorr(io::Error),
+    Utf8Error(std::str::Utf8Error),
 }
 
 impl fmt::Display for Error {
@@ -13,6 +14,7 @@ impl fmt::Display for Error {
         match *self {
             Error::VersionError(ref message) => write!(f, "{}", message),
             Error::IOErorr(ref message) => write!(f, "{}", message),
+            Error::Utf8Error(ref message) => write!(f, "{}", message),
         }
     }
 }
@@ -20,6 +22,12 @@ impl fmt::Display for Error {
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
         Error::IOErorr(err)
+    }
+}
+
+impl From<std::str::Utf8Error> for Error {
+    fn from(err: std::str::Utf8Error) -> Error {
+        Error::Utf8Error(err)
     }
 }
 

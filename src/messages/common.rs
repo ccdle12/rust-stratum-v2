@@ -1,5 +1,6 @@
 use crate::error::{Error, Result};
 use crate::messages::Serializable;
+use crate::util::types::{string_to_str0_255, string_to_str0_255_bytes};
 use std::io;
 
 /// SetupConnection is the first message sent by a client on a new connection.
@@ -95,12 +96,12 @@ impl SetupConnection {
             min_version,
             max_version,
             flags,
-            endpoint_host: endpoint_host.into(),
+            endpoint_host: string_to_str0_255(endpoint_host)?,
             endpoint_port,
-            vendor: vendor.into(),
-            hardware_version: hardware_version.into(),
-            firmware: firmware.into(),
-            device_id: device_id.into(),
+            vendor: string_to_str0_255(vendor)?,
+            hardware_version: string_to_str0_255(hardware_version)?,
+            firmware: string_to_str0_255(firmware)?,
+            device_id: string_to_str0_255(device_id)?,
         })
     }
 }
@@ -113,21 +114,13 @@ impl Serializable for SetupConnection {
         buffer.extend_from_slice(&self.max_version.to_le_bytes());
         buffer.extend_from_slice(&self.flags.to_le_bytes());
 
-        buffer.push(self.endpoint_host.len() as u8);
-        buffer.extend_from_slice(self.endpoint_host.as_bytes());
+        buffer.extend_from_slice(&string_to_str0_255_bytes(&self.endpoint_host)?);
         buffer.extend_from_slice(&self.endpoint_port.to_le_bytes());
 
-        buffer.push(self.vendor.len() as u8);
-        buffer.extend_from_slice(self.vendor.as_bytes());
-
-        buffer.push(self.hardware_version.len() as u8);
-        buffer.extend_from_slice(self.hardware_version.as_bytes());
-
-        buffer.push(self.firmware.len() as u8);
-        buffer.extend_from_slice(self.firmware.as_bytes());
-
-        buffer.push(self.device_id.len() as u8);
-        buffer.extend_from_slice(self.device_id.as_bytes());
+        buffer.extend_from_slice(&string_to_str0_255_bytes(&self.vendor)?);
+        buffer.extend_from_slice(&string_to_str0_255_bytes(&self.hardware_version)?);
+        buffer.extend_from_slice(&string_to_str0_255_bytes(&self.firmware)?);
+        buffer.extend_from_slice(&string_to_str0_255_bytes(&self.device_id)?);
 
         Ok(writer.write(&buffer)?)
     }
