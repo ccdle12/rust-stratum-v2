@@ -126,6 +126,37 @@ impl Serializable for SetupConnection {
     }
 }
 
+/// SetupConnectionSuccess is one of the required responses from a
+/// Server to a Client when a connection is accepted.
+pub struct SetupConnectionSuccess {
+    /// Version proposed by the connecting node that the upstream node (Server?)
+    /// supports. The version will be used during the lifetime of the connection.
+    used_version: u16,
+
+    /// Used to indicate the optional features the server supports.
+    flags: u32,
+}
+
+impl SetupConnectionSuccess {
+    /// Constructor for the SetupConnectionSuccess message.
+    pub fn new(used_version: u16, flags: u32) -> SetupConnectionSuccess {
+        SetupConnectionSuccess {
+            used_version,
+            flags,
+        }
+    }
+}
+
+impl Serializable for SetupConnectionSuccess {
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        let mut buffer: Vec<u8> = Vec::new();
+        buffer.extend_from_slice(&self.used_version.to_le_bytes());
+        buffer.extend_from_slice(&self.flags.to_le_bytes());
+
+        Ok(writer.write(&buffer)?)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -231,6 +262,17 @@ mod tests {
             0x32, 0x32, 0x2d, 0x31, 0x2d, 0x68, 0x61, 0x73, 0x68, 0x09, 0x73, 0x6f, 0x6d, 0x65,
             0x2d, 0x75, 0x75, 0x69, 0x64,
         ];
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn setup_connection_success() {
+        let success_msg = SetupConnectionSuccess::new(2, 0);
+
+        let mut buffer: Vec<u8> = Vec::new();
+        success_msg.serialize(&mut buffer).unwrap();
+
+        let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
         assert_eq!(buffer, expected);
     }
 }
