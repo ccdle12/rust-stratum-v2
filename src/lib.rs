@@ -5,6 +5,7 @@
 #![allow(dead_code)]
 
 mod error;
+mod util;
 
 /// Messages for all the Stratum V2 (sub) protocols.
 pub mod messages;
