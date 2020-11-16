@@ -3,8 +3,66 @@ use crate::messages::Serializable;
 use crate::util::types::{string_to_str0_255, string_to_str0_255_bytes};
 use std::io;
 
+/// SetupConnectionFlags indicate optional protocol features used by the client.
+/// Feature flags are sent on the first SetupConnection message.
+pub enum SetupConnectionFlags {
+    /// Flag indicating the downstream node requires standard jobs. The node
+    /// doesn't undestand group channels and extended jobs.
+    RequiresStandardJobs,
+
+    /// Flag indicating that the client will send the server SetCustomMiningJob
+    /// message on this connection.
+    RequiresWorkSelection,
+
+    /// Flag indicating the client requires version rolling. The server MUST NOT
+    /// send jobs which do not allow version rolling.
+    RequiresVersionRolling,
+}
+
+impl SetupConnectionFlags {
+    /// Get the byte representation of the flag.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// # use stratumv2::messages::common::SetupConnectionFlags;
+    /// let standard_job = SetupConnectionFlags::RequiresStandardJobs.as_byte();
+    /// assert_eq!(standard_job, 0b0001);
+    /// ```
+    pub fn as_byte(&self) -> u8 {
+        match self {
+            SetupConnectionFlags::RequiresStandardJobs => 0b0001,
+            SetupConnectionFlags::RequiresWorkSelection => 0b0010,
+            SetupConnectionFlags::RequiresVersionRolling => 0b0100,
+        }
+    }
+
+    /// Serialize an array of SetupConnectionFlags. The function performs an
+    /// OR on all set flags, returning little endian representation of u32 bytes.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// # use stratumv2::messages::common::SetupConnectionFlags;
+    /// let flags = [
+    ///     SetupConnectionFlags::RequiresStandardJobs,
+    ///     SetupConnectionFlags::RequiresWorkSelection
+    /// ];
+    ///
+    /// let serialized = SetupConnectionFlags::serialize_flags(&flags);
+    /// assert_eq!(serialized, [0x03, 0x00, 0x00, 0x00]);
+    /// ```
+    pub fn serialize_flags(flags: &[SetupConnectionFlags]) -> [u8; 4] {
+        (flags
+            .iter()
+            .map(|flag| flag.as_byte())
+            .fold(0, |accumulator, byte| (accumulator | byte)) as u32)
+            .to_le_bytes()
+    }
+}
+
 /// SetupConnection is the first message sent by a client on a new connection.
-pub struct SetupConnection {
+pub struct SetupConnection<'a> {
     /// Used to indicate the protocol the client wants to use on the new connection.
     /// Available protocols:
     ///   0 = Mining Protocol
@@ -20,7 +78,7 @@ pub struct SetupConnection {
     max_version: u16,
 
     /// Flags indicating the optional protocol features the client supports.
-    flags: u32,
+    flags: &'a [SetupConnectionFlags],
 
     /// Used to indicate the hostname or IP address of the endpoint.
     endpoint_host: String,
@@ -44,19 +102,19 @@ pub struct SetupConnection {
     device_id: String,
 }
 
-impl SetupConnection {
+impl<'a> SetupConnection<'a> {
     /// Constructor for the SetupConnection message.
     ///
     /// Example:
     ///
     /// ```rust
-    /// # use stratumv2::messages::common::SetupConnection;
+    /// # use stratumv2::messages::common::{SetupConnection, SetupConnectionFlags};
     ///
     /// let connection_msg = SetupConnection::new(
     ///     0,
     ///     2,
     ///     2,
-    ///     123,
+    ///     &[SetupConnectionFlags::RequiresStandardJobs],
     ///     "0.0.0.0",
     ///     8545,
     ///     "Bitmain",
@@ -71,7 +129,7 @@ impl SetupConnection {
         protocol: u8,
         min_version: u16,
         max_version: u16,
-        flags: u32,
+        flags: &'a [SetupConnectionFlags],
         endpoint_host: T,
         endpoint_port: u16,
         vendor: T,
@@ -106,13 +164,13 @@ impl SetupConnection {
     }
 }
 
-impl Serializable for SetupConnection {
+impl Serializable for SetupConnection<'_> {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut buffer: Vec<u8> = vec![self.protocol];
 
         buffer.extend_from_slice(&self.min_version.to_le_bytes());
         buffer.extend_from_slice(&self.max_version.to_le_bytes());
-        buffer.extend_from_slice(&self.flags.to_le_bytes());
+        buffer.extend_from_slice(&SetupConnectionFlags::serialize_flags(&self.flags));
 
         buffer.extend_from_slice(&string_to_str0_255_bytes(&self.endpoint_host)?);
         buffer.extend_from_slice(&self.endpoint_port.to_le_bytes());
@@ -167,7 +225,7 @@ mod tests {
             0,
             2,
             2,
-            123,
+            &[SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -185,7 +243,7 @@ mod tests {
             0,
             0,
             2,
-            123,
+            &[SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -203,7 +261,7 @@ mod tests {
             0,
             2,
             0,
-            123,
+            &[SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -221,7 +279,7 @@ mod tests {
             4,
             2,
             2,
-            123,
+            &[SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -239,7 +297,7 @@ mod tests {
             3,
             2,
             2,
-            0,
+            &[SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -255,7 +313,7 @@ mod tests {
         assert_eq!(size, 75);
 
         let expected = [
-            0x03, 0x02, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0x30, 0x2e, 0x30, 0x2e,
+            0x03, 0x02, 0x00, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x07, 0x30, 0x2e, 0x30, 0x2e,
             0x30, 0x2e, 0x30, 0x61, 0x21, 0x07, 0x42, 0x69, 0x74, 0x6d, 0x61, 0x69, 0x6e, 0x08,
             0x53, 0x39, 0x69, 0x20, 0x31, 0x33, 0x2e, 0x35, 0x1c, 0x62, 0x72, 0x61, 0x69, 0x69,
             0x6e, 0x73, 0x2d, 0x6f, 0x73, 0x2d, 0x32, 0x30, 0x31, 0x38, 0x2d, 0x30, 0x39, 0x2d,
