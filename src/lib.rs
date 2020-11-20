@@ -14,3 +14,6 @@ pub mod common;
 
 /// Mining subprotocol of Stratum V2.
 pub mod mining;
+
+/// Job Negotiation subprotocol of Stratum V2.
+pub mod job_negotiation;

@@ -33,7 +33,7 @@ pub struct SetupConnection {
     /// Used to indicate the connecting port value of the endpoint.
     pub endpoint_port: u16,
 
-    /// The following fields relay the mining device information.
+    /// The following fields relay the new_mining device information.
     ///
     /// Used to indicate the vendor/manufacturer of the device.
     pub vendor: String,
@@ -90,9 +90,9 @@ impl SetupConnection {
         })
     }
 
-    /// Constructor for creating a SetupConnection message for the mining
+    /// Constructor for creating a SetupConnection message for the new_mining
     /// sub protocol.
-    pub fn mining_setup_connection<T: Into<String>>(
+    pub fn new_mining<T: Into<String>>(
         min_version: u16,
         max_version: u16,
         flags: &[MiningSetupConnectionFlags],
@@ -118,9 +118,9 @@ impl SetupConnection {
         )
     }
 
-    /// Constructor for creating a SetupConnection message for the job_negotiation
+    /// Constructor for creating a SetupConnection message for the new_job_negotiation
     /// sub protocol.
-    pub fn job_negotiation_setup_connection<T: Into<String>>(
+    pub fn new_job_negotiation<T: Into<String>>(
         min_version: u16,
         max_version: u16,
         flags: &[JobNegotiationSetupConnectionFlags],
@@ -209,7 +209,6 @@ impl Serializable for SetupConnectionSuccess {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mining::messages::MiningSetupConnectionFlags;
 
     #[test]
     fn setup_connection_invalid_min_value() {
@@ -235,7 +234,7 @@ mod tests {
             0,
             2,
             0,
-            vec![0b0001],
+            vec![0x01],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -253,7 +252,7 @@ mod tests {
             4,
             2,
             0,
-            vec![0b0001],
+            vec![0x01],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -266,8 +265,8 @@ mod tests {
     }
 
     #[test]
-    fn mining_setup_connection_init() {
-        let message = SetupConnection::mining_setup_connection(
+    fn new_mining_setup_connection_init() {
+        let message = SetupConnection::new_mining(
             2,
             2,
             &[MiningSetupConnectionFlags::RequiresStandardJobs],
@@ -283,8 +282,8 @@ mod tests {
     }
 
     #[test]
-    fn mining_setup_connection_serialize_0() {
-        let message = SetupConnection::mining_setup_connection(
+    fn new_mining_setup_connection_serialize_0() {
+        let message = SetupConnection::new_mining(
             2,
             2,
             &[MiningSetupConnectionFlags::RequiresStandardJobs],
@@ -314,8 +313,8 @@ mod tests {
     }
 
     #[test]
-    fn mining_setup_connection_serialize_1() {
-        let message = SetupConnection::mining_setup_connection(
+    fn new_mining_setup_connection_serialize_1() {
+        let message = SetupConnection::new_mining(
             2,
             2,
             &[],
@@ -331,14 +330,15 @@ mod tests {
         let mut buffer: Vec<u8> = Vec::new();
         let size = message.serialize(&mut buffer).unwrap();
 
-        // Expect the feature flag to have no set flags (0x00).
         assert_eq!(size, 75);
+
+        // Expect the feature flag to have no set flags (0x00).
         assert_eq!(buffer[5], 0x00);
     }
 
     #[test]
-    fn mining_setup_connection_serialize_2() {
-        let message = SetupConnection::mining_setup_connection(
+    fn new_mining_setup_connection_serialize_2() {
+        let message = SetupConnection::new_mining(
             2,
             2,
             &[
@@ -362,8 +362,8 @@ mod tests {
     }
 
     #[test]
-    fn mining_setup_connection_serialize_3() {
-        let message = SetupConnection::mining_setup_connection(
+    fn new_mining_setup_connection_serialize_3() {
+        let message = SetupConnection::new_mining(
             2,
             2,
             &[
@@ -399,8 +399,8 @@ mod tests {
     }
 
     #[test]
-    fn job_negotiation_setup_connection_init() {
-        let message = SetupConnection::job_negotiation_setup_connection(
+    fn new_job_negotiation_setup_connection_init() {
+        let message = SetupConnection::new_job_negotiation(
             2,
             2,
             &[JobNegotiationSetupConnectionFlags::RequiresAsyncJobMining],
@@ -416,8 +416,8 @@ mod tests {
     }
 
     #[test]
-    fn job_negotiation_serialize_0() {
-        let message = SetupConnection::job_negotiation_setup_connection(
+    fn new_job_negotiation_serialize_0() {
+        let message = SetupConnection::new_job_negotiation(
             2,
             2,
             &[JobNegotiationSetupConnectionFlags::RequiresAsyncJobMining],
@@ -439,8 +439,8 @@ mod tests {
     }
 
     #[test]
-    fn job_negotiation_serialize_1() {
-        let message = SetupConnection::job_negotiation_setup_connection(
+    fn new_job_negotiation_serialize_1() {
+        let message = SetupConnection::new_job_negotiation(
             2,
             2,
             &[],
