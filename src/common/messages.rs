@@ -1,5 +1,6 @@
 use crate::common::{BitFlag, Serializable};
 use crate::error::{Error, Result};
+use crate::job_negotiation::messages::JobNegotiationSetupConnectionFlags;
 use crate::mining::messages::MiningSetupConnectionFlags;
 use crate::util::types::{string_to_str0_255, string_to_str0_255_bytes};
 use std::io;
@@ -105,6 +106,34 @@ impl SetupConnection {
         let flags: Vec<u8> = flags.iter().map(|x| x.as_byte()).collect();
         SetupConnection::new(
             0,
+            min_version,
+            max_version,
+            flags,
+            endpoint_host,
+            endpoint_port,
+            vendor,
+            hardware_version,
+            firmware,
+            device_id,
+        )
+    }
+
+    /// Constructor for creating a SetupConnection message for the job_negotiation
+    /// sub protocol.
+    pub fn job_negotiation_setup_connection<T: Into<String>>(
+        min_version: u16,
+        max_version: u16,
+        flags: &[JobNegotiationSetupConnectionFlags],
+        endpoint_host: T,
+        endpoint_port: u16,
+        vendor: T,
+        hardware_version: T,
+        firmware: T,
+        device_id: T,
+    ) -> Result<SetupConnection> {
+        let flags: Vec<u8> = flags.iter().map(|x| x.as_byte()).collect();
+        SetupConnection::new(
+            1,
             min_version,
             max_version,
             flags,
@@ -367,5 +396,68 @@ mod tests {
 
         let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn job_negotiation_setup_connection_init() {
+        let connection_msg = SetupConnection::job_negotiation_setup_connection(
+            2,
+            2,
+            &[JobNegotiationSetupConnectionFlags::RequiresAsyncJobMining],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        );
+
+        assert_eq!(connection_msg.is_ok(), true);
+    }
+
+    #[test]
+    fn job_negotiation_serialize_0() {
+        let connection_msg = SetupConnection::job_negotiation_setup_connection(
+            2,
+            2,
+            &[JobNegotiationSetupConnectionFlags::RequiresAsyncJobMining],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        )
+        .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        let size = connection_msg.serialize(&mut buffer).unwrap();
+
+        assert_eq!(size, 75);
+        assert_eq!(buffer[0], 0x01);
+        assert_eq!(buffer[5], 0x01);
+    }
+
+    #[test]
+    fn job_negotiation_serialize_1() {
+        let connection_msg = SetupConnection::job_negotiation_setup_connection(
+            2,
+            2,
+            &[],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        )
+        .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        let size = connection_msg.serialize(&mut buffer).unwrap();
+
+        assert_eq!(size, 75);
+        assert_eq!(buffer[0], 0x01);
+        assert_eq!(buffer[5], 0x00);
     }
 }
