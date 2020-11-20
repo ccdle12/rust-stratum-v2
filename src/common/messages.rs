@@ -213,7 +213,7 @@ mod tests {
 
     #[test]
     fn setup_connection_invalid_min_value() {
-        let connection_msg = SetupConnection::new(
+        let message = SetupConnection::new(
             0,
             2,
             1,
@@ -226,12 +226,12 @@ mod tests {
             "some-uuid",
         );
 
-        assert_eq!(connection_msg.is_err(), true);
+        assert!(message.is_err());
     }
 
     #[test]
     fn setup_connection_invalid_max_value() {
-        let connection_msg = SetupConnection::new(
+        let message = SetupConnection::new(
             0,
             2,
             0,
@@ -244,12 +244,12 @@ mod tests {
             "some-uuid",
         );
 
-        assert_eq!(connection_msg.is_err(), true);
+        assert!(message.is_err());
     }
 
     #[test]
     fn setup_connection_invalid_protocol() {
-        let connection_msg = SetupConnection::new(
+        let message = SetupConnection::new(
             4,
             2,
             0,
@@ -262,12 +262,12 @@ mod tests {
             "some-uuid",
         );
 
-        assert_eq!(connection_msg.is_err(), true);
+        assert!(message.is_err());
     }
 
     #[test]
     fn mining_setup_connection_init() {
-        let connection_msg = SetupConnection::mining_setup_connection(
+        let message = SetupConnection::mining_setup_connection(
             2,
             2,
             &[MiningSetupConnectionFlags::RequiresStandardJobs],
@@ -279,12 +279,12 @@ mod tests {
             "some-uuid",
         );
 
-        assert_eq!(connection_msg.is_err(), false);
+        assert!(message.is_ok());
     }
 
     #[test]
     fn mining_setup_connection_serialize_0() {
-        let connection_msg = SetupConnection::mining_setup_connection(
+        let message = SetupConnection::mining_setup_connection(
             2,
             2,
             &[MiningSetupConnectionFlags::RequiresStandardJobs],
@@ -299,7 +299,7 @@ mod tests {
 
         let mut buffer: Vec<u8> = Vec::new();
 
-        let size = connection_msg.serialize(&mut buffer).unwrap();
+        let size = message.serialize(&mut buffer).unwrap();
         assert_eq!(size, 75);
 
         let expected = [
@@ -315,7 +315,7 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_serialize_1() {
-        let connection_msg = SetupConnection::mining_setup_connection(
+        let message = SetupConnection::mining_setup_connection(
             2,
             2,
             &[],
@@ -329,7 +329,7 @@ mod tests {
         .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
-        let size = connection_msg.serialize(&mut buffer).unwrap();
+        let size = message.serialize(&mut buffer).unwrap();
 
         // Expect the feature flag to have no set flags (0x00).
         assert_eq!(size, 75);
@@ -338,7 +338,7 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_serialize_2() {
-        let connection_msg = SetupConnection::mining_setup_connection(
+        let message = SetupConnection::mining_setup_connection(
             2,
             2,
             &[
@@ -355,7 +355,7 @@ mod tests {
         .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
-        let size = connection_msg.serialize(&mut buffer).unwrap();
+        let size = message.serialize(&mut buffer).unwrap();
 
         assert_eq!(size, 75);
         assert_eq!(buffer[5], 0x05);
@@ -363,7 +363,7 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_serialize_3() {
-        let connection_msg = SetupConnection::mining_setup_connection(
+        let message = SetupConnection::mining_setup_connection(
             2,
             2,
             &[
@@ -381,7 +381,7 @@ mod tests {
         .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
-        let size = connection_msg.serialize(&mut buffer).unwrap();
+        let size = message.serialize(&mut buffer).unwrap();
 
         assert_eq!(size, 75);
         assert_eq!(buffer[5], 0x07);
@@ -400,7 +400,7 @@ mod tests {
 
     #[test]
     fn job_negotiation_setup_connection_init() {
-        let connection_msg = SetupConnection::job_negotiation_setup_connection(
+        let message = SetupConnection::job_negotiation_setup_connection(
             2,
             2,
             &[JobNegotiationSetupConnectionFlags::RequiresAsyncJobMining],
@@ -412,12 +412,12 @@ mod tests {
             "some-uuid",
         );
 
-        assert_eq!(connection_msg.is_ok(), true);
+        assert!(message.is_ok());
     }
 
     #[test]
     fn job_negotiation_serialize_0() {
-        let connection_msg = SetupConnection::job_negotiation_setup_connection(
+        let message = SetupConnection::job_negotiation_setup_connection(
             2,
             2,
             &[JobNegotiationSetupConnectionFlags::RequiresAsyncJobMining],
@@ -431,7 +431,7 @@ mod tests {
         .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
-        let size = connection_msg.serialize(&mut buffer).unwrap();
+        let size = message.serialize(&mut buffer).unwrap();
 
         assert_eq!(size, 75);
         assert_eq!(buffer[0], 0x01);
@@ -440,7 +440,7 @@ mod tests {
 
     #[test]
     fn job_negotiation_serialize_1() {
-        let connection_msg = SetupConnection::job_negotiation_setup_connection(
+        let message = SetupConnection::job_negotiation_setup_connection(
             2,
             2,
             &[],
@@ -454,7 +454,7 @@ mod tests {
         .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
-        let size = connection_msg.serialize(&mut buffer).unwrap();
+        let size = message.serialize(&mut buffer).unwrap();
 
         assert_eq!(size, 75);
         assert_eq!(buffer[0], 0x01);
