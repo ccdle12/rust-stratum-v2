@@ -1,6 +1,8 @@
 //! A library implementation of the Stratum V2 Protocol.
 //!
-//! spec: https://docs.google.com/document/d/1FadCWj-57dvhxsnFM_7X806qyvhR0u3i85607bGHxvg/edit
+//! Stratum V2 sources:
+//! - [Stratum V2 Overview](https://braiins.com/stratum-v2)
+//! - [Stratum V2 Specification](https://docs.google.com/document/d/1FadCWj-57dvhxsnFM_7X806qyvhR0u3i85607bGHxvg/edit)
 
 #![allow(dead_code)]
 
