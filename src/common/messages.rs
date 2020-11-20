@@ -285,6 +285,80 @@ mod tests {
     }
 
     #[test]
+    fn mining_setup_connection_serialize_1() {
+        let connection_msg = SetupConnection::mining_setup_connection(
+            2,
+            2,
+            &[],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        )
+        .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        let size = connection_msg.serialize(&mut buffer).unwrap();
+
+        // Expect the feature flag to have no set flags (0x00).
+        assert_eq!(size, 75);
+        assert_eq!(buffer[5], 0x00);
+    }
+
+    #[test]
+    fn mining_setup_connection_serialize_2() {
+        let connection_msg = SetupConnection::mining_setup_connection(
+            2,
+            2,
+            &[
+                MiningSetupConnectionFlags::RequiresStandardJobs,
+                MiningSetupConnectionFlags::RequiresVersionRolling,
+            ],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        )
+        .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        let size = connection_msg.serialize(&mut buffer).unwrap();
+
+        assert_eq!(size, 75);
+        assert_eq!(buffer[5], 0x05);
+    }
+
+    #[test]
+    fn mining_setup_connection_serialize_3() {
+        let connection_msg = SetupConnection::mining_setup_connection(
+            2,
+            2,
+            &[
+                MiningSetupConnectionFlags::RequiresStandardJobs,
+                MiningSetupConnectionFlags::RequiresWorkSelection,
+                MiningSetupConnectionFlags::RequiresVersionRolling,
+            ],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        )
+        .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        let size = connection_msg.serialize(&mut buffer).unwrap();
+
+        assert_eq!(size, 75);
+        assert_eq!(buffer[5], 0x07);
+    }
+
+    #[test]
     fn setup_connection_success() {
         let success_msg = SetupConnectionSuccess::new(2, 0);
 
