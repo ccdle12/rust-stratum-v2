@@ -24,6 +24,7 @@ impl BitFlag for MiningSetupConnectionFlags {
     /// ```rust
     /// # use stratumv2::mining::messages::MiningSetupConnectionFlags;
     /// # use stratumv2::common::BitFlag;
+    ///
     /// let standard_job = MiningSetupConnectionFlags::RequiresStandardJobs.as_byte();
     /// assert_eq!(standard_job, 0b0001);
     /// ```

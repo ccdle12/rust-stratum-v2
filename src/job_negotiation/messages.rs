@@ -17,6 +17,7 @@ impl BitFlag for JobNegotiationSetupConnectionFlags {
     /// ```rust
     /// # use stratumv2::job_negotiation::messages::JobNegotiationSetupConnectionFlags;
     /// # use stratumv2::common::BitFlag;
+    ///
     /// let standard_job = JobNegotiationSetupConnectionFlags::RequiresAsyncJobMining.as_byte();
     /// assert_eq!(standard_job, 0b0001);
     /// ```

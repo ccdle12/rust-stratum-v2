@@ -16,7 +16,7 @@ pub fn string_to_str0_255_bytes<T: Into<String>>(input: T) -> Result<Vec<u8>> {
     Ok(buffer)
 }
 
-// Helper function to return 0..255 bytes of a string.
+/// Helper function to return 0..255 bytes of a string.
 fn trim_to_255_bytes<T: Into<String>>(input: T) -> Vec<u8> {
     let mut bytes = input.into().as_bytes().to_vec();
 
