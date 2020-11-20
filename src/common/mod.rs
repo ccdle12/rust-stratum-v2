@@ -7,5 +7,11 @@ pub trait Serializable {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize>;
 }
 
+/// Trait for converting an enum or type into it's byte representation according
+/// to the Stratum V2 specification.
+pub trait BitFlag {
+    fn as_byte(&self) -> u8;
+}
+
 /// Messages common to all Stratum V2 protocols.
-pub mod common;
+pub mod messages;
