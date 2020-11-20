@@ -63,7 +63,10 @@ impl SetupConnection {
         firmware: T,
         device_id: T,
     ) -> Result<SetupConnection> {
-        // TODO: Raise a protocol error doesn't exist.
+        if protocol > 3 {
+            return Err(Error::VersionError("invalid protocol request".into()));
+        }
+
         if min_version < 2 {
             return Err(Error::VersionError("min_version must be atleast 2".into()));
         }
@@ -201,6 +204,24 @@ mod tests {
     fn setup_connection_invalid_max_value() {
         let connection_msg = SetupConnection::new(
             0,
+            2,
+            0,
+            vec![0b0001],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        );
+
+        assert_eq!(connection_msg.is_err(), true);
+    }
+
+    #[test]
+    fn setup_connection_invalid_protocol() {
+        let connection_msg = SetupConnection::new(
+            4,
             2,
             0,
             vec![0b0001],
