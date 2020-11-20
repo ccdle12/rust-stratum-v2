@@ -7,5 +7,8 @@
 mod error;
 mod util;
 
-/// Messages for all the Stratum V2 (sub) protocols.
-pub mod messages;
+/// Common utilities shared between each subprotocol.
+pub mod common;
+
+/// Mining subprotocol of Stratum V2.
+pub mod mining;
