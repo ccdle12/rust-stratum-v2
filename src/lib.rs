@@ -12,8 +12,8 @@ mod util;
 /// Common utilities shared between each subprotocol.
 pub mod common;
 
-/// Mining subprotocol of Stratum V2.
+/// Mining sub protocol of Stratum V2.
 pub mod mining;
 
-/// Job Negotiation subprotocol of Stratum V2.
+/// Job Negotiation is a sub protocol of Stratum V2.
 pub mod job_negotiation;
