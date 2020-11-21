@@ -1,5 +1,6 @@
 use crate::common::{BitFlag, Serializable};
 use crate::error::{Error, Result};
+use crate::job_negotiation::messages::JobNegotiationSetupConnectionFlags;
 use crate::mining::messages::MiningSetupConnectionFlags;
 use crate::util::types::{string_to_str0_255, string_to_str0_255_bytes};
 use std::io;
@@ -32,7 +33,7 @@ pub struct SetupConnection {
     /// Used to indicate the connecting port value of the endpoint.
     pub endpoint_port: u16,
 
-    /// The following fields relay the mining device information.
+    /// The following fields relay the new_mining device information.
     ///
     /// Used to indicate the vendor/manufacturer of the device.
     pub vendor: String,
@@ -89,9 +90,9 @@ impl SetupConnection {
         })
     }
 
-    /// Constructor for creating a SetupConnection message for the mining
+    /// Constructor for creating a SetupConnection message for the new_mining
     /// sub protocol.
-    pub fn mining_setup_connection<T: Into<String>>(
+    pub fn new_mining<T: Into<String>>(
         min_version: u16,
         max_version: u16,
         flags: &[MiningSetupConnectionFlags],
@@ -105,6 +106,34 @@ impl SetupConnection {
         let flags: Vec<u8> = flags.iter().map(|x| x.as_byte()).collect();
         SetupConnection::new(
             0,
+            min_version,
+            max_version,
+            flags,
+            endpoint_host,
+            endpoint_port,
+            vendor,
+            hardware_version,
+            firmware,
+            device_id,
+        )
+    }
+
+    /// Constructor for creating a SetupConnection message for the new_job_negotiation
+    /// sub protocol.
+    pub fn new_job_negotiation<T: Into<String>>(
+        min_version: u16,
+        max_version: u16,
+        flags: &[JobNegotiationSetupConnectionFlags],
+        endpoint_host: T,
+        endpoint_port: u16,
+        vendor: T,
+        hardware_version: T,
+        firmware: T,
+        device_id: T,
+    ) -> Result<SetupConnection> {
+        let flags: Vec<u8> = flags.iter().map(|x| x.as_byte()).collect();
+        SetupConnection::new(
+            1,
             min_version,
             max_version,
             flags,
@@ -180,11 +209,10 @@ impl Serializable for SetupConnectionSuccess {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mining::messages::MiningSetupConnectionFlags;
 
     #[test]
     fn setup_connection_invalid_min_value() {
-        let connection_msg = SetupConnection::new(
+        let message = SetupConnection::new(
             0,
             2,
             1,
@@ -197,16 +225,16 @@ mod tests {
             "some-uuid",
         );
 
-        assert_eq!(connection_msg.is_err(), true);
+        assert!(message.is_err());
     }
 
     #[test]
     fn setup_connection_invalid_max_value() {
-        let connection_msg = SetupConnection::new(
+        let message = SetupConnection::new(
             0,
             2,
             0,
-            vec![0b0001],
+            vec![0x01],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -215,16 +243,16 @@ mod tests {
             "some-uuid",
         );
 
-        assert_eq!(connection_msg.is_err(), true);
+        assert!(message.is_err());
     }
 
     #[test]
     fn setup_connection_invalid_protocol() {
-        let connection_msg = SetupConnection::new(
+        let message = SetupConnection::new(
             4,
             2,
             0,
-            vec![0b0001],
+            vec![0x01],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -233,12 +261,12 @@ mod tests {
             "some-uuid",
         );
 
-        assert_eq!(connection_msg.is_err(), true);
+        assert!(message.is_err());
     }
 
     #[test]
-    fn mining_setup_connection_init() {
-        let connection_msg = SetupConnection::mining_setup_connection(
+    fn new_mining_setup_connection_init() {
+        let message = SetupConnection::new_mining(
             2,
             2,
             &[MiningSetupConnectionFlags::RequiresStandardJobs],
@@ -250,12 +278,12 @@ mod tests {
             "some-uuid",
         );
 
-        assert_eq!(connection_msg.is_err(), false);
+        assert!(message.is_ok());
     }
 
     #[test]
-    fn mining_setup_connection_serialize_0() {
-        let connection_msg = SetupConnection::mining_setup_connection(
+    fn new_mining_setup_connection_serialize_0() {
+        let message = SetupConnection::new_mining(
             2,
             2,
             &[MiningSetupConnectionFlags::RequiresStandardJobs],
@@ -270,7 +298,7 @@ mod tests {
 
         let mut buffer: Vec<u8> = Vec::new();
 
-        let size = connection_msg.serialize(&mut buffer).unwrap();
+        let size = message.serialize(&mut buffer).unwrap();
         assert_eq!(size, 75);
 
         let expected = [
@@ -285,8 +313,8 @@ mod tests {
     }
 
     #[test]
-    fn mining_setup_connection_serialize_1() {
-        let connection_msg = SetupConnection::mining_setup_connection(
+    fn new_mining_setup_connection_serialize_1() {
+        let message = SetupConnection::new_mining(
             2,
             2,
             &[],
@@ -300,16 +328,17 @@ mod tests {
         .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
-        let size = connection_msg.serialize(&mut buffer).unwrap();
+        let size = message.serialize(&mut buffer).unwrap();
+
+        assert_eq!(size, 75);
 
         // Expect the feature flag to have no set flags (0x00).
-        assert_eq!(size, 75);
         assert_eq!(buffer[5], 0x00);
     }
 
     #[test]
-    fn mining_setup_connection_serialize_2() {
-        let connection_msg = SetupConnection::mining_setup_connection(
+    fn new_mining_setup_connection_serialize_2() {
+        let message = SetupConnection::new_mining(
             2,
             2,
             &[
@@ -326,15 +355,15 @@ mod tests {
         .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
-        let size = connection_msg.serialize(&mut buffer).unwrap();
+        let size = message.serialize(&mut buffer).unwrap();
 
         assert_eq!(size, 75);
         assert_eq!(buffer[5], 0x05);
     }
 
     #[test]
-    fn mining_setup_connection_serialize_3() {
-        let connection_msg = SetupConnection::mining_setup_connection(
+    fn new_mining_setup_connection_serialize_3() {
+        let message = SetupConnection::new_mining(
             2,
             2,
             &[
@@ -352,7 +381,7 @@ mod tests {
         .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
-        let size = connection_msg.serialize(&mut buffer).unwrap();
+        let size = message.serialize(&mut buffer).unwrap();
 
         assert_eq!(size, 75);
         assert_eq!(buffer[5], 0x07);
@@ -367,5 +396,68 @@ mod tests {
 
         let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn new_job_negotiation_setup_connection_init() {
+        let message = SetupConnection::new_job_negotiation(
+            2,
+            2,
+            &[JobNegotiationSetupConnectionFlags::RequiresAsyncJobMining],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        );
+
+        assert!(message.is_ok());
+    }
+
+    #[test]
+    fn new_job_negotiation_serialize_0() {
+        let message = SetupConnection::new_job_negotiation(
+            2,
+            2,
+            &[JobNegotiationSetupConnectionFlags::RequiresAsyncJobMining],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        )
+        .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        let size = message.serialize(&mut buffer).unwrap();
+
+        assert_eq!(size, 75);
+        assert_eq!(buffer[0], 0x01);
+        assert_eq!(buffer[5], 0x01);
+    }
+
+    #[test]
+    fn new_job_negotiation_serialize_1() {
+        let message = SetupConnection::new_job_negotiation(
+            2,
+            2,
+            &[],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        )
+        .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        let size = message.serialize(&mut buffer).unwrap();
+
+        assert_eq!(size, 75);
+        assert_eq!(buffer[0], 0x01);
+        assert_eq!(buffer[5], 0x00);
     }
 }
