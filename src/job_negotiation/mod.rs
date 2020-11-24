@@ -7,5 +7,9 @@
 //! nodes (Mining Farms/Devices) can use the same negotiation result on all
 //! their connections.
 
+mod flags;
+mod messages;
+
 /// Job Negotiation subprotocol messages.
-pub mod messages;
+pub use flags::SetupConnectionFlags;
+pub use messages::SetupConnection;

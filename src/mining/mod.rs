@@ -17,5 +17,8 @@
 //!                     opened to a particular connection. The group is addressable
 //!                     through a common communication channel.
 
-/// Mining subprotocol messages.
-pub mod messages;
+mod flags;
+mod messages;
+
+pub use flags::SetupConnectionFlags;
+pub use messages::SetupConnection;
