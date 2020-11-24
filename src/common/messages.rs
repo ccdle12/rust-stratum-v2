@@ -1,7 +1,5 @@
-use crate::common::{BitFlag, Serializable};
+use crate::common::Serializable;
 use crate::error::{Error, Result};
-use crate::job_negotiation::messages::JobNegotiationSetupConnectionFlags;
-use crate::mining::messages::MiningSetupConnectionFlags;
 use crate::util::types::{string_to_str0_255, string_to_str0_255_bytes};
 use std::io;
 
@@ -52,7 +50,7 @@ pub struct SetupConnection {
 impl SetupConnection {
     /// Internal constructor for the SetupConnection message. Each subprotcol
     /// has its own public setup connection method that should be called.
-    fn new<T: Into<String>>(
+    pub(crate) fn new<T: Into<String>>(
         protocol: u8,
         min_version: u16,
         max_version: u16,
@@ -88,62 +86,6 @@ impl SetupConnection {
             firmware: string_to_str0_255(firmware)?,
             device_id: string_to_str0_255(device_id)?,
         })
-    }
-
-    /// Constructor for creating a SetupConnection message for the new_mining
-    /// sub protocol.
-    pub fn new_mining<T: Into<String>>(
-        min_version: u16,
-        max_version: u16,
-        flags: &[MiningSetupConnectionFlags],
-        endpoint_host: T,
-        endpoint_port: u16,
-        vendor: T,
-        hardware_version: T,
-        firmware: T,
-        device_id: T,
-    ) -> Result<SetupConnection> {
-        let flags: Vec<u8> = flags.iter().map(|x| x.as_byte()).collect();
-        SetupConnection::new(
-            0,
-            min_version,
-            max_version,
-            flags,
-            endpoint_host,
-            endpoint_port,
-            vendor,
-            hardware_version,
-            firmware,
-            device_id,
-        )
-    }
-
-    /// Constructor for creating a SetupConnection message for the new_job_negotiation
-    /// sub protocol.
-    pub fn new_job_negotiation<T: Into<String>>(
-        min_version: u16,
-        max_version: u16,
-        flags: &[JobNegotiationSetupConnectionFlags],
-        endpoint_host: T,
-        endpoint_port: u16,
-        vendor: T,
-        hardware_version: T,
-        firmware: T,
-        device_id: T,
-    ) -> Result<SetupConnection> {
-        let flags: Vec<u8> = flags.iter().map(|x| x.as_byte()).collect();
-        SetupConnection::new(
-            1,
-            min_version,
-            max_version,
-            flags,
-            endpoint_host,
-            endpoint_port,
-            vendor,
-            hardware_version,
-            firmware,
-            device_id,
-        )
     }
 }
 
@@ -265,129 +207,6 @@ mod tests {
     }
 
     #[test]
-    fn new_mining_setup_connection_init() {
-        let message = SetupConnection::new_mining(
-            2,
-            2,
-            &[MiningSetupConnectionFlags::RequiresStandardJobs],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        );
-
-        assert!(message.is_ok());
-    }
-
-    #[test]
-    fn new_mining_setup_connection_serialize_0() {
-        let message = SetupConnection::new_mining(
-            2,
-            2,
-            &[MiningSetupConnectionFlags::RequiresStandardJobs],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        )
-        .unwrap();
-
-        let mut buffer: Vec<u8> = Vec::new();
-
-        let size = message.serialize(&mut buffer).unwrap();
-        assert_eq!(size, 75);
-
-        let expected = [
-            0x00, 0x02, 0x00, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x07, 0x30, 0x2e, 0x30, 0x2e,
-            0x30, 0x2e, 0x30, 0x61, 0x21, 0x07, 0x42, 0x69, 0x74, 0x6d, 0x61, 0x69, 0x6e, 0x08,
-            0x53, 0x39, 0x69, 0x20, 0x31, 0x33, 0x2e, 0x35, 0x1c, 0x62, 0x72, 0x61, 0x69, 0x69,
-            0x6e, 0x73, 0x2d, 0x6f, 0x73, 0x2d, 0x32, 0x30, 0x31, 0x38, 0x2d, 0x30, 0x39, 0x2d,
-            0x32, 0x32, 0x2d, 0x31, 0x2d, 0x68, 0x61, 0x73, 0x68, 0x09, 0x73, 0x6f, 0x6d, 0x65,
-            0x2d, 0x75, 0x75, 0x69, 0x64,
-        ];
-        assert_eq!(buffer, expected);
-    }
-
-    #[test]
-    fn new_mining_setup_connection_serialize_1() {
-        let message = SetupConnection::new_mining(
-            2,
-            2,
-            &[],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        )
-        .unwrap();
-
-        let mut buffer: Vec<u8> = Vec::new();
-        let size = message.serialize(&mut buffer).unwrap();
-
-        assert_eq!(size, 75);
-
-        // Expect the feature flag to have no set flags (0x00).
-        assert_eq!(buffer[5], 0x00);
-    }
-
-    #[test]
-    fn new_mining_setup_connection_serialize_2() {
-        let message = SetupConnection::new_mining(
-            2,
-            2,
-            &[
-                MiningSetupConnectionFlags::RequiresStandardJobs,
-                MiningSetupConnectionFlags::RequiresVersionRolling,
-            ],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        )
-        .unwrap();
-
-        let mut buffer: Vec<u8> = Vec::new();
-        let size = message.serialize(&mut buffer).unwrap();
-
-        assert_eq!(size, 75);
-        assert_eq!(buffer[5], 0x05);
-    }
-
-    #[test]
-    fn new_mining_setup_connection_serialize_3() {
-        let message = SetupConnection::new_mining(
-            2,
-            2,
-            &[
-                MiningSetupConnectionFlags::RequiresStandardJobs,
-                MiningSetupConnectionFlags::RequiresWorkSelection,
-                MiningSetupConnectionFlags::RequiresVersionRolling,
-            ],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        )
-        .unwrap();
-
-        let mut buffer: Vec<u8> = Vec::new();
-        let size = message.serialize(&mut buffer).unwrap();
-
-        assert_eq!(size, 75);
-        assert_eq!(buffer[5], 0x07);
-    }
-
-    #[test]
     fn setup_connection_success() {
         let success_msg = SetupConnectionSuccess::new(2, 0);
 
@@ -396,68 +215,5 @@ mod tests {
 
         let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
         assert_eq!(buffer, expected);
-    }
-
-    #[test]
-    fn new_job_negotiation_setup_connection_init() {
-        let message = SetupConnection::new_job_negotiation(
-            2,
-            2,
-            &[JobNegotiationSetupConnectionFlags::RequiresAsyncJobMining],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        );
-
-        assert!(message.is_ok());
-    }
-
-    #[test]
-    fn new_job_negotiation_serialize_0() {
-        let message = SetupConnection::new_job_negotiation(
-            2,
-            2,
-            &[JobNegotiationSetupConnectionFlags::RequiresAsyncJobMining],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        )
-        .unwrap();
-
-        let mut buffer: Vec<u8> = Vec::new();
-        let size = message.serialize(&mut buffer).unwrap();
-
-        assert_eq!(size, 75);
-        assert_eq!(buffer[0], 0x01);
-        assert_eq!(buffer[5], 0x01);
-    }
-
-    #[test]
-    fn new_job_negotiation_serialize_1() {
-        let message = SetupConnection::new_job_negotiation(
-            2,
-            2,
-            &[],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        )
-        .unwrap();
-
-        let mut buffer: Vec<u8> = Vec::new();
-        let size = message.serialize(&mut buffer).unwrap();
-
-        assert_eq!(size, 75);
-        assert_eq!(buffer[0], 0x01);
-        assert_eq!(buffer[5], 0x00);
     }
 }
