@@ -18,7 +18,5 @@
 //!                     through a common communication channel.
 
 mod flags;
-mod messages;
 
 pub use flags::{SetupConnectionFlags, SetupConnectionSuccessFlags};
-pub use messages::{SetupConnection, SetupConnectionSuccess};
