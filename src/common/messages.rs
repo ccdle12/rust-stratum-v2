@@ -124,12 +124,12 @@ pub struct SetupConnectionSuccess {
     used_version: u16,
 
     /// Used to indicate the optional features the server supports.
-    flags: u32,
+    flags: Vec<u8>,
 }
 
 impl SetupConnectionSuccess {
     /// Constructor for the SetupConnectionSuccess message.
-    pub fn new(used_version: u16, flags: u32) -> SetupConnectionSuccess {
+    pub fn new(used_version: u16, flags: Vec<u8>) -> SetupConnectionSuccess {
         SetupConnectionSuccess {
             used_version,
             flags,
@@ -142,7 +142,14 @@ impl Serializable for SetupConnectionSuccess {
         let mut buffer: Vec<u8> = Vec::new();
 
         buffer.extend_from_slice(&self.used_version.to_le_bytes());
-        buffer.extend_from_slice(&self.flags.to_le_bytes());
+
+        let byte_flags = (self
+            .flags
+            .iter()
+            .fold(0, |accumulator, byte| (accumulator | byte)) as u32)
+            .to_le_bytes();
+
+        buffer.extend_from_slice(&byte_flags);
 
         Ok(writer.write(&buffer)?)
     }
@@ -208,10 +215,10 @@ mod tests {
 
     #[test]
     fn setup_connection_success() {
-        let success_msg = SetupConnectionSuccess::new(2, 0);
+        let message = SetupConnectionSuccess::new(2, vec![]);
 
         let mut buffer: Vec<u8> = Vec::new();
-        success_msg.serialize(&mut buffer).unwrap();
+        message.serialize(&mut buffer).unwrap();
 
         let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
         assert_eq!(buffer, expected);

@@ -20,5 +20,5 @@
 mod flags;
 mod messages;
 
-pub use flags::SetupConnectionFlags;
-pub use messages::SetupConnection;
+pub use flags::{SetupConnectionFlags, SetupConnectionSuccessFlags};
+pub use messages::{SetupConnection, SetupConnectionSuccess};
