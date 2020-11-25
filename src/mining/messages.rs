@@ -11,7 +11,7 @@ use crate::mining;
 pub struct SetupConnection(common::SetupConnection);
 
 impl SetupConnection {
-    /// Constructor for creating a SetupConnection message for the Mining
+    /// Constructor for creating a SetupConnection message for the mining
     /// sub protocol.
     pub fn new<T: Into<String>>(
         min_version: u16,
@@ -40,13 +40,30 @@ impl SetupConnection {
     }
 }
 
+/// SetupConnectionSuccess is the message used by the server to respond to
+/// the `SetupConenction` message in the mining protocol.
+pub struct SetupConnectionSuccess(common::SetupConnectionSuccess);
+
+impl SetupConnectionSuccess {
+    /// Constructor for creating a SetupConenctionSuccess message for the
+    /// mining sub protocol.
+    pub fn new(
+        version: u16,
+        flags: &[mining::SetupConnectionSuccessFlags],
+    ) -> common::SetupConnectionSuccess {
+        let flags: Vec<u8> = flags.iter().map(|x| x.as_byte()).collect();
+
+        common::SetupConnectionSuccess::new(version, flags)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::common::Serializable;
 
     #[test]
-    fn new_setup_connection_init() {
+    fn mining_setup_connection_init() {
         let message = SetupConnection::new(
             2,
             2,
@@ -65,7 +82,7 @@ mod tests {
     }
 
     #[test]
-    fn new_setup_connection_serialize_0() {
+    fn mining_setup_connection_serialize_0() {
         let message = SetupConnection::new(
             2,
             2,
@@ -96,7 +113,7 @@ mod tests {
     }
 
     #[test]
-    fn new_setup_connection_serialize_1() {
+    fn mining_setup_connection_serialize_1() {
         let message = SetupConnection::new(
             2,
             2,
@@ -120,7 +137,7 @@ mod tests {
     }
 
     #[test]
-    fn new_setup_connection_serialize_2() {
+    fn mining_setup_connection_serialize_2() {
         let message = SetupConnection::new(
             2,
             2,
@@ -145,7 +162,7 @@ mod tests {
     }
 
     #[test]
-    fn new_setup_connection_serialize_3() {
+    fn mining_setup_connection_serialize_3() {
         let message = SetupConnection::new(
             2,
             2,
@@ -168,5 +185,47 @@ mod tests {
 
         assert_eq!(size, 75);
         assert_eq!(buffer[5], 0x07);
+    }
+
+    #[test]
+    fn mining_setup_connection_success_0() {
+        let message = SetupConnectionSuccess::new(
+            2,
+            &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
+        );
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.serialize(&mut buffer).unwrap();
+
+        let expected = [0x02, 0x00, 0x01, 0x00, 0x00, 0x00];
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn mining_setup_connection_success_1() {
+        let message = SetupConnectionSuccess::new(
+            2,
+            &[
+                mining::SetupConnectionSuccessFlags::RequiresFixedVersion,
+                mining::SetupConnectionSuccessFlags::RequiresExtendedChannels,
+            ],
+        );
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.serialize(&mut buffer).unwrap();
+
+        let expected = [0x02, 0x00, 0x03, 0x00, 0x00, 0x00];
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn mining_setup_connection_success_2() {
+        let message = SetupConnectionSuccess::new(2, &[]);
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.serialize(&mut buffer).unwrap();
+
+        let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
+        assert_eq!(buffer, expected);
     }
 }
