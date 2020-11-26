@@ -4,6 +4,7 @@ use crate::error::{Error, Result};
 use crate::job_negotiation;
 use crate::mining;
 use crate::util::types::{string_to_str0_255, string_to_str0_255_bytes};
+use std::fmt;
 use std::io;
 
 /// SetupConnection is the first message sent by a client on a new connection.
@@ -215,6 +216,81 @@ impl Serializable for SetupConnectionSuccess {
             .to_le_bytes();
 
         buffer.extend_from_slice(&byte_flags);
+
+        Ok(writer.write(&buffer)?)
+    }
+}
+
+/// Error codes for the `SetupConnectionError` message. Each error code has
+/// a default STR0_255 message.
+pub enum SetupConnectionErrorCodes {
+    /// Indicates the server has received a feature flag from a client that
+    /// the server does not support.
+    UnsupportedFeatureFlags,
+
+    /// Indicates the server has received a connection request using a protcol
+    /// the server does not support.
+    UnsupportedProtocol,
+
+    // TODO: What is the difference between protocol version mismatch
+    // and unsupported protocol?
+    ProtocolVersionMismatch,
+}
+
+impl fmt::Display for SetupConnectionErrorCodes {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            SetupConnectionErrorCodes::UnsupportedFeatureFlags => {
+                write!(f, "unsupported-feature-flags")
+            }
+            SetupConnectionErrorCodes::UnsupportedProtocol => write!(f, "unsupported-protocol"),
+            SetupConnectionErrorCodes::ProtocolVersionMismatch => {
+                write!(f, "protocol-version-mismatch")
+            }
+        }
+    }
+}
+
+/// SetupConnectionError is one of the required respones from a server to client
+/// when a new connection has failed. The server is required to send this message
+/// with an error code before closing the connection.
+///
+/// If the error is a `FeatureFlag` error, the server MUST respond with a all
+/// the feature flags that it does not support.
+pub struct SetupConnectionError<'a, T> {
+    flags: &'a [T],
+    error_code: SetupConnectionErrorCodes,
+}
+
+impl<T> SetupConnectionError<'_, T>
+where
+    T: BitFlag,
+{
+    /// Constructor for the SetupConnectionError message.
+    pub fn new(flags: &[T], error_code: SetupConnectionErrorCodes) -> SetupConnectionError<T> {
+        SetupConnectionError {
+            flags: &flags,
+            error_code,
+        }
+    }
+}
+
+impl<T> Serializable for SetupConnectionError<'_, T>
+where
+    T: BitFlag,
+{
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        let mut buffer: Vec<u8> = Vec::new();
+
+        let byte_flags = (self
+            .flags
+            .iter()
+            .map(|x| x.as_byte())
+            .fold(0, |accumulator, byte| (accumulator | byte)) as u32)
+            .to_le_bytes();
+
+        buffer.extend_from_slice(&byte_flags);
+        buffer.extend_from_slice(&string_to_str0_255_bytes(&self.error_code.to_string())?);
 
         Ok(writer.write(&buffer)?)
     }
@@ -518,5 +594,21 @@ mod tests {
 
         let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn setup_connection_error_serialize_0() {
+        let flags = &[mining::SetupConnectionFlags::RequiresStandardJobs];
+        let message =
+            SetupConnectionError::new(flags, SetupConnectionErrorCodes::UnsupportedFeatureFlags);
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.serialize(&mut buffer).unwrap();
+
+        // Feature flag.
+        assert_eq!(buffer[0], 0x01);
+
+        // Length of error code string.
+        assert_eq!(buffer[4], 0x19);
     }
 }

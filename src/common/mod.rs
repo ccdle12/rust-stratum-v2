@@ -15,4 +15,6 @@ pub trait BitFlag {
 
 /// Messages common to all Stratum V2 protocols.
 mod messages;
-pub use messages::{SetupConnection, SetupConnectionSuccess};
+pub use messages::{
+    SetupConnection, SetupConnectionError, SetupConnectionErrorCodes, SetupConnectionSuccess,
+};
