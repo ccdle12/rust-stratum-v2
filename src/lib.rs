@@ -9,7 +9,7 @@
 mod error;
 mod util;
 
-/// Common utilities shared between each subprotocol.
+/// Common messages and utilities for each sub protocol.
 pub mod common;
 
 /// Mining is the main sub protocol of Stratum V2.
