@@ -13,8 +13,13 @@ pub trait BitFlag {
     fn as_byte(&self) -> u8;
 }
 
+pub trait ToProtocol {
+    fn as_protocol(&self) -> Protocol;
+}
+
 /// Messages common to all Stratum V2 protocols.
 mod messages;
 pub use messages::{
-    SetupConnection, SetupConnectionError, SetupConnectionErrorCodes, SetupConnectionSuccess,
+    Protocol, SetupConnection, SetupConnectionError, SetupConnectionErrorCodes,
+    SetupConnectionSuccess,
 };

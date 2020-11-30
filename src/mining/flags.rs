@@ -1,4 +1,4 @@
-use crate::common::BitFlag;
+use crate::common::{BitFlag, Protocol, ToProtocol};
 
 /// Feature flags that can be passed to a SetupConnection message in the mining
 /// sub protocol. Each flag corresponds to a set bit.
@@ -34,6 +34,14 @@ impl BitFlag for SetupConnectionFlags {
             SetupConnectionFlags::RequiresWorkSelection => 0b0010,
             SetupConnectionFlags::RequiresVersionRolling => 0b0100,
         }
+    }
+}
+
+/// Implement ToProtocol to be able to match the flags to a specific Stratum V2
+/// Protocol.
+impl ToProtocol for SetupConnectionFlags {
+    fn as_protocol(&self) -> Protocol {
+        Protocol::Mining
     }
 }
 
