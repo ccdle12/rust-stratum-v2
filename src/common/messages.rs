@@ -1,7 +1,6 @@
 use crate::common::Serializable;
 use crate::common::{BitFlag, ToProtocol};
 use crate::error::{Error, Result};
-use crate::mining;
 use crate::util::types::{string_to_str0_255, string_to_str0_255_bytes};
 use std::fmt;
 use std::io;
@@ -146,22 +145,21 @@ where
 
 /// SetupConnectionSuccess is one of the required responses from a
 /// Server to a Client when a connection is accepted.
-pub struct SetupConnectionSuccess {
+pub struct SetupConnectionSuccess<'a, B> {
     /// Version proposed by the connecting node that the upstream node (Server?)
     /// supports. The version will be used during the lifetime of the connection.
     used_version: u16,
 
     /// Used to indicate the optional features the server supports.
-    flags: Vec<u8>,
+    flags: &'a [B],
 }
 
-impl SetupConnectionSuccess {
+impl<'a, B> SetupConnectionSuccess<'a, B>
+where
+    B: BitFlag,
+{
     /// Constructor for the SetupConnectionSuccess message for the mining protocol.
-    pub fn new_mining_success(
-        used_version: u16,
-        flags: &[mining::SetupConnectionSuccessFlags],
-    ) -> SetupConnectionSuccess {
-        let flags: Vec<u8> = flags.iter().map(|x| x.as_byte()).collect();
+    pub fn new(used_version: u16, flags: &[B]) -> SetupConnectionSuccess<B> {
         SetupConnectionSuccess {
             used_version,
             flags,
@@ -169,7 +167,10 @@ impl SetupConnectionSuccess {
     }
 }
 
-impl Serializable for SetupConnectionSuccess {
+impl<B> Serializable for SetupConnectionSuccess<'_, B>
+where
+    B: BitFlag,
+{
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut buffer: Vec<u8> = Vec::new();
 
@@ -178,6 +179,7 @@ impl Serializable for SetupConnectionSuccess {
         let byte_flags = (self
             .flags
             .iter()
+            .map(|x| x.as_byte())
             .fold(0, |accumulator, byte| (accumulator | byte)) as u32)
             .to_le_bytes();
 
@@ -266,7 +268,7 @@ where
 mod tests {
     use super::*;
     use crate::common::Serializable;
-    use crate::job_negotiation;
+    use crate::{job_negotiation, mining};
 
     #[test]
     fn setup_connection_init() {
@@ -342,7 +344,8 @@ mod tests {
 
     #[test]
     fn setup_connection_success() {
-        let message = SetupConnectionSuccess::new_mining_success(2, &[]);
+        let message: SetupConnectionSuccess<'_, mining::SetupConnectionSuccessFlags> =
+            SetupConnectionSuccess::new(2, &[]);
 
         let mut buffer: Vec<u8> = Vec::new();
         message.serialize(&mut buffer).unwrap();
@@ -530,7 +533,7 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_success_0() {
-        let message = SetupConnectionSuccess::new_mining_success(
+        let message = SetupConnectionSuccess::new(
             2,
             &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
         );
@@ -544,7 +547,7 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_success_1() {
-        let message = SetupConnectionSuccess::new_mining_success(
+        let message = SetupConnectionSuccess::new(
             2,
             &[
                 mining::SetupConnectionSuccessFlags::RequiresFixedVersion,
@@ -561,7 +564,8 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_success_2() {
-        let message = SetupConnectionSuccess::new_mining_success(2, &[]);
+        let message: SetupConnectionSuccess<'_, mining::SetupConnectionSuccessFlags> =
+            SetupConnectionSuccess::new(2, &[]);
 
         let mut buffer: Vec<u8> = Vec::new();
         message.serialize(&mut buffer).unwrap();
