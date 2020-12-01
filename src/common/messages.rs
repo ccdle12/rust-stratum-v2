@@ -29,7 +29,10 @@ pub enum Protocol {
 /// SetupConnection is the first message sent by a client on a new connection.
 /// This implementation is a base struct that contains all the common fields
 /// for the SetupConnection for each Stratum V2 subprotocol.
-pub struct SetupConnection<'a, B> {
+pub struct SetupConnection<'a, B>
+where
+    B: BitFlag + ToProtocol,
+{
     /// Used to indicate the protocol the client wants to use on the new connection.
     pub protocol: Protocol,
 
@@ -115,7 +118,7 @@ where
 /// of the SetupConnection message to the valid message format.
 impl<B> Serializable for SetupConnection<'_, B>
 where
-    B: BitFlag,
+    B: BitFlag + ToProtocol,
 {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut buffer: Vec<u8> = vec![self.protocol as u8];
@@ -145,7 +148,10 @@ where
 /// Implementation of the Framable trait to build the network message frame
 /// specifically for SetupConenction including the serialzed information as the
 /// message payload.
-impl Framable for SetupConnection {
+impl<B> Framable for SetupConnection<'_, B>
+where
+    B: BitFlag + ToProtocol,
+{
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         // TODO: This is repeated for each frame, so maybe create a macro?
         //
@@ -175,7 +181,10 @@ impl Framable for SetupConnection {
 
 /// SetupConnectionSuccess is one of the required responses from a
 /// Server to a Client when a connection is accepted.
-pub struct SetupConnectionSuccess<'a, B> {
+pub struct SetupConnectionSuccess<'a, B>
+where
+    B: BitFlag + ToProtocol,
+{
     /// Version proposed by the connecting node that the upstream node (Server?)
     /// supports. The version will be used during the lifetime of the connection.
     used_version: u16,
@@ -186,7 +195,7 @@ pub struct SetupConnectionSuccess<'a, B> {
 
 impl<'a, B> SetupConnectionSuccess<'a, B>
 where
-    B: BitFlag,
+    B: BitFlag + ToProtocol,
 {
     /// Constructor for the SetupConnectionSuccess message for the mining protocol.
     pub fn new(used_version: u16, flags: &[B]) -> SetupConnectionSuccess<B> {
@@ -199,7 +208,7 @@ where
 
 impl<B> Serializable for SetupConnectionSuccess<'_, B>
 where
-    B: BitFlag,
+    B: BitFlag + ToProtocol,
 {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut buffer: Vec<u8> = Vec::new();
@@ -219,7 +228,10 @@ where
     }
 }
 
-impl Framable for SetupConnectionSuccess {
+impl<B> Framable for SetupConnectionSuccess<'_, B>
+where
+    B: BitFlag + ToProtocol,
+{
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         // TODO: Need to move to a macro to reduce repetition.
         // Default empty channel messsage.
@@ -282,14 +294,17 @@ impl fmt::Display for SetupConnectionErrorCodes {
 ///
 /// If the error is a `FeatureFlag` error, the server MUST respond with a all
 /// the feature flags that it does not support.
-pub struct SetupConnectionError<'a, B> {
+pub struct SetupConnectionError<'a, B>
+where
+    B: BitFlag + ToProtocol,
+{
     flags: &'a [B],
     error_code: SetupConnectionErrorCodes,
 }
 
 impl<B> SetupConnectionError<'_, B>
 where
-    B: BitFlag,
+    B: BitFlag + ToProtocol,
 {
     /// Constructor for the SetupConnectionError message.
     pub fn new(flags: &[B], error_code: SetupConnectionErrorCodes) -> SetupConnectionError<B> {
@@ -302,7 +317,7 @@ where
 
 impl<B> Serializable for SetupConnectionError<'_, B>
 where
-    B: BitFlag,
+    B: BitFlag + ToProtocol,
 {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut buffer: Vec<u8> = Vec::new();
@@ -324,7 +339,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::common::Serializable;
+    use crate::common::{Framable, Serializable};
     use crate::{job_negotiation, mining};
 
     #[test]
@@ -523,7 +538,8 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_frame_0() {
-        let message = SetupConnection::new_mining_connection(
+        let message = SetupConnection::new(
+            Protocol::Mining,
             2,
             2,
             &[mining::SetupConnectionFlags::RequiresStandardJobs],
@@ -634,7 +650,7 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_success_frame_0() {
-        let message = SetupConnectionSuccess::new_mining_success(
+        let message = SetupConnectionSuccess::new(
             2,
             &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
         );

@@ -67,3 +67,9 @@ impl BitFlag for SetupConnectionSuccessFlags {
         }
     }
 }
+
+impl ToProtocol for SetupConnectionSuccessFlags {
+    fn as_protocol(&self) -> Protocol {
+        Protocol::Mining
+    }
+}
