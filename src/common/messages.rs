@@ -1,23 +1,37 @@
-use crate::common::{BitFlag, Framable, Serializable};
+use crate::common::{BitFlag, Framable, Serializable, ToProtocol};
 use crate::error::{Error, Result};
-use crate::job_negotiation;
-use crate::mining;
 use crate::util::types::{string_to_str0_255, string_to_str0_255_bytes};
 use std::fmt;
 use std::io;
 
+#[repr(u8)]
+#[derive(PartialEq, Clone, Copy)]
+/// Protocol is an enum representing each sub protocol of Stratum V2.
+pub enum Protocol {
+    /// Mining is the main and only required sub protocol in Stratum V2.
+    Mining = 0,
+
+    /// JobNegotiation is a protocol for intermediate nodes to broker
+    /// the terms of a connection between downstream nodes and upstream nodes.
+    JobNegotiation = 1,
+
+    /// TemplateDistribution is a protocol for getting the next block from the
+    /// Bitcoin RPC. This protocol is intented to replace getblocktemplate.
+    TemplateDistribution = 2,
+
+    /// JobDistribution is a protocol for passing newly-negotiated work from the
+    /// Job Negotiator to proxies or mining devices. If miners aren't choosing
+    /// their transaction sets, then jobs will be distributed from pools directly
+    /// to proxies/mining devices.
+    JobDistribution = 3,
+}
+
 /// SetupConnection is the first message sent by a client on a new connection.
 /// This implementation is a base struct that contains all the common fields
 /// for the SetupConnection for each Stratum V2 subprotocol.
-pub struct SetupConnection {
+pub struct SetupConnection<'a, B> {
     /// Used to indicate the protocol the client wants to use on the new connection.
-    ///
-    /// Available protocols:
-    /// - 0 = Mining Protocol
-    /// - 1 = Job Negotiation Protocol
-    /// - 2 = Template Distribution Protocol
-    /// - 3 = Job Distribution Protocol
-    pub protocol: u8,
+    pub protocol: Protocol,
 
     /// The minimum protocol version the client supports. (current default: 2)
     pub min_version: u16,
@@ -26,7 +40,7 @@ pub struct SetupConnection {
     pub max_version: u16,
 
     /// Flags indicating the optional protocol features the client supports.
-    pub flags: Vec<u8>,
+    pub flags: &'a [B],
 
     /// Used to indicate the hostname or IP address of the endpoint.
     pub endpoint_host: String,
@@ -50,23 +64,28 @@ pub struct SetupConnection {
     pub device_id: String,
 }
 
-impl SetupConnection {
+impl<'a, B> SetupConnection<'a, B>
+where
+    B: BitFlag + ToProtocol,
+{
     /// Internal constructor for the SetupConnection message. Each subprotcol
     /// has its own public setup connection method that should be called.
-    pub(crate) fn new<T: Into<String>>(
-        protocol: u8,
+    pub fn new<T: Into<String>>(
+        protocol: Protocol,
         min_version: u16,
         max_version: u16,
-        flags: Vec<u8>,
+        flags: &'a [B],
         endpoint_host: T,
         endpoint_port: u16,
         vendor: T,
         hardware_version: T,
         firmware: T,
         device_id: T,
-    ) -> Result<SetupConnection> {
-        if protocol > 3 {
-            return Err(Error::VersionError("invalid protocol request".into()));
+    ) -> Result<SetupConnection<B>> {
+        for flag in flags {
+            if flag.as_protocol() != protocol {
+                return Err(Error::VersionError("flags do not match protocol".into()));
+            }
         }
 
         if min_version < 2 {
@@ -90,71 +109,16 @@ impl SetupConnection {
             device_id: string_to_str0_255(device_id)?,
         })
     }
-
-    /// Constructor for the mining sub protocol setup connection message.
-    /// This restricts the caller to only use feature flags from the mining
-    /// module.
-    pub fn new_mining_connection<T: Into<String>>(
-        min_version: u16,
-        max_version: u16,
-        flags: &[mining::SetupConnectionFlags],
-        endpoint_host: T,
-        endpoint_port: u16,
-        vendor: T,
-        hardware_version: T,
-        firmware: T,
-        device_id: T,
-    ) -> Result<SetupConnection> {
-        let flags: Vec<u8> = flags.iter().map(|x| x.as_byte()).collect();
-        SetupConnection::new(
-            0,
-            min_version,
-            max_version,
-            flags,
-            endpoint_host,
-            endpoint_port,
-            vendor,
-            hardware_version,
-            firmware,
-            device_id,
-        )
-    }
-
-    /// Constructor for the job negotiation sub protocol setup conenction message.
-    /// This restricts the caller to only use feature falgs from the job negotiation
-    /// module.
-    pub fn new_job_negotiation_connection<T: Into<String>>(
-        min_version: u16,
-        max_version: u16,
-        flags: &[job_negotiation::SetupConnectionFlags],
-        endpoint_host: T,
-        endpoint_port: u16,
-        vendor: T,
-        hardware_version: T,
-        firmware: T,
-        device_id: T,
-    ) -> Result<SetupConnection> {
-        let flags: Vec<u8> = flags.iter().map(|x| x.as_byte()).collect();
-        SetupConnection::new(
-            1,
-            min_version,
-            max_version,
-            flags,
-            endpoint_host,
-            endpoint_port,
-            vendor,
-            hardware_version,
-            firmware,
-            device_id,
-        )
-    }
 }
 
 /// Implementation of the Serializable trait to serialize the contents
 /// of the SetupConnection message to the valid message format.
-impl Serializable for SetupConnection {
+impl<B> Serializable for SetupConnection<'_, B>
+where
+    B: BitFlag,
+{
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let mut buffer: Vec<u8> = vec![self.protocol];
+        let mut buffer: Vec<u8> = vec![self.protocol as u8];
 
         buffer.extend_from_slice(&self.min_version.to_le_bytes());
         buffer.extend_from_slice(&self.max_version.to_le_bytes());
@@ -162,6 +126,7 @@ impl Serializable for SetupConnection {
         let byte_flags = (self
             .flags
             .iter()
+            .map(|x| x.as_byte())
             .fold(0, |accumulator, byte| (accumulator | byte)) as u32)
             .to_le_bytes();
 
@@ -210,22 +175,21 @@ impl Framable for SetupConnection {
 
 /// SetupConnectionSuccess is one of the required responses from a
 /// Server to a Client when a connection is accepted.
-pub struct SetupConnectionSuccess {
+pub struct SetupConnectionSuccess<'a, B> {
     /// Version proposed by the connecting node that the upstream node (Server?)
     /// supports. The version will be used during the lifetime of the connection.
     used_version: u16,
 
     /// Used to indicate the optional features the server supports.
-    flags: Vec<u8>,
+    flags: &'a [B],
 }
 
-impl SetupConnectionSuccess {
+impl<'a, B> SetupConnectionSuccess<'a, B>
+where
+    B: BitFlag,
+{
     /// Constructor for the SetupConnectionSuccess message for the mining protocol.
-    pub fn new_mining_success(
-        used_version: u16,
-        flags: &[mining::SetupConnectionSuccessFlags],
-    ) -> SetupConnectionSuccess {
-        let flags: Vec<u8> = flags.iter().map(|x| x.as_byte()).collect();
+    pub fn new(used_version: u16, flags: &[B]) -> SetupConnectionSuccess<B> {
         SetupConnectionSuccess {
             used_version,
             flags,
@@ -233,7 +197,10 @@ impl SetupConnectionSuccess {
     }
 }
 
-impl Serializable for SetupConnectionSuccess {
+impl<B> Serializable for SetupConnectionSuccess<'_, B>
+where
+    B: BitFlag,
+{
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut buffer: Vec<u8> = Vec::new();
 
@@ -242,6 +209,7 @@ impl Serializable for SetupConnectionSuccess {
         let byte_flags = (self
             .flags
             .iter()
+            .map(|x| x.as_byte())
             .fold(0, |accumulator, byte| (accumulator | byte)) as u32)
             .to_le_bytes();
 
@@ -314,17 +282,17 @@ impl fmt::Display for SetupConnectionErrorCodes {
 ///
 /// If the error is a `FeatureFlag` error, the server MUST respond with a all
 /// the feature flags that it does not support.
-pub struct SetupConnectionError<'a, T> {
-    flags: &'a [T],
+pub struct SetupConnectionError<'a, B> {
+    flags: &'a [B],
     error_code: SetupConnectionErrorCodes,
 }
 
-impl<T> SetupConnectionError<'_, T>
+impl<B> SetupConnectionError<'_, B>
 where
-    T: BitFlag,
+    B: BitFlag,
 {
     /// Constructor for the SetupConnectionError message.
-    pub fn new(flags: &[T], error_code: SetupConnectionErrorCodes) -> SetupConnectionError<T> {
+    pub fn new(flags: &[B], error_code: SetupConnectionErrorCodes) -> SetupConnectionError<B> {
         SetupConnectionError {
             flags: &flags,
             error_code,
@@ -332,9 +300,9 @@ where
     }
 }
 
-impl<T> Serializable for SetupConnectionError<'_, T>
+impl<B> Serializable for SetupConnectionError<'_, B>
 where
-    T: BitFlag,
+    B: BitFlag,
 {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut buffer: Vec<u8> = Vec::new();
@@ -357,14 +325,51 @@ where
 mod tests {
     use super::*;
     use crate::common::Serializable;
+    use crate::{job_negotiation, mining};
+
+    #[test]
+    fn setup_connection_init() {
+        let message = SetupConnection::new(
+            Protocol::Mining,
+            2,
+            2,
+            &[mining::SetupConnectionFlags::RequiresStandardJobs],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        );
+
+        assert!(message.is_ok());
+    }
+
+    #[test]
+    fn setup_connection_invalid_flag_and_protcol() {
+        let message = SetupConnection::new(
+            Protocol::JobNegotiation,
+            2,
+            2,
+            &[mining::SetupConnectionFlags::RequiresStandardJobs],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        );
+
+        assert!(message.is_err());
+    }
 
     #[test]
     fn setup_connection_invalid_min_value() {
         let message = SetupConnection::new(
-            0,
+            Protocol::Mining,
             2,
             1,
-            vec![0b0001],
+            &[mining::SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -379,28 +384,10 @@ mod tests {
     #[test]
     fn setup_connection_invalid_max_value() {
         let message = SetupConnection::new(
-            0,
+            Protocol::Mining,
             2,
             0,
-            vec![0x01],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        );
-
-        assert!(message.is_err());
-    }
-
-    #[test]
-    fn setup_connection_invalid_protocol() {
-        let message = SetupConnection::new(
-            4,
-            2,
-            0,
-            vec![0x01],
+            &[mining::SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -414,7 +401,8 @@ mod tests {
 
     #[test]
     fn setup_connection_success() {
-        let message = SetupConnectionSuccess::new_mining_success(2, &[]);
+        let message: SetupConnectionSuccess<'_, mining::SetupConnectionSuccessFlags> =
+            SetupConnectionSuccess::new(2, &[]);
 
         let mut buffer: Vec<u8> = Vec::new();
         message.serialize(&mut buffer).unwrap();
@@ -424,27 +412,9 @@ mod tests {
     }
 
     #[test]
-    fn mining_setup_connection_init() {
-        let message = SetupConnection::new_mining_connection(
-            2,
-            2,
-            &[mining::SetupConnectionFlags::RequiresStandardJobs],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        )
-        .unwrap();
-
-        assert_eq!(message.protocol, 0);
-        assert_eq!(message.min_version, 2);
-    }
-
-    #[test]
     fn mining_setup_connection_serialize_0() {
-        let message = SetupConnection::new_mining_connection(
+        let message = SetupConnection::new(
+            Protocol::Mining,
             2,
             2,
             &[mining::SetupConnectionFlags::RequiresStandardJobs],
@@ -475,7 +445,8 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_serialize_1() {
-        let message = SetupConnection::new_mining_connection(
+        let message: SetupConnection<'_, mining::SetupConnectionFlags> = SetupConnection::new(
+            Protocol::Mining,
             2,
             2,
             &[],
@@ -499,7 +470,8 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_serialize_2() {
-        let message = SetupConnection::new_mining_connection(
+        let message = SetupConnection::new(
+            Protocol::Mining,
             2,
             2,
             &[
@@ -524,7 +496,8 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_serialize_3() {
-        let message = SetupConnection::new_mining_connection(
+        let message = SetupConnection::new(
+            Protocol::Mining,
             2,
             2,
             &[
@@ -580,7 +553,8 @@ mod tests {
 
     #[test]
     fn new_job_negotiation_setup_connection_init() {
-        let message = SetupConnection::new_job_negotiation_connection(
+        let message = SetupConnection::new(
+            Protocol::JobNegotiation,
             2,
             2,
             &[job_negotiation::SetupConnectionFlags::RequiresAsyncJobMining],
@@ -597,7 +571,8 @@ mod tests {
 
     #[test]
     fn new_job_negotiation_serialize_0() {
-        let message = SetupConnection::new_job_negotiation_connection(
+        let message = SetupConnection::new(
+            Protocol::JobNegotiation,
             2,
             2,
             &[job_negotiation::SetupConnectionFlags::RequiresAsyncJobMining],
@@ -620,18 +595,20 @@ mod tests {
 
     #[test]
     fn new_job_negotiation_serialize_1() {
-        let message = SetupConnection::new_job_negotiation_connection(
-            2,
-            2,
-            &[],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        )
-        .unwrap();
+        let message: SetupConnection<'_, job_negotiation::SetupConnectionFlags> =
+            SetupConnection::new(
+                Protocol::JobNegotiation,
+                2,
+                2,
+                &[],
+                "0.0.0.0",
+                8545,
+                "Bitmain",
+                "S9i 13.5",
+                "braiins-os-2018-09-22-1-hash",
+                "some-uuid",
+            )
+            .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
         let size = message.serialize(&mut buffer).unwrap();
@@ -643,7 +620,7 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_success_0() {
-        let message = SetupConnectionSuccess::new_mining_success(
+        let message = SetupConnectionSuccess::new(
             2,
             &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
         );
@@ -674,7 +651,7 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_success_1() {
-        let message = SetupConnectionSuccess::new_mining_success(
+        let message = SetupConnectionSuccess::new(
             2,
             &[
                 mining::SetupConnectionSuccessFlags::RequiresFixedVersion,
@@ -691,7 +668,8 @@ mod tests {
 
     #[test]
     fn mining_setup_connection_success_2() {
-        let message = SetupConnectionSuccess::new_mining_success(2, &[]);
+        let message: SetupConnectionSuccess<'_, mining::SetupConnectionSuccessFlags> =
+            SetupConnectionSuccess::new(2, &[]);
 
         let mut buffer: Vec<u8> = Vec::new();
         message.serialize(&mut buffer).unwrap();
