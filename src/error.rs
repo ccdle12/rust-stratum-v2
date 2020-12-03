@@ -7,6 +7,8 @@ pub enum Error {
     VersionError(String),
     IOErorr(io::Error),
     Utf8Error(std::str::Utf8Error),
+    ProtocolMismatchError(String),
+    RequirementError(String),
 }
 
 impl fmt::Display for Error {
@@ -15,6 +17,8 @@ impl fmt::Display for Error {
             Error::VersionError(ref message) => write!(f, "{}", message),
             Error::IOErorr(ref message) => write!(f, "{}", message),
             Error::Utf8Error(ref message) => write!(f, "{}", message),
+            Error::ProtocolMismatchError(ref message) => write!(f, "{}", message),
+            Error::RequirementError(ref message) => write!(f, "{}", message),
         }
     }
 }

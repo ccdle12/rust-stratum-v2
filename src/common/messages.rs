@@ -85,10 +85,25 @@ where
         firmware: T,
         device_id: T,
     ) -> Result<SetupConnection<B>> {
-        for flag in flags {
-            if flag.as_protocol() != protocol {
-                return Err(Error::VersionError("flags do not match protocol".into()));
-            }
+        let invalid_flag = &flags.into_iter().any(|x| x.as_protocol() != protocol);
+        if *invalid_flag {
+            return Err(Error::ProtocolMismatchError(
+                "flags do not match protocol".into(),
+            ));
+        }
+
+        let vendor = vendor.into();
+        if *&vendor.is_empty() {
+            return Err(Error::RequirementError(
+                "vendor field in SetupConnection MUST NOT be empty".into(),
+            ));
+        }
+
+        let firmware = firmware.into();
+        if *&firmware.is_empty() {
+            return Err(Error::RequirementError(
+                "firmware field in SetupConnection MUST NOT be empty".into(),
+            ));
         }
 
         if min_version < 2 {
@@ -410,6 +425,42 @@ mod tests {
         );
 
         assert!(message.is_err());
+    }
+
+    #[test]
+    fn setup_connection_empty_vendor() {
+        let message = SetupConnection::new(
+            Protocol::Mining,
+            2,
+            2,
+            &[mining::SetupConnectionFlags::RequiresStandardJobs],
+            "0.0.0.0",
+            8545,
+            "",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        );
+
+        assert!(message.is_err())
+    }
+
+    #[test]
+    fn setup_connection_empty_firmware() {
+        let message = SetupConnection::new(
+            Protocol::Mining,
+            2,
+            2,
+            &[mining::SetupConnectionFlags::RequiresStandardJobs],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "",
+            "some-uuid",
+        );
+
+        assert!(message.is_err())
     }
 
     #[test]
