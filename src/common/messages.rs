@@ -27,8 +27,8 @@ pub enum Protocol {
 }
 
 /// SetupConnection is the first message sent by a client on a new connection.
-/// This implementation is a base struct that contains all the common fields
-/// for the SetupConnection for each Stratum V2 subprotocol.
+/// The SetupConnection struct contains all the common fields for the
+/// SetupConnection message for each Stratum V2 subprotocol.
 pub struct SetupConnection<'a, B>
 where
     B: BitFlag + ToProtocol,
@@ -71,8 +71,8 @@ impl<'a, B> SetupConnection<'a, B>
 where
     B: BitFlag + ToProtocol,
 {
-    /// Internal constructor for the SetupConnection message. Each subprotcol
-    /// has its own public setup connection method that should be called.
+    /// Constructor for the SetupConnection message. A specific SetupConnection
+    /// can be specified for a sub protocol.
     pub fn new<T: Into<String>>(
         protocol: Protocol,
         min_version: u16,
@@ -145,9 +145,8 @@ where
     }
 }
 
-/// Implementation of the Framable trait to build the network message frame
-/// specifically for SetupConenction including the serialzed information as the
-/// message payload.
+/// Implementation of the Framable trait to build a network frame for the
+/// SetupConnection message.
 impl<B> Framable for SetupConnection<'_, B>
 where
     B: BitFlag + ToProtocol,
@@ -195,7 +194,7 @@ impl<'a, B> SetupConnectionSuccess<'a, B>
 where
     B: BitFlag + ToProtocol,
 {
-    /// Constructor for the SetupConnectionSuccess message for the mining protocol.
+    /// Constructor for the SetupConnectionSuccess message.
     pub fn new(used_version: u16, flags: &[B]) -> SetupConnectionSuccess<B> {
         SetupConnectionSuccess {
             used_version,
@@ -231,7 +230,8 @@ where
     B: BitFlag + ToProtocol,
 {
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        // TODO: Need to move to a macro to reduce repetition.
+        // TODO: Need to move to a macro or function to reduce repetition
+        // in each frame implemenation.
         // Default empty channel messsage.
         let channel_msg = &[0x00, 0x00];
 
