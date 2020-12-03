@@ -13,6 +13,13 @@ pub trait BitFlag {
     fn as_byte(&self) -> u8;
 }
 
+/// Trait for creating a serialized frame for networked messages. This trait
+/// will build the correct frame for a specific message as well as serialize
+/// the payload.
+pub trait Framable {
+    fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize>;
+}
+
 /// Trait for identifying some struct/enum as part of a certain sub protocol.
 pub trait ToProtocol {
     fn as_protocol(&self) -> Protocol;

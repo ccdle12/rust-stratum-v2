@@ -1,5 +1,4 @@
-use crate::common::Serializable;
-use crate::common::{BitFlag, ToProtocol};
+use crate::common::{BitFlag, Framable, Serializable, ToProtocol};
 use crate::error::{Error, Result};
 use crate::util::types::{string_to_str0_255, string_to_str0_255_bytes};
 use std::fmt;
@@ -30,7 +29,10 @@ pub enum Protocol {
 /// SetupConnection is the first message sent by a client on a new connection.
 /// This implementation is a base struct that contains all the common fields
 /// for the SetupConnection for each Stratum V2 subprotocol.
-pub struct SetupConnection<'a, B> {
+pub struct SetupConnection<'a, B>
+where
+    B: BitFlag + ToProtocol,
+{
     /// Used to indicate the protocol the client wants to use on the new connection.
     pub protocol: Protocol,
 
@@ -112,12 +114,12 @@ where
     }
 }
 
+/// Implementation of the Serializable trait to serialize the contents
+/// of the SetupConnection message to the valid message format.
 impl<B> Serializable for SetupConnection<'_, B>
 where
-    B: BitFlag,
+    B: BitFlag + ToProtocol,
 {
-    /// Implementation of the Serializable trait to serialize the contents
-    /// of the SetupConnection message to the valid message format.
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut buffer: Vec<u8> = vec![self.protocol as u8];
 
@@ -143,9 +145,44 @@ where
     }
 }
 
+/// Implementation of the Framable trait to build the network message frame
+/// specifically for SetupConenction including the serialzed information as the
+/// message payload.
+impl<B> Framable for SetupConnection<'_, B>
+where
+    B: BitFlag + ToProtocol,
+{
+    fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        // Default empty channel messsage.
+        let channel_msg = &[0x00, 0x00];
+
+        // Message type of SetupConnection is always 0x00.
+        let msg_type = &[0x00];
+
+        // Serialize SetupConnection as the message payload.
+        let mut payload = Vec::new();
+        let size = *&self.serialize(&mut payload)?;
+
+        // A size_u24 of the message payload.
+        let mut payload_length = (size as u16).to_le_bytes().to_vec();
+        payload_length.push(0x00);
+
+        let mut result = Vec::new();
+        result.extend_from_slice(channel_msg);
+        result.extend_from_slice(msg_type);
+        result.extend_from_slice(&payload_length);
+        result.extend_from_slice(&payload);
+
+        Ok(writer.write(&result)?)
+    }
+}
+
 /// SetupConnectionSuccess is one of the required responses from a
 /// Server to a Client when a connection is accepted.
-pub struct SetupConnectionSuccess<'a, B> {
+pub struct SetupConnectionSuccess<'a, B>
+where
+    B: BitFlag + ToProtocol,
+{
     /// Version proposed by the connecting node that the upstream node (Server?)
     /// supports. The version will be used during the lifetime of the connection.
     used_version: u16,
@@ -156,7 +193,7 @@ pub struct SetupConnectionSuccess<'a, B> {
 
 impl<'a, B> SetupConnectionSuccess<'a, B>
 where
-    B: BitFlag,
+    B: BitFlag + ToProtocol,
 {
     /// Constructor for the SetupConnectionSuccess message for the mining protocol.
     pub fn new(used_version: u16, flags: &[B]) -> SetupConnectionSuccess<B> {
@@ -169,7 +206,7 @@ where
 
 impl<B> Serializable for SetupConnectionSuccess<'_, B>
 where
-    B: BitFlag,
+    B: BitFlag + ToProtocol,
 {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut buffer: Vec<u8> = Vec::new();
@@ -186,6 +223,36 @@ where
         buffer.extend_from_slice(&byte_flags);
 
         Ok(writer.write(&buffer)?)
+    }
+}
+
+impl<B> Framable for SetupConnectionSuccess<'_, B>
+where
+    B: BitFlag + ToProtocol,
+{
+    fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        // TODO: Need to move to a macro to reduce repetition.
+        // Default empty channel messsage.
+        let channel_msg = &[0x00, 0x00];
+
+        // Message type of SetupConnectionSuccess is always 0x01.
+        let msg_type = &[0x01];
+
+        // Serialize SetupConnection as the message payload.
+        let mut payload = Vec::new();
+        let size = *&self.serialize(&mut payload)?;
+
+        // A size_u24 of the message payload.
+        let mut payload_length = (size as u16).to_le_bytes().to_vec();
+        payload_length.push(0x00);
+
+        let mut result = Vec::new();
+        result.extend_from_slice(channel_msg);
+        result.extend_from_slice(msg_type);
+        result.extend_from_slice(&payload_length);
+        result.extend_from_slice(&payload);
+
+        Ok(writer.write(&result)?)
     }
 }
 
@@ -225,14 +292,17 @@ impl fmt::Display for SetupConnectionErrorCodes {
 ///
 /// If the error is a `FeatureFlag` error, the server MUST respond with a all
 /// the feature flags that it does not support.
-pub struct SetupConnectionError<'a, B> {
+pub struct SetupConnectionError<'a, B>
+where
+    B: BitFlag + ToProtocol,
+{
     flags: &'a [B],
     error_code: SetupConnectionErrorCodes,
 }
 
 impl<B> SetupConnectionError<'_, B>
 where
-    B: BitFlag,
+    B: BitFlag + ToProtocol,
 {
     /// Constructor for the SetupConnectionError message.
     pub fn new(flags: &[B], error_code: SetupConnectionErrorCodes) -> SetupConnectionError<B> {
@@ -245,7 +315,7 @@ where
 
 impl<B> Serializable for SetupConnectionError<'_, B>
 where
-    B: BitFlag,
+    B: BitFlag + ToProtocol,
 {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut buffer: Vec<u8> = Vec::new();
@@ -267,7 +337,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::common::Serializable;
+    use crate::common::{Framable, Serializable};
     use crate::{job_negotiation, mining};
 
     #[test]
@@ -465,6 +535,37 @@ mod tests {
     }
 
     #[test]
+    fn mining_setup_connection_frame_0() {
+        let message = SetupConnection::new(
+            Protocol::Mining,
+            2,
+            2,
+            &[mining::SetupConnectionFlags::RequiresStandardJobs],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        )
+        .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        let size = message.frame(&mut buffer).unwrap();
+        assert_eq!(size, 81);
+
+        let expected = [
+            0x00, 0x00, 0x00, 0x4b, 0x00, 0x00, 0x00, 0x02, 0x00, 0x02, 0x00, 0x01, 0x00, 0x00,
+            0x00, 0x07, 0x30, 0x2e, 0x30, 0x2e, 0x30, 0x2e, 0x30, 0x61, 0x21, 0x07, 0x42, 0x69,
+            0x74, 0x6d, 0x61, 0x69, 0x6e, 0x08, 0x53, 0x39, 0x69, 0x20, 0x31, 0x33, 0x2e, 0x35,
+            0x1c, 0x62, 0x72, 0x61, 0x69, 0x69, 0x6e, 0x73, 0x2d, 0x6f, 0x73, 0x2d, 0x32, 0x30,
+            0x31, 0x38, 0x2d, 0x30, 0x39, 0x2d, 0x32, 0x32, 0x2d, 0x31, 0x2d, 0x68, 0x61, 0x73,
+            0x68, 0x09, 0x73, 0x6f, 0x6d, 0x65, 0x2d, 0x75, 0x75, 0x69, 0x64,
+        ];
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
     fn new_job_negotiation_setup_connection_init() {
         let message = SetupConnection::new(
             Protocol::JobNegotiation,
@@ -542,6 +643,22 @@ mod tests {
         message.serialize(&mut buffer).unwrap();
 
         let expected = [0x02, 0x00, 0x01, 0x00, 0x00, 0x00];
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn mining_setup_connection_success_frame_0() {
+        let message = SetupConnectionSuccess::new(
+            2,
+            &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
+        );
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.frame(&mut buffer).unwrap();
+
+        let expected = [
+            0x00, 0x00, 0x01, 0x06, 0x00, 0x00, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00,
+        ];
         assert_eq!(buffer, expected);
     }
 
