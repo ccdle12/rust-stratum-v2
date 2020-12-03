@@ -153,8 +153,6 @@ where
     B: BitFlag + ToProtocol,
 {
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        // TODO: This is repeated for each frame, so maybe create a macro?
-        //
         // Default empty channel messsage.
         let channel_msg = &[0x00, 0x00];
 
@@ -656,7 +654,6 @@ mod tests {
         );
 
         let mut buffer: Vec<u8> = Vec::new();
-        // message.serialize(&mut buffer).unwrap();
         message.frame(&mut buffer).unwrap();
 
         let expected = [
