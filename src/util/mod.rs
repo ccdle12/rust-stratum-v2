@@ -1,4 +1,4 @@
-mod channel_id_gen;
+mod channel_id;
 pub(crate) mod types;
 
-pub use channel_id_gen::new_channel_id;
+pub use channel_id::new_channel_id;
