@@ -199,10 +199,10 @@ where
 {
     /// Version proposed by the connecting node that the upstream node (Server?)
     /// supports. The version will be used during the lifetime of the connection.
-    used_version: u16,
+    pub used_version: u16,
 
-    /// Used to indicate the optional features the server supports.
-    flags: &'a [B],
+    /// Indicates the optional features the server supports.
+    pub flags: &'a [B],
 }
 
 impl<'a, B> SetupConnectionSuccess<'a, B>
@@ -271,8 +271,9 @@ where
     }
 }
 
-/// Error codes for the `SetupConnectionError` message. Each error code has
-/// a default STR0_255 message.
+/// Contains the error codes for the [SetupConnectionError](struct.SetupConnectionError.html) message.
+/// Each error code has a default STR0_255 message.
+#[derive(PartialEq)]
 pub enum SetupConnectionErrorCodes {
     /// Indicates the server has received a feature flag from a client that
     /// the server does not support.
@@ -305,14 +306,20 @@ impl fmt::Display for SetupConnectionErrorCodes {
 /// when a new connection has failed. The server is required to send this message
 /// with an error code before closing the connection.
 ///
-/// If the error is a `FeatureFlag` error, the server MUST respond with a all
-/// the feature flags that it does not support.
+/// If the error is a variant of [UnsupportedFeatureFlags](enum.SetupConnectionErrorCodes.html),
+/// the server MUST respond with a all the feature flags that it does NOT support.
+///
+/// If the flag is 0, then the error is some condition aside from unsupported
+/// flags.
 pub struct SetupConnectionError<'a, B>
 where
     B: BitFlag + ToProtocol,
 {
-    flags: &'a [B],
-    error_code: SetupConnectionErrorCodes,
+    /// Indicates all the flags that the server does NOT support.
+    pub flags: &'a [B],
+
+    /// Error code is a predefined STR0_255 error code.
+    pub error_code: SetupConnectionErrorCodes,
 }
 
 impl<B> SetupConnectionError<'_, B>
@@ -320,11 +327,20 @@ where
     B: BitFlag + ToProtocol,
 {
     /// Constructor for the SetupConnectionError message.
-    pub fn new(flags: &[B], error_code: SetupConnectionErrorCodes) -> SetupConnectionError<B> {
-        SetupConnectionError {
+    pub fn new(
+        flags: &[B],
+        error_code: SetupConnectionErrorCodes,
+    ) -> Result<SetupConnectionError<B>> {
+        if flags.is_empty() && error_code == SetupConnectionErrorCodes::UnsupportedFeatureFlags {
+            return Err(Error::RequirementError(
+                "a full set of unsupported flags MUST be returned to the client".into(),
+            ));
+        }
+
+        Ok(SetupConnectionError {
             flags: &flags,
             error_code,
-        }
+        })
     }
 }
 
@@ -746,7 +762,8 @@ mod tests {
     fn setup_connection_error_serialize_0() {
         let flags = &[mining::SetupConnectionFlags::RequiresStandardJobs];
         let message =
-            SetupConnectionError::new(flags, SetupConnectionErrorCodes::UnsupportedFeatureFlags);
+            SetupConnectionError::new(flags, SetupConnectionErrorCodes::UnsupportedFeatureFlags)
+                .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
         message.serialize(&mut buffer).unwrap();
@@ -756,5 +773,13 @@ mod tests {
 
         // Length of error code string.
         assert_eq!(buffer[4], 0x19);
+    }
+
+    #[test]
+    fn setup_connection_invalid_empty_flags() {
+        let message: Result<SetupConnectionError<'_, mining::SetupConnectionFlags>> =
+            SetupConnectionError::new(&[], SetupConnectionErrorCodes::UnsupportedFeatureFlags);
+
+        assert!(message.is_err())
     }
 }
