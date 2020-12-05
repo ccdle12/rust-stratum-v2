@@ -1,13 +1,13 @@
 use crate::error::Result;
 
 /// Convert a string to a string limited to 255 bytes.
-pub fn string_to_str0_255<T: Into<String>>(input: T) -> Result<String> {
+pub(crate) fn string_to_str0_255<T: Into<String>>(input: T) -> Result<String> {
     Ok(std::str::from_utf8(&trim_to_255_bytes(input))?.to_string())
 }
 
 /// Convert a string to byte representation of STR0_255.
 /// The byte represenation is <1 byte length of string><string 0..255>.
-pub fn string_to_str0_255_bytes<T: Into<String>>(input: T) -> Result<Vec<u8>> {
+pub(crate) fn string_to_str0_255_bytes<T: Into<String>>(input: T) -> Result<Vec<u8>> {
     let bytes = trim_to_255_bytes(input);
 
     let mut buffer = vec![bytes.len() as u8];
