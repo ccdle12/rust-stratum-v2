@@ -2,6 +2,8 @@
 
 A WIP library implementation of the [Stratum V2 Protocol](https://braiins.com/stratum-v2).
 
+The detailed spec can be found [here](https://docs.google.com/document/d/1FadCWj-57dvhxsnFM_7X806qyvhR0u3i85607bGHxvg/edit#heading=h.we2r5emgsjcx).
+
 ## Building
 
 The library can be built and tested using [`cargo`](https://github.com/rust-lang/cargo/):
