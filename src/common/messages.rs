@@ -138,6 +138,14 @@ where
         firmware: T,
         device_id: T,
     ) -> Result<SetupConnection<B>> {
+        // TODO: Add channel_id restribtion for the TemplateDistribution Protocol.
+        // TemplateDistribution SetupConnection flags need to be created first.
+        if channel_id.is_some() && protocol == Protocol::JobNegotiation {
+            return Err(Error::ProtocolMismatchError(
+                "channel_id cannot be set in a JobNegotiation connection".into(),
+            ));
+        }
+
         let invalid_flag = &flags.into_iter().any(|x| x.as_protocol() != protocol);
         if *invalid_flag {
             return Err(Error::ProtocolMismatchError(
@@ -430,6 +438,7 @@ where
 mod setup_connection_tests {
     use super::*;
     use crate::common::Serializable;
+    use crate::job_negotiation;
     use crate::mining;
 
     #[test]
@@ -556,6 +565,24 @@ mod setup_connection_tests {
 
         let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn disable_channel_id_in_job_negotiation() {
+        let message = SetupConnection::new(
+            Some(1),
+            Protocol::JobNegotiation,
+            2,
+            2,
+            &[job_negotiation::SetupConnectionFlags::RequiresAsyncJobMining],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        );
+        assert!(message.is_err())
     }
 }
 
