@@ -6,8 +6,12 @@
 
 #![allow(dead_code)]
 
+/// Errors returned in the library.
 mod error;
-mod util;
+
+/// Utility functions that help with generating messages or other Stratum V2
+/// functionality.
+pub mod util;
 
 /// Common messages and utilities for each sub protocol.
 pub mod common;
