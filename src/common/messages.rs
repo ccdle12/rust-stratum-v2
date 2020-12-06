@@ -786,7 +786,7 @@ mod mining_connection_tests {
     }
 
     #[test]
-    fn mining_setup_connection_success_0() {
+    fn serialize_connection_sucess() {
         let message = SetupConnectionSuccess::new(
             2,
             &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
@@ -800,7 +800,7 @@ mod mining_connection_tests {
     }
 
     #[test]
-    fn mining_setup_connection_success_frame_0() {
+    fn connection_success_frame() {
         let message = SetupConnectionSuccess::new(
             2,
             &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
@@ -816,7 +816,7 @@ mod mining_connection_tests {
     }
 
     #[test]
-    fn mining_setup_connection_success_1() {
+    fn connection_success_from_all_flags() {
         let message = SetupConnectionSuccess::new(
             2,
             &[
@@ -833,7 +833,7 @@ mod mining_connection_tests {
     }
 
     #[test]
-    fn mining_setup_connection_success_2() {
+    fn setup_connection_success_no_flags() {
         let message: SetupConnectionSuccess<'_, mining::SetupConnectionSuccessFlags> =
             SetupConnectionSuccess::new(2, &[]);
 
