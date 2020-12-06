@@ -16,15 +16,15 @@ impl BitFlag for SetupConnectionFlags {
     /// Example:
     ///
     /// ```rust
-    /// # use stratumv2::job_negotiation::SetupConnectionFlags;
-    /// # use stratumv2::common::BitFlag;
+    /// use stratumv2::job_negotiation::SetupConnectionFlags;
+    /// use stratumv2::common::BitFlag;
     ///
     /// let standard_job = SetupConnectionFlags::RequiresAsyncJobMining.as_byte();
-    /// assert_eq!(standard_job, 0b0001);
+    /// assert_eq!(standard_job, 0x01);
     /// ```
     fn as_byte(&self) -> u8 {
         match self {
-            SetupConnectionFlags::RequiresAsyncJobMining => 0b0001,
+            SetupConnectionFlags::RequiresAsyncJobMining => 0x01,
         }
     }
 }
