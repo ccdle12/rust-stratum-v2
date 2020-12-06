@@ -73,6 +73,48 @@ where
 {
     /// Constructor for the SetupConnection message. A specific SetupConnection
     /// can be specified for a sub protocol.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// use stratumv2::common::{Protocol, SetupConnection};
+    /// use stratumv2::mining;
+    /// use stratumv2::job_negotiation;
+    ///
+    /// let mining_connection = SetupConnection::new(
+    ///    Protocol::Mining,
+    ///    2,
+    ///    2,
+    ///    &[
+    ///        mining::SetupConnectionFlags::RequiresStandardJobs,
+    ///        mining::SetupConnectionFlags::RequiresVersionRolling
+    ///     ],
+    ///    "0.0.0.0",
+    ///    8545,
+    ///    "Bitmain",
+    ///    "S9i 13.5",
+    ///    "braiins-os-2018-09-22-1-hash",
+    ///    "some-device-uuid",
+    /// );
+    ///
+    /// let job_negotiation_connection = SetupConnection::new(
+    ///    Protocol::JobNegotiation,
+    ///    2,
+    ///    2,
+    ///    &[
+    ///        job_negotiation::SetupConnectionFlags::RequiresAsyncJobMining,
+    ///     ],
+    ///    "0.0.0.0",
+    ///    8545,
+    ///    "Bitmain",
+    ///    "S9i 13.5",
+    ///    "braiins-os-2018-09-22-1-hash",
+    ///    "some-device-uuid",
+    /// );
+    ///
+    /// assert!(mining_connection.is_ok());
+    /// assert!(job_negotiation_connection.is_ok());
+    /// ```
     pub fn new<T: Into<String>>(
         protocol: Protocol,
         min_version: u16,
