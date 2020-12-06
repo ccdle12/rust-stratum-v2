@@ -408,10 +408,10 @@ where
 }
 
 #[cfg(test)]
-mod tests {
+mod setup_connection_tests {
     use super::*;
-    use crate::common::{Framable, Serializable};
-    use crate::{job_negotiation, mining};
+    use crate::common::Serializable;
+    use crate::mining;
 
     #[test]
     fn setup_connection_init() {
@@ -532,6 +532,13 @@ mod tests {
         let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
         assert_eq!(buffer, expected);
     }
+}
+
+#[cfg(test)]
+mod mining_connection_tests {
+    use super::*;
+    use crate::common::{Framable, Serializable};
+    use crate::mining;
 
     #[test]
     fn mining_setup_connection_serialize_0() {
@@ -675,6 +682,72 @@ mod tests {
     }
 
     #[test]
+    fn mining_setup_connection_success_0() {
+        let message = SetupConnectionSuccess::new(
+            2,
+            &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
+        );
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.serialize(&mut buffer).unwrap();
+
+        let expected = [0x02, 0x00, 0x01, 0x00, 0x00, 0x00];
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn mining_setup_connection_success_frame_0() {
+        let message = SetupConnectionSuccess::new(
+            2,
+            &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
+        );
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.frame(&mut buffer).unwrap();
+
+        let expected = [
+            0x00, 0x00, 0x01, 0x06, 0x00, 0x00, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00,
+        ];
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn mining_setup_connection_success_1() {
+        let message = SetupConnectionSuccess::new(
+            2,
+            &[
+                mining::SetupConnectionSuccessFlags::RequiresFixedVersion,
+                mining::SetupConnectionSuccessFlags::RequiresExtendedChannels,
+            ],
+        );
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.serialize(&mut buffer).unwrap();
+
+        let expected = [0x02, 0x00, 0x03, 0x00, 0x00, 0x00];
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn mining_setup_connection_success_2() {
+        let message: SetupConnectionSuccess<'_, mining::SetupConnectionSuccessFlags> =
+            SetupConnectionSuccess::new(2, &[]);
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.serialize(&mut buffer).unwrap();
+
+        let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
+        assert_eq!(buffer, expected);
+    }
+}
+
+#[cfg(test)]
+mod job_negotiation_connection_tests {
+    use super::*;
+    use crate::common::Serializable;
+    use crate::{job_negotiation, mining};
+
+    #[test]
     fn new_job_negotiation_setup_connection_init() {
         let message = SetupConnection::new(
             Protocol::JobNegotiation,
@@ -739,65 +812,6 @@ mod tests {
         assert_eq!(size, 75);
         assert_eq!(buffer[0], 0x01);
         assert_eq!(buffer[5], 0x00);
-    }
-
-    #[test]
-    fn mining_setup_connection_success_0() {
-        let message = SetupConnectionSuccess::new(
-            2,
-            &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
-        );
-
-        let mut buffer: Vec<u8> = Vec::new();
-        message.serialize(&mut buffer).unwrap();
-
-        let expected = [0x02, 0x00, 0x01, 0x00, 0x00, 0x00];
-        assert_eq!(buffer, expected);
-    }
-
-    #[test]
-    fn mining_setup_connection_success_frame_0() {
-        let message = SetupConnectionSuccess::new(
-            2,
-            &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
-        );
-
-        let mut buffer: Vec<u8> = Vec::new();
-        message.frame(&mut buffer).unwrap();
-
-        let expected = [
-            0x00, 0x00, 0x01, 0x06, 0x00, 0x00, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00,
-        ];
-        assert_eq!(buffer, expected);
-    }
-
-    #[test]
-    fn mining_setup_connection_success_1() {
-        let message = SetupConnectionSuccess::new(
-            2,
-            &[
-                mining::SetupConnectionSuccessFlags::RequiresFixedVersion,
-                mining::SetupConnectionSuccessFlags::RequiresExtendedChannels,
-            ],
-        );
-
-        let mut buffer: Vec<u8> = Vec::new();
-        message.serialize(&mut buffer).unwrap();
-
-        let expected = [0x02, 0x00, 0x03, 0x00, 0x00, 0x00];
-        assert_eq!(buffer, expected);
-    }
-
-    #[test]
-    fn mining_setup_connection_success_2() {
-        let message: SetupConnectionSuccess<'_, mining::SetupConnectionSuccessFlags> =
-            SetupConnectionSuccess::new(2, &[]);
-
-        let mut buffer: Vec<u8> = Vec::new();
-        message.serialize(&mut buffer).unwrap();
-
-        let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
-        assert_eq!(buffer, expected);
     }
 
     #[test]
