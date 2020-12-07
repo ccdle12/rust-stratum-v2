@@ -76,7 +76,12 @@ where
     B: BitFlag + ToProtocol,
 {
     /// Constructor for the SetupConnection message. A specific SetupConnection
-    /// can be specified for a sub protocol.
+    /// can be specified for a sub protocol and an optional channel_id can
+    /// be provided to specify the receiver of the message on a particular
+    /// channel.
+    ///
+    /// Setting a channel_id for the JobNegotiation and TemplateDistribution
+    /// protocols will raise an error.
     ///
     /// Example:
     ///
@@ -87,10 +92,8 @@ where
     /// use stratumv2::util::new_channel_id;
     ///
     ///
-    /// let channel_id = new_channel_id();
-    ///
     /// let mining_connection = SetupConnection::new(
-    ///    Some(channel_id),
+    ///    Some(new_channel_id()),
     ///    Protocol::Mining,
     ///    2,
     ///    2,
