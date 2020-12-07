@@ -76,7 +76,12 @@ where
     B: BitFlag + ToProtocol,
 {
     /// Constructor for the SetupConnection message. A specific SetupConnection
-    /// can be specified for a sub protocol.
+    /// can be specified for a sub protocol and an optional channel_id can
+    /// be provided to specify the receiver of the message on a particular
+    /// channel.
+    ///
+    /// Setting a channel_id for the JobNegotiation and TemplateDistribution
+    /// protocols will raise an error.
     ///
     /// Example:
     ///
@@ -87,10 +92,8 @@ where
     /// use stratumv2::util::new_channel_id;
     ///
     ///
-    /// let channel_id = new_channel_id();
-    ///
     /// let mining_connection = SetupConnection::new(
-    ///    Some(channel_id),
+    ///    Some(new_channel_id()),
     ///    Protocol::Mining,
     ///    2,
     ///    2,
@@ -208,11 +211,11 @@ where
         buffer.extend_from_slice(&self.min_version.to_le_bytes());
         buffer.extend_from_slice(&self.max_version.to_le_bytes());
 
-        let byte_flags = (self
+        let byte_flags = self
             .flags
             .iter()
             .map(|x| x.as_byte())
-            .fold(0, |accumulator, byte| (accumulator | byte)) as u32)
+            .fold(0, |accumulator, byte| (accumulator as u32 | byte as u32))
             .to_le_bytes();
 
         buffer.extend_from_slice(&byte_flags);
@@ -266,8 +269,9 @@ pub struct SetupConnectionSuccess<'a, B>
 where
     B: BitFlag + ToProtocol,
 {
-    /// Version proposed by the connecting node that the upstream node (Server?)
-    /// supports. The version will be used during the lifetime of the connection.
+    /// Version proposed by the connecting node as one of the verions supported
+    /// by the upstream node. The version will be used during the lifetime of
+    /// the connection.
     pub used_version: u16,
 
     /// Indicates the optional features the server supports.
@@ -296,11 +300,11 @@ where
 
         buffer.extend_from_slice(&self.used_version.to_le_bytes());
 
-        let byte_flags = (self
+        let byte_flags = self
             .flags
             .iter()
             .map(|x| x.as_byte())
-            .fold(0, |accumulator, byte| (accumulator | byte)) as u32)
+            .fold(0, |accumulator, byte| (accumulator as u32 | byte as u32))
             .to_le_bytes();
 
         buffer.extend_from_slice(&byte_flags);
@@ -420,11 +424,11 @@ where
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut buffer: Vec<u8> = Vec::new();
 
-        let byte_flags = (self
+        let byte_flags = self
             .flags
             .iter()
             .map(|x| x.as_byte())
-            .fold(0, |accumulator, byte| (accumulator | byte)) as u32)
+            .fold(0, |accumulator, byte| (accumulator as u32 | byte as u32))
             .to_le_bytes();
 
         buffer.extend_from_slice(&byte_flags);
