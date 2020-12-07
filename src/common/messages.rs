@@ -211,11 +211,11 @@ where
         buffer.extend_from_slice(&self.min_version.to_le_bytes());
         buffer.extend_from_slice(&self.max_version.to_le_bytes());
 
-        let byte_flags = (self
+        let byte_flags = self
             .flags
             .iter()
             .map(|x| x.as_byte())
-            .fold(0, |accumulator, byte| (accumulator | byte)) as u32)
+            .fold(0, |accumulator, byte| (accumulator as u32 | byte as u32))
             .to_le_bytes();
 
         buffer.extend_from_slice(&byte_flags);
@@ -299,11 +299,11 @@ where
 
         buffer.extend_from_slice(&self.used_version.to_le_bytes());
 
-        let byte_flags = (self
+        let byte_flags = self
             .flags
             .iter()
             .map(|x| x.as_byte())
-            .fold(0, |accumulator, byte| (accumulator | byte)) as u32)
+            .fold(0, |accumulator, byte| (accumulator as u32 | byte as u32))
             .to_le_bytes();
 
         buffer.extend_from_slice(&byte_flags);
@@ -423,11 +423,11 @@ where
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut buffer: Vec<u8> = Vec::new();
 
-        let byte_flags = (self
+        let byte_flags = self
             .flags
             .iter()
             .map(|x| x.as_byte())
-            .fold(0, |accumulator, byte| (accumulator | byte)) as u32)
+            .fold(0, |accumulator, byte| (accumulator as u32 | byte as u32))
             .to_le_bytes();
 
         buffer.extend_from_slice(&byte_flags);
