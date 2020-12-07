@@ -269,8 +269,9 @@ pub struct SetupConnectionSuccess<'a, B>
 where
     B: BitFlag + ToProtocol,
 {
-    /// Version proposed by the connecting node that the upstream node (Server?)
-    /// supports. The version will be used during the lifetime of the connection.
+    /// Version proposed by the connecting node as one of the verions supported
+    /// by the upstream node. The version will be used during the lifetime of
+    /// the connection.
     pub used_version: u16,
 
     /// Indicates the optional features the server supports.
