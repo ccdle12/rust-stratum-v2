@@ -19,12 +19,12 @@ impl BitFlag for SetupConnectionFlags {
     /// use stratumv2::job_negotiation::SetupConnectionFlags;
     /// use stratumv2::common::BitFlag;
     ///
-    /// let standard_job = SetupConnectionFlags::RequiresAsyncJobMining.as_byte();
+    /// let standard_job = SetupConnectionFlags::RequiresAsyncJobMining.as_bytes();
     /// assert_eq!(standard_job, 0x01);
     /// ```
-    fn as_byte(&self) -> u8 {
+    fn as_bytes(&self) -> u32 {
         match self {
-            SetupConnectionFlags::RequiresAsyncJobMining => 0x01,
+            SetupConnectionFlags::RequiresAsyncJobMining => 1,
         }
     }
 }

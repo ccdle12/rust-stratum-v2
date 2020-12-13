@@ -214,8 +214,8 @@ where
         let byte_flags = self
             .flags
             .iter()
-            .map(|x| x.as_byte())
-            .fold(0, |accumulator, byte| (accumulator as u32 | byte as u32))
+            .map(|x| x.as_bytes())
+            .fold(0, |accumulator, byte| (accumulator | byte))
             .to_le_bytes();
 
         buffer.extend_from_slice(&byte_flags);
@@ -303,8 +303,8 @@ where
         let byte_flags = self
             .flags
             .iter()
-            .map(|x| x.as_byte())
-            .fold(0, |accumulator, byte| (accumulator as u32 | byte as u32))
+            .map(|x| x.as_bytes())
+            .fold(0, |accumulator, byte| (accumulator | byte))
             .to_le_bytes();
 
         buffer.extend_from_slice(&byte_flags);
@@ -427,8 +427,8 @@ where
         let byte_flags = self
             .flags
             .iter()
-            .map(|x| x.as_byte())
-            .fold(0, |accumulator, byte| (accumulator as u32 | byte as u32))
+            .map(|x| x.as_bytes())
+            .fold(0, |accumulator, byte| (accumulator | byte))
             .to_le_bytes();
 
         buffer.extend_from_slice(&byte_flags);
