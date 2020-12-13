@@ -25,14 +25,14 @@ impl BitFlag for SetupConnectionFlags {
     /// use stratumv2::mining::SetupConnectionFlags;
     /// use stratumv2::common::BitFlag;
     ///
-    /// let standard_job = SetupConnectionFlags::RequiresStandardJobs.as_byte();
+    /// let standard_job = SetupConnectionFlags::RequiresStandardJobs.as_bytes();
     /// assert_eq!(standard_job, 0x01);
     /// ```
-    fn as_byte(&self) -> u8 {
+    fn as_bytes(&self) -> u32 {
         match self {
-            SetupConnectionFlags::RequiresStandardJobs => 0x01,
-            SetupConnectionFlags::RequiresWorkSelection => 0x02,
-            SetupConnectionFlags::RequiresVersionRolling => 0x04,
+            SetupConnectionFlags::RequiresStandardJobs => 1,
+            SetupConnectionFlags::RequiresWorkSelection => (1 << 1),
+            SetupConnectionFlags::RequiresVersionRolling => (1 << 2),
         }
     }
 }
@@ -60,10 +60,10 @@ pub enum SetupConnectionSuccessFlags {
 }
 
 impl BitFlag for SetupConnectionSuccessFlags {
-    fn as_byte(&self) -> u8 {
+    fn as_bytes(&self) -> u32 {
         match self {
-            SetupConnectionSuccessFlags::RequiresFixedVersion => 0x01,
-            SetupConnectionSuccessFlags::RequiresExtendedChannels => 0x02,
+            SetupConnectionSuccessFlags::RequiresFixedVersion => 1,
+            SetupConnectionSuccessFlags::RequiresExtendedChannels => (1 << 1),
         }
     }
 }
