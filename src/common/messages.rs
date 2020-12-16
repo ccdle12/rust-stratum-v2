@@ -33,10 +33,6 @@ pub struct SetupConnection<'a, B>
 where
     B: BitFlag + ToProtocol,
 {
-    /// Optional Parameter to indicate if the message is intended for a certain
-    /// channel.
-    pub channel_id: Option<u32>,
-
     /// Used to indicate the protocol the client wants to use on the new connection.
     pub protocol: Protocol,
 
@@ -80,9 +76,6 @@ where
     /// be provided to specify the receiver of the message on a particular
     /// channel.
     ///
-    /// Setting a channel_id for the JobNegotiation and TemplateDistribution
-    /// protocols will raise an error.
-    ///
     /// Example:
     ///
     /// ```rust
@@ -93,7 +86,6 @@ where
     ///
     ///
     /// let mining_connection = SetupConnection::new(
-    ///    Some(new_channel_id()),
     ///    Protocol::Mining,
     ///    2,
     ///    2,
@@ -110,7 +102,6 @@ where
     /// );
     ///
     /// let job_negotiation_connection = SetupConnection::new(
-    ///    None,
     ///    Protocol::JobNegotiation,
     ///    2,
     ///    2,
@@ -129,7 +120,6 @@ where
     /// assert!(job_negotiation_connection.is_ok());
     /// ```
     pub fn new<T: Into<String>>(
-        channel_id: Option<u32>,
         protocol: Protocol,
         min_version: u16,
         max_version: u16,
@@ -141,14 +131,6 @@ where
         firmware: T,
         device_id: T,
     ) -> Result<SetupConnection<B>> {
-        // TODO: Add channel_id restribtion for the TemplateDistribution Protocol.
-        // TemplateDistribution SetupConnection flags need to be created first.
-        if channel_id.is_some() && protocol == Protocol::JobNegotiation {
-            return Err(Error::ProtocolMismatchError(
-                "channel_id cannot be set in a JobNegotiation connection".into(),
-            ));
-        }
-
         let invalid_flag = &flags.into_iter().any(|x| x.as_protocol() != protocol);
         if *invalid_flag {
             return Err(Error::ProtocolMismatchError(
@@ -179,7 +161,6 @@ where
         }
 
         Ok(SetupConnection {
-            channel_id,
             protocol,
             min_version,
             max_version,
@@ -202,10 +183,6 @@ where
 {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut buffer: Vec<u8> = Vec::new();
-
-        if self.channel_id.is_some() {
-            buffer.extend_from_slice(&self.channel_id.unwrap().to_le_bytes());
-        }
 
         buffer.push(self.protocol as u8);
         buffer.extend_from_slice(&self.min_version.to_le_bytes());
@@ -237,10 +214,9 @@ where
     B: BitFlag + ToProtocol,
 {
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let channel_msg = match self.channel_id {
-            Some(_) => &[0x80, 0x00],
-            None => &[0x00, 0x00],
-        };
+        // Currently set to a default empty extension type with MSB NOT set
+        // to indicate the message is intended to the direct recipient.
+        let extension_type = &[0x00, 0x00];
 
         // Message type of SetupConnection is always 0x00.
         let msg_type = &[0x00];
@@ -254,7 +230,7 @@ where
         payload_length.push(0x00);
 
         let mut result = Vec::new();
-        result.extend_from_slice(channel_msg);
+        result.extend_from_slice(extension_type);
         result.extend_from_slice(msg_type);
         result.extend_from_slice(&payload_length);
         result.extend_from_slice(&payload);
@@ -320,8 +296,9 @@ where
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         // TODO: Need to move to a macro or function to reduce repetition
         // in each frame implemenation.
-        // Default empty channel messsage.
-        let channel_msg = &[0x00, 0x00];
+        // Currently set to a default empty extension type with MSB NOT set
+        // to indicate the message is intended to the direct recipient.
+        let extension_type = &[0x00, 0x00];
 
         // Message type of SetupConnectionSuccess is always 0x01.
         let msg_type = &[0x01];
@@ -335,7 +312,7 @@ where
         payload_length.push(0x00);
 
         let mut result = Vec::new();
-        result.extend_from_slice(channel_msg);
+        result.extend_from_slice(extension_type);
         result.extend_from_slice(msg_type);
         result.extend_from_slice(&payload_length);
         result.extend_from_slice(&payload);
@@ -442,13 +419,11 @@ where
 mod setup_connection_tests {
     use super::*;
     use crate::common::Serializable;
-    use crate::job_negotiation;
     use crate::mining;
 
     #[test]
     fn setup_connection_init() {
         let message = SetupConnection::new(
-            None,
             Protocol::Mining,
             2,
             2,
@@ -467,7 +442,6 @@ mod setup_connection_tests {
     #[test]
     fn setup_connection_invalid_flag_and_protocol() {
         let message = SetupConnection::new(
-            None,
             Protocol::JobNegotiation,
             2,
             2,
@@ -486,7 +460,6 @@ mod setup_connection_tests {
     #[test]
     fn setup_connection_invalid_min_value() {
         let message = SetupConnection::new(
-            None,
             Protocol::Mining,
             2,
             1,
@@ -505,7 +478,6 @@ mod setup_connection_tests {
     #[test]
     fn setup_connection_invalid_max_value() {
         let message = SetupConnection::new(
-            None,
             Protocol::Mining,
             2,
             0,
@@ -524,7 +496,6 @@ mod setup_connection_tests {
     #[test]
     fn setup_connection_empty_vendor() {
         let message = SetupConnection::new(
-            None,
             Protocol::Mining,
             2,
             2,
@@ -543,7 +514,6 @@ mod setup_connection_tests {
     #[test]
     fn setup_connection_empty_firmware() {
         let message = SetupConnection::new(
-            None,
             Protocol::Mining,
             2,
             2,
@@ -570,24 +540,6 @@ mod setup_connection_tests {
         let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
         assert_eq!(buffer, expected);
     }
-
-    #[test]
-    fn disable_channel_id_in_job_negotiation() {
-        let message = SetupConnection::new(
-            Some(1),
-            Protocol::JobNegotiation,
-            2,
-            2,
-            &[job_negotiation::SetupConnectionFlags::RequiresAsyncJobMining],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        );
-        assert!(message.is_err())
-    }
 }
 
 #[cfg(test)]
@@ -599,9 +551,8 @@ mod mining_connection_tests {
     use std::convert::TryInto;
 
     #[test]
-    fn serialize_no_channel_id() {
+    fn serialize_mining_connection() {
         let message = SetupConnection::new(
-            None,
             Protocol::Mining,
             2,
             2,
@@ -634,7 +585,6 @@ mod mining_connection_tests {
     #[test]
     fn serialize_no_flags() {
         let message: SetupConnection<'_, mining::SetupConnectionFlags> = SetupConnection::new(
-            None,
             Protocol::Mining,
             2,
             2,
@@ -660,7 +610,6 @@ mod mining_connection_tests {
     #[test]
     fn serialize_multiple_flags() {
         let message = SetupConnection::new(
-            None,
             Protocol::Mining,
             2,
             2,
@@ -687,7 +636,6 @@ mod mining_connection_tests {
     #[test]
     fn serialilze_all_flags() {
         let message = SetupConnection::new(
-            None,
             Protocol::Mining,
             2,
             2,
@@ -713,45 +661,8 @@ mod mining_connection_tests {
     }
 
     #[test]
-    fn serialize_with_channel_id() {
-        let channel_id = new_channel_id();
-        let message = SetupConnection::new(
-            Some(channel_id),
-            Protocol::Mining,
-            2,
-            2,
-            &[
-                mining::SetupConnectionFlags::RequiresStandardJobs,
-                mining::SetupConnectionFlags::RequiresWorkSelection,
-                mining::SetupConnectionFlags::RequiresVersionRolling,
-            ],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        )
-        .unwrap();
-
-        let mut buffer: Vec<u8> = Vec::new();
-        let size = message.serialize(&mut buffer).unwrap();
-
-        // The message should be an additional 4 bytes longer due to the
-        // specified channel_id.
-        assert_eq!(size, 79);
-
-        // Assert the first 4 deserialized bytes match the assigned channel_id.
-        assert_eq!(
-            u32::from_le_bytes(buffer[0..4].try_into().unwrap()),
-            channel_id
-        );
-    }
-
-    #[test]
     fn connection_frame_without_channel_id() {
         let message = SetupConnection::new(
-            None,
             Protocol::Mining,
             2,
             2,
@@ -776,42 +687,6 @@ mod mining_connection_tests {
             0x1c, 0x62, 0x72, 0x61, 0x69, 0x69, 0x6e, 0x73, 0x2d, 0x6f, 0x73, 0x2d, 0x32, 0x30,
             0x31, 0x38, 0x2d, 0x30, 0x39, 0x2d, 0x32, 0x32, 0x2d, 0x31, 0x2d, 0x68, 0x61, 0x73,
             0x68, 0x09, 0x73, 0x6f, 0x6d, 0x65, 0x2d, 0x75, 0x75, 0x69, 0x64,
-        ];
-        assert_eq!(buffer, expected);
-    }
-
-    #[test]
-    fn connection_frame_with_channel_id() {
-        let message = SetupConnection::new(
-            Some(32),
-            Protocol::Mining,
-            2,
-            2,
-            &[mining::SetupConnectionFlags::RequiresStandardJobs],
-            "0.0.0.0",
-            8545,
-            "Bitmain",
-            "S9i 13.5",
-            "braiins-os-2018-09-22-1-hash",
-            "some-uuid",
-        )
-        .unwrap();
-
-        let mut buffer: Vec<u8> = Vec::new();
-        let size = message.frame(&mut buffer).unwrap();
-
-        // Assert the entire frame has an additional 4 bytes for the channel_id
-        // in the payload.
-        assert_eq!(size, 85);
-
-        let expected = [
-            0x80, 0x00, 0x00, 0x4f, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x02,
-            0x00, 0x01, 0x00, 0x00, 0x00, 0x07, 0x30, 0x2e, 0x30, 0x2e, 0x30, 0x2e, 0x30, 0x61,
-            0x21, 0x07, 0x42, 0x69, 0x74, 0x6d, 0x61, 0x69, 0x6e, 0x08, 0x53, 0x39, 0x69, 0x20,
-            0x31, 0x33, 0x2e, 0x35, 0x1c, 0x62, 0x72, 0x61, 0x69, 0x69, 0x6e, 0x73, 0x2d, 0x6f,
-            0x73, 0x2d, 0x32, 0x30, 0x31, 0x38, 0x2d, 0x30, 0x39, 0x2d, 0x32, 0x32, 0x2d, 0x31,
-            0x2d, 0x68, 0x61, 0x73, 0x68, 0x09, 0x73, 0x6f, 0x6d, 0x65, 0x2d, 0x75, 0x75, 0x69,
-            0x64,
         ];
         assert_eq!(buffer, expected);
     }
@@ -885,7 +760,6 @@ mod job_negotiation_connection_tests {
     #[test]
     fn new_job_negotiation_setup_connection_init() {
         let message = SetupConnection::new(
-            None,
             Protocol::JobNegotiation,
             2,
             2,
@@ -904,7 +778,6 @@ mod job_negotiation_connection_tests {
     #[test]
     fn new_job_negotiation_serialize_0() {
         let message = SetupConnection::new(
-            None,
             Protocol::JobNegotiation,
             2,
             2,
@@ -930,7 +803,6 @@ mod job_negotiation_connection_tests {
     fn new_job_negotiation_serialize_1() {
         let message: SetupConnection<'_, job_negotiation::SetupConnectionFlags> =
             SetupConnection::new(
-                None,
                 Protocol::JobNegotiation,
                 2,
                 2,
