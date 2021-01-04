@@ -1,6 +1,6 @@
+use crate::common::types::STR0_255;
 use crate::common::{BitFlag, Framable, Serializable, ToProtocol};
 use crate::error::{Error, Result};
-use crate::util::types::{string_to_str0_255, string_to_str0_255_bytes};
 use std::fmt;
 use std::io;
 
@@ -46,7 +46,7 @@ where
     pub flags: &'a [B],
 
     /// Used to indicate the hostname or IP address of the endpoint.
-    pub endpoint_host: String,
+    pub endpoint_host: STR0_255,
 
     /// Used to indicate the connecting port value of the endpoint.
     pub endpoint_port: u16,
@@ -54,17 +54,17 @@ where
     /// The following fields relay the new_mining device information.
     ///
     /// Used to indicate the vendor/manufacturer of the device.
-    pub vendor: String,
+    pub vendor: STR0_255,
 
     /// Used to indicate the hardware version of the device.
-    pub hardware_version: String,
+    pub hardware_version: STR0_255,
 
     /// Used to indicate the firmware on the device.
-    pub firmware: String,
+    pub firmware: STR0_255,
 
     /// Used to indicate the unique identifier of the device defined by the
     /// vendor.
-    pub device_id: String,
+    pub device_id: STR0_255,
 }
 
 impl<'a, B> SetupConnection<'a, B>
@@ -79,7 +79,7 @@ where
     /// Example:
     ///
     /// ```rust
-    /// use stratumv2::common::{Protocol, SetupConnection};
+    /// use stratumv2::common::messages::{Protocol, SetupConnection};
     /// use stratumv2::mining;
     /// use stratumv2::job_negotiation;
     /// use stratumv2::util::new_channel_id;
@@ -165,12 +165,12 @@ where
             min_version,
             max_version,
             flags,
-            endpoint_host: string_to_str0_255(endpoint_host)?,
+            endpoint_host: STR0_255::new(endpoint_host)?,
             endpoint_port,
-            vendor: string_to_str0_255(vendor)?,
-            hardware_version: string_to_str0_255(hardware_version)?,
-            firmware: string_to_str0_255(firmware)?,
-            device_id: string_to_str0_255(device_id)?,
+            vendor: STR0_255::new(vendor)?,
+            hardware_version: STR0_255::new(hardware_version)?,
+            firmware: STR0_255::new(firmware)?,
+            device_id: STR0_255::new(device_id)?,
         })
     }
 }
@@ -196,12 +196,12 @@ where
             .to_le_bytes();
 
         buffer.extend_from_slice(&byte_flags);
-        buffer.extend_from_slice(&string_to_str0_255_bytes(&self.endpoint_host)?);
+        buffer.extend_from_slice(&self.endpoint_host.as_bytes());
         buffer.extend_from_slice(&self.endpoint_port.to_le_bytes());
-        buffer.extend_from_slice(&string_to_str0_255_bytes(&self.vendor)?);
-        buffer.extend_from_slice(&string_to_str0_255_bytes(&self.hardware_version)?);
-        buffer.extend_from_slice(&string_to_str0_255_bytes(&self.firmware)?);
-        buffer.extend_from_slice(&string_to_str0_255_bytes(&self.device_id)?);
+        buffer.extend_from_slice(&self.vendor.as_bytes());
+        buffer.extend_from_slice(&self.hardware_version.as_bytes());
+        buffer.extend_from_slice(&self.firmware.as_bytes());
+        buffer.extend_from_slice(&self.device_id.as_bytes());
 
         Ok(writer.write(&buffer)?)
     }
@@ -409,7 +409,7 @@ where
             .to_le_bytes();
 
         buffer.extend_from_slice(&byte_flags);
-        buffer.extend_from_slice(&string_to_str0_255_bytes(&self.error_code.to_string())?);
+        buffer.extend_from_slice(&STR0_255::new(&self.error_code.to_string())?.as_bytes());
 
         Ok(writer.write(&buffer)?)
     }
