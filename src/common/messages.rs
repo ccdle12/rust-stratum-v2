@@ -170,7 +170,7 @@ where
         let byte_flags = self
             .flags
             .iter()
-            .map(|x| x.as_bytes())
+            .map(|x| x.as_bit_flag())
             .fold(0, |accumulator, byte| (accumulator | byte))
             .to_le_bytes();
 
@@ -258,7 +258,7 @@ where
         let byte_flags = self
             .flags
             .iter()
-            .map(|x| x.as_bytes())
+            .map(|x| x.as_bit_flag())
             .fold(0, |accumulator, byte| (accumulator | byte))
             .to_le_bytes();
 
@@ -383,7 +383,7 @@ where
         let byte_flags = self
             .flags
             .iter()
-            .map(|x| x.as_bytes())
+            .map(|x| x.as_bit_flag())
             .fold(0, |accumulator, byte| (accumulator | byte))
             .to_le_bytes();
 

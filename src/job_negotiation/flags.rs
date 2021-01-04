@@ -11,7 +11,7 @@ pub enum SetupConnectionFlags {
 }
 
 impl BitFlag for SetupConnectionFlags {
-    /// Get the byte representation of the flag.
+    /// Gets the set bit representation of a SetupConnectionFlag as a u32.
     ///
     /// Example:
     ///
@@ -19,10 +19,10 @@ impl BitFlag for SetupConnectionFlags {
     /// use stratumv2::job_negotiation::SetupConnectionFlags;
     /// use stratumv2::common::BitFlag;
     ///
-    /// let standard_job = SetupConnectionFlags::RequiresAsyncJobMining.as_bytes();
+    /// let standard_job = SetupConnectionFlags::RequiresAsyncJobMining.as_bit_flag();
     /// assert_eq!(standard_job, 0x01);
     /// ```
-    fn as_bytes(&self) -> u32 {
+    fn as_bit_flag(&self) -> u32 {
         match self {
             SetupConnectionFlags::RequiresAsyncJobMining => 1,
         }
