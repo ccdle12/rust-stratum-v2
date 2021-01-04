@@ -1,4 +1,5 @@
-use crate::common::{BitFlag, Protocol, ToProtocol};
+use crate::common::messages::Protocol;
+use crate::common::{BitFlag, ToProtocol};
 
 /// Feature flags that can be passed to a SetupConnection message in the mining
 /// sub protocol. Each flag corresponds to a set bit.
@@ -17,7 +18,7 @@ pub enum SetupConnectionFlags {
 }
 
 impl BitFlag for SetupConnectionFlags {
-    /// Get the byte representation of the flag.
+    /// Gets the set bit representation of a u32.
     ///
     /// Example:
     ///

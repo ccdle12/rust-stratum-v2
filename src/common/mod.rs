@@ -1,5 +1,12 @@
 use crate::error::Result;
+use messages::Protocol;
 use std::io;
+
+/// Types used in all Stratum V2 Protocols.
+pub mod types;
+
+/// Messages common to all Stratum V2 protocols.
+pub mod messages;
 
 /// Trait for encoding and serializing messages and objects according to the
 /// Stratum V2 protocol.
@@ -24,10 +31,3 @@ pub trait Framable {
 pub trait ToProtocol {
     fn as_protocol(&self) -> Protocol;
 }
-
-/// Messages common to all Stratum V2 protocols.
-mod messages;
-pub use messages::{
-    Protocol, SetupConnection, SetupConnectionError, SetupConnectionErrorCodes,
-    SetupConnectionSuccess,
-};
