@@ -17,7 +17,7 @@ pub enum SetupConnectionFlags {
 }
 
 impl BitFlag for SetupConnectionFlags {
-    /// Gets the set bit representation of a u32.
+    /// Gets the set bit representation of a SetupConnectionFlag as a u32.
     ///
     /// Example:
     ///
@@ -25,10 +25,10 @@ impl BitFlag for SetupConnectionFlags {
     /// use stratumv2::mining::SetupConnectionFlags;
     /// use stratumv2::common::BitFlag;
     ///
-    /// let standard_job = SetupConnectionFlags::RequiresStandardJobs.as_bytes();
+    /// let standard_job = SetupConnectionFlags::RequiresStandardJobs.as_bit_flag();
     /// assert_eq!(standard_job, 0x01);
     /// ```
-    fn as_bytes(&self) -> u32 {
+    fn as_bit_flag(&self) -> u32 {
         match self {
             SetupConnectionFlags::RequiresStandardJobs => 1,
             SetupConnectionFlags::RequiresWorkSelection => (1 << 1),
@@ -60,7 +60,7 @@ pub enum SetupConnectionSuccessFlags {
 }
 
 impl BitFlag for SetupConnectionSuccessFlags {
-    fn as_bytes(&self) -> u32 {
+    fn as_bit_flag(&self) -> u32 {
         match self {
             SetupConnectionSuccessFlags::RequiresFixedVersion => 1,
             SetupConnectionSuccessFlags::RequiresExtendedChannels => (1 << 1),
