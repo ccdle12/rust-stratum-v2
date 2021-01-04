@@ -1,5 +1,4 @@
-use crate::common::messages::Protocol;
-use crate::common::{BitFlag, ToProtocol};
+use crate::common::{BitFlag, Protocol, ToProtocol};
 
 /// Feature flags that can be passed to a SetupConnection message for the
 /// job negotiation protocol. Each flag corresponds to a set bit.
