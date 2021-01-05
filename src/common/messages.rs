@@ -198,7 +198,7 @@ where
         let extension_type = &[0x00, 0x00];
 
         // The byte representation of the MessageType for SetupConnection.
-        let msg_type = &[MessageTypes::SetupConnection as u8];
+        let msg_type: &[u8] = &[MessageTypes::SetupConnection.into()];
 
         // Serialize SetupConnection as the message payload.
         let mut payload = Vec::new();
@@ -280,7 +280,7 @@ where
         let extension_type = &[0x00, 0x00];
 
         // The byte representation of the MessageType for SetupConnectionSuccess.
-        let msg_type = &[MessageTypes::SetupConnectionSuccess as u8];
+        let msg_type: &[u8] = &[MessageTypes::SetupConnectionSuccess.into()];
 
         // Serialize SetupConnection as the message payload.
         let mut payload = Vec::new();
