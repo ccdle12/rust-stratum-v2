@@ -401,7 +401,7 @@ mod setup_connection_tests {
     use crate::mining;
 
     #[test]
-    fn setup_connection_init() {
+    fn init_setup_connection() {
         let message = SetupConnection::new(
             Protocol::Mining,
             2,
@@ -440,8 +440,8 @@ mod setup_connection_tests {
     fn setup_connection_invalid_min_value() {
         let message = SetupConnection::new(
             Protocol::Mining,
-            2,
             1,
+            2,
             &[mining::SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
@@ -509,15 +509,43 @@ mod setup_connection_tests {
     }
 
     #[test]
-    fn setup_connection_success() {
+    fn serialize_connection_success() {
         let message: SetupConnectionSuccess<'_, mining::SetupConnectionSuccessFlags> =
             SetupConnectionSuccess::new(2, &[]);
 
         let mut buffer: Vec<u8> = Vec::new();
         message.serialize(&mut buffer).unwrap();
 
-        let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
+        let expected = [
+            0x02, 0x00, // used_version
+            0x00, 0x00, 0x00, 0x00, // flags
+        ];
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn serialize_connection_error() {
+        let flags = &[mining::SetupConnectionFlags::RequiresStandardJobs];
+        let message =
+            SetupConnectionError::new(flags, SetupConnectionErrorCodes::UnsupportedFeatureFlags)
+                .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.serialize(&mut buffer).unwrap();
+
+        // Feature flag.
+        assert_eq!(buffer[0], 0x01);
+
+        // Length of error code string.
+        assert_eq!(buffer[4], 0x19);
+    }
+
+    #[test]
+    fn serialize_connection_error_empty_flags() {
+        let message: Result<SetupConnectionError<'_, mining::SetupConnectionFlags>> =
+            SetupConnectionError::new(&[], SetupConnectionErrorCodes::UnsupportedFeatureFlags);
+
+        assert!(message.is_err())
     }
 }
 
@@ -526,8 +554,6 @@ mod mining_connection_tests {
     use super::*;
     use crate::common::{Framable, Serializable};
     use crate::mining;
-    use crate::util::new_channel_id;
-    use std::convert::TryInto;
 
     #[test]
     fn serialize_mining_connection() {
@@ -551,12 +577,23 @@ mod mining_connection_tests {
         assert_eq!(size, 75);
 
         let expected = [
-            0x00, 0x02, 0x00, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00, 0x07, 0x30, 0x2e, 0x30, 0x2e,
-            0x30, 0x2e, 0x30, 0x61, 0x21, 0x07, 0x42, 0x69, 0x74, 0x6d, 0x61, 0x69, 0x6e, 0x08,
-            0x53, 0x39, 0x69, 0x20, 0x31, 0x33, 0x2e, 0x35, 0x1c, 0x62, 0x72, 0x61, 0x69, 0x69,
-            0x6e, 0x73, 0x2d, 0x6f, 0x73, 0x2d, 0x32, 0x30, 0x31, 0x38, 0x2d, 0x30, 0x39, 0x2d,
-            0x32, 0x32, 0x2d, 0x31, 0x2d, 0x68, 0x61, 0x73, 0x68, 0x09, 0x73, 0x6f, 0x6d, 0x65,
-            0x2d, 0x75, 0x75, 0x69, 0x64,
+            0x00, // protocol
+            0x02, 0x00, // min_version
+            0x02, 0x00, // max_version
+            0x01, 0x00, 0x00, 0x00, // flags
+            0x07, // length_endpoint_host
+            0x30, 0x2e, 0x30, 0x2e, 0x30, 0x2e, 0x30, // endpoint_host
+            0x61, 0x21, // endpoint_port
+            0x07, // length_vendor
+            0x42, 0x69, 0x74, 0x6d, 0x61, 0x69, 0x6e, // vendor
+            0x08, // length_hardware_version
+            0x53, 0x39, 0x69, 0x20, 0x31, 0x33, 0x2e, 0x35, // hardware_version
+            0x1c, // length_firmware
+            0x62, 0x72, 0x61, 0x69, 0x69, 0x6e, 0x73, 0x2d, 0x6f, 0x73, 0x2d, 0x32, 0x30, 0x31,
+            0x38, 0x2d, 0x30, 0x39, 0x2d, 0x32, 0x32, 0x2d, 0x31, 0x2d, 0x68, 0x61, 0x73,
+            0x68, // firmware
+            0x09, // length_device_id
+            0x73, 0x6f, 0x6d, 0x65, 0x2d, 0x75, 0x75, 0x69, 0x64, // device_id
         ];
         assert_eq!(buffer, expected);
     }
@@ -578,8 +615,8 @@ mod mining_connection_tests {
         .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
-        let size = message.serialize(&mut buffer).unwrap();
 
+        let size = message.serialize(&mut buffer).unwrap();
         assert_eq!(size, 75);
 
         // Expect the feature flag to have no set flags (0x00).
@@ -640,7 +677,7 @@ mod mining_connection_tests {
     }
 
     #[test]
-    fn connection_frame_without_channel_id() {
+    fn frame_setup_connection() {
         let message = SetupConnection::new(
             Protocol::Mining,
             2,
@@ -656,16 +693,31 @@ mod mining_connection_tests {
         .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
+
         let size = message.frame(&mut buffer).unwrap();
         assert_eq!(size, 81);
 
         let expected = [
-            0x00, 0x00, 0x00, 0x4b, 0x00, 0x00, 0x00, 0x02, 0x00, 0x02, 0x00, 0x01, 0x00, 0x00,
-            0x00, 0x07, 0x30, 0x2e, 0x30, 0x2e, 0x30, 0x2e, 0x30, 0x61, 0x21, 0x07, 0x42, 0x69,
-            0x74, 0x6d, 0x61, 0x69, 0x6e, 0x08, 0x53, 0x39, 0x69, 0x20, 0x31, 0x33, 0x2e, 0x35,
-            0x1c, 0x62, 0x72, 0x61, 0x69, 0x69, 0x6e, 0x73, 0x2d, 0x6f, 0x73, 0x2d, 0x32, 0x30,
-            0x31, 0x38, 0x2d, 0x30, 0x39, 0x2d, 0x32, 0x32, 0x2d, 0x31, 0x2d, 0x68, 0x61, 0x73,
-            0x68, 0x09, 0x73, 0x6f, 0x6d, 0x65, 0x2d, 0x75, 0x75, 0x69, 0x64,
+            0x00, 0x00, // extension_type
+            0x00, // msg_type
+            0x4b, 0x00, 0x00, // msg_length
+            0x00, // protocol
+            0x02, 0x00, // min_version
+            0x02, 0x00, // max_version
+            0x01, 0x00, 0x00, 0x00, // flags
+            0x07, // length_endpoint_host
+            0x30, 0x2e, 0x30, 0x2e, 0x30, 0x2e, 0x30, // endpoint_host
+            0x61, 0x21, // endpoint_port
+            0x07, // length_vendor
+            0x42, 0x69, 0x74, 0x6d, 0x61, 0x69, 0x6e, // vendor
+            0x08, // length_hardware_version
+            0x53, 0x39, 0x69, 0x20, 0x31, 0x33, 0x2e, 0x35, // hardware_version
+            0x1c, // length_firmeware
+            0x62, 0x72, 0x61, 0x69, 0x69, 0x6e, 0x73, 0x2d, 0x6f, 0x73, 0x2d, 0x32, 0x30, 0x31,
+            0x38, 0x2d, 0x30, 0x39, 0x2d, 0x32, 0x32, 0x2d, 0x31, 0x2d, 0x68, 0x61, 0x73,
+            0x68, // firmeware
+            0x09, // length_device_id
+            0x73, 0x6f, 0x6d, 0x65, 0x2d, 0x75, 0x75, 0x69, 0x64, // device_id
         ];
         assert_eq!(buffer, expected);
     }
@@ -680,12 +732,15 @@ mod mining_connection_tests {
         let mut buffer: Vec<u8> = Vec::new();
         message.serialize(&mut buffer).unwrap();
 
-        let expected = [0x02, 0x00, 0x01, 0x00, 0x00, 0x00];
+        let expected = [
+            0x02, 0x00, // used_version
+            0x01, 0x00, 0x00, 0x00, // flags
+        ];
         assert_eq!(buffer, expected);
     }
 
     #[test]
-    fn connection_success_frame() {
+    fn frame_connection_success() {
         let message = SetupConnectionSuccess::new(
             2,
             &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
@@ -695,13 +750,17 @@ mod mining_connection_tests {
         message.frame(&mut buffer).unwrap();
 
         let expected = [
-            0x00, 0x00, 0x01, 0x06, 0x00, 0x00, 0x02, 0x00, 0x01, 0x00, 0x00, 0x00,
+            0x00, 0x00, // extension_type
+            0x01, // msg_type
+            0x06, 0x00, 0x00, // msg_length
+            0x02, 0x00, // used_version
+            0x01, 0x00, 0x00, 0x00, // flags
         ];
         assert_eq!(buffer, expected);
     }
 
     #[test]
-    fn connection_success_from_all_flags() {
+    fn serialize_connection_success_all_flags() {
         let message = SetupConnectionSuccess::new(
             2,
             &[
@@ -713,19 +772,25 @@ mod mining_connection_tests {
         let mut buffer: Vec<u8> = Vec::new();
         message.serialize(&mut buffer).unwrap();
 
-        let expected = [0x02, 0x00, 0x03, 0x00, 0x00, 0x00];
+        let expected = [
+            0x02, 0x00, // used_version
+            0x03, 0x00, 0x00, 0x00, // flags
+        ];
         assert_eq!(buffer, expected);
     }
 
     #[test]
-    fn setup_connection_success_no_flags() {
+    fn serialize_connection_success_no_flags() {
         let message: SetupConnectionSuccess<'_, mining::SetupConnectionSuccessFlags> =
             SetupConnectionSuccess::new(2, &[]);
 
         let mut buffer: Vec<u8> = Vec::new();
         message.serialize(&mut buffer).unwrap();
 
-        let expected = [0x02, 0x00, 0x00, 0x00, 0x00, 0x00];
+        let expected = [
+            0x02, 0x00, // used_version
+            0x00, 0x00, 0x00, 0x00, // flags
+        ];
         assert_eq!(buffer, expected);
     }
 }
@@ -734,10 +799,10 @@ mod mining_connection_tests {
 mod job_negotiation_connection_tests {
     use super::*;
     use crate::common::Serializable;
-    use crate::{job_negotiation, mining};
+    use crate::job_negotiation;
 
     #[test]
-    fn new_job_negotiation_setup_connection_init() {
+    fn init_job_negotiation_connection() {
         let message = SetupConnection::new(
             Protocol::JobNegotiation,
             2,
@@ -755,7 +820,7 @@ mod job_negotiation_connection_tests {
     }
 
     #[test]
-    fn new_job_negotiation_serialize_0() {
+    fn serialize_job_negotiation() {
         let message = SetupConnection::new(
             Protocol::JobNegotiation,
             2,
@@ -779,7 +844,7 @@ mod job_negotiation_connection_tests {
     }
 
     #[test]
-    fn new_job_negotiation_serialize_1() {
+    fn serialize_job_negotiation_no_flags() {
         let message: SetupConnection<'_, job_negotiation::SetupConnectionFlags> =
             SetupConnection::new(
                 Protocol::JobNegotiation,
@@ -801,30 +866,5 @@ mod job_negotiation_connection_tests {
         assert_eq!(size, 75);
         assert_eq!(buffer[0], 0x01);
         assert_eq!(buffer[5], 0x00);
-    }
-
-    #[test]
-    fn setup_connection_error_serialize_0() {
-        let flags = &[mining::SetupConnectionFlags::RequiresStandardJobs];
-        let message =
-            SetupConnectionError::new(flags, SetupConnectionErrorCodes::UnsupportedFeatureFlags)
-                .unwrap();
-
-        let mut buffer: Vec<u8> = Vec::new();
-        message.serialize(&mut buffer).unwrap();
-
-        // Feature flag.
-        assert_eq!(buffer[0], 0x01);
-
-        // Length of error code string.
-        assert_eq!(buffer[4], 0x19);
-    }
-
-    #[test]
-    fn setup_connection_invalid_empty_flags() {
-        let message: Result<SetupConnectionError<'_, mining::SetupConnectionFlags>> =
-            SetupConnectionError::new(&[], SetupConnectionErrorCodes::UnsupportedFeatureFlags);
-
-        assert!(message.is_err())
     }
 }
