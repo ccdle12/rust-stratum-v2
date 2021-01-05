@@ -1,4 +1,4 @@
-use crate::common::types::STR0_255;
+use crate::common::types::{MessageTypes, STR0_255};
 use crate::common::{BitFlag, Framable, Protocol, Serializable, ToProtocol};
 use crate::error::{Error, Result};
 use std::fmt;
@@ -197,8 +197,8 @@ where
         // to indicate the message is intended to the direct recipient.
         let extension_type = &[0x00, 0x00];
 
-        // Message type of SetupConnection is always 0x00.
-        let msg_type = &[0x00];
+        // The byte representation of the MessageType for SetupConnection.
+        let msg_type = &[MessageTypes::SetupConnection as u8];
 
         // Serialize SetupConnection as the message payload.
         let mut payload = Vec::new();
@@ -279,8 +279,8 @@ where
         // to indicate the message is intended to the direct recipient.
         let extension_type = &[0x00, 0x00];
 
-        // Message type of SetupConnectionSuccess is always 0x01.
-        let msg_type = &[0x01];
+        // The byte representation of the MessageType for SetupConnectionSuccess.
+        let msg_type = &[MessageTypes::SetupConnectionSuccess as u8];
 
         // Serialize SetupConnection as the message payload.
         let mut payload = Vec::new();
