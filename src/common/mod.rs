@@ -7,7 +7,6 @@ pub mod types;
 /// Messages common to all Stratum V2 protocols.
 pub mod messages;
 
-#[repr(u8)]
 #[derive(PartialEq, Clone, Copy)]
 /// Protocol is an enum representing each sub protocol of Stratum V2.
 pub enum Protocol {
