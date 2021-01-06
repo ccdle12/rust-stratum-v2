@@ -46,9 +46,19 @@ impl From<STR0_255> for String {
 /// MessageTypes contain all the variations for the byte representation of a
 /// messages used in a message frame.
 pub(crate) enum MessageTypes {
-    SetupConnection = 0x00,
-    SetupConnectionSuccess = 0x01,
-    SetupConnectionError = 0x03,
+    SetupConnection,
+    SetupConnectionSuccess,
+    SetupConnectionError,
+}
+
+impl From<MessageTypes> for u8 {
+    fn from(m: MessageTypes) -> Self {
+        match m {
+            MessageTypes::SetupConnection => 0x00,
+            MessageTypes::SetupConnectionSuccess => 0x01,
+            MessageTypes::SetupConnectionError => 0x03,
+        }
+    }
 }
 
 #[cfg(test)]
