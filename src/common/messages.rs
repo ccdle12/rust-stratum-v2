@@ -394,6 +394,34 @@ where
     }
 }
 
+impl<B> Framable for SetupConnectionError<'_, B>
+where
+    B: BitFlag + ToProtocol,
+{
+    fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        let extension_type = &[0x00, 0x00];
+
+        // The byte representation of the MessageType for SetupConnectionError.
+        let msg_type: &[u8] = &[MessageTypes::SetupConnectionError.into()];
+
+        // Serialize SetupConnectionError as the message payload.
+        let mut payload = Vec::new();
+        let size = *&self.serialize(&mut payload)?;
+
+        // A size_u24 of the message payload.
+        let mut payload_length = (size as u16).to_le_bytes().to_vec();
+        payload_length.push(0x00);
+
+        let mut result = Vec::new();
+        result.extend_from_slice(extension_type);
+        result.extend_from_slice(msg_type);
+        result.extend_from_slice(&payload_length);
+        result.extend_from_slice(&payload);
+
+        Ok(writer.write(&result)?)
+    }
+}
+
 #[cfg(test)]
 mod setup_connection_tests {
     use super::*;
@@ -546,6 +574,30 @@ mod setup_connection_tests {
             SetupConnectionError::new(&[], SetupConnectionErrorCodes::UnsupportedFeatureFlags);
 
         assert!(message.is_err())
+    }
+
+    #[test]
+    fn frame_connection_error() {
+        let flags = &[mining::SetupConnectionFlags::RequiresStandardJobs];
+        let message =
+            SetupConnectionError::new(flags, SetupConnectionErrorCodes::UnsupportedFeatureFlags)
+                .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.frame(&mut buffer).unwrap();
+
+        // Feature flag.
+        let expected = [
+            0x00, 0x00, // extension_type
+            0x03, // msg_type
+            0x1e, 0x00, 0x00, // msg_length
+            0x01, 0x00, 0x00, 0x00, // flags
+            0x19, // length_error_code
+            0x75, 0x6e, 0x73, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x64, 0x2d, 0x66, 0x65,
+            0x61, 0x74, 0x75, 0x72, 0x65, 0x2d, 0x66, 0x6c, 0x61, 0x67, 0x73, // error_code
+        ];
+
+        assert_eq!(buffer, expected)
     }
 }
 
