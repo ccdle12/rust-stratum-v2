@@ -161,12 +161,6 @@ where
     B: BitFlag + ToProtocol,
 {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let mut buffer: Vec<u8> = Vec::new();
-
-        buffer.push(self.protocol as u8);
-        buffer.extend_from_slice(&self.min_version.to_le_bytes());
-        buffer.extend_from_slice(&self.max_version.to_le_bytes());
-
         let byte_flags = self
             .flags
             .iter()
@@ -174,13 +168,18 @@ where
             .fold(0, |accumulator, byte| (accumulator | byte))
             .to_le_bytes();
 
-        buffer.extend_from_slice(&byte_flags);
-        buffer.extend_from_slice(&self.endpoint_host.as_bytes());
-        buffer.extend_from_slice(&self.endpoint_port.to_le_bytes());
-        buffer.extend_from_slice(&self.vendor.as_bytes());
-        buffer.extend_from_slice(&self.hardware_version.as_bytes());
-        buffer.extend_from_slice(&self.firmware.as_bytes());
-        buffer.extend_from_slice(&self.device_id.as_bytes());
+        let buffer = serialize!(
+            &[self.protocol as u8],
+            &self.min_version.to_le_bytes(),
+            &self.max_version.to_le_bytes(),
+            &byte_flags,
+            &self.endpoint_host.as_bytes(),
+            &self.endpoint_port.to_le_bytes(),
+            &self.vendor.as_bytes(),
+            &self.hardware_version.as_bytes(),
+            &self.firmware.as_bytes(),
+            &self.device_id.as_bytes()
+        );
 
         Ok(writer.write(&buffer)?)
     }
@@ -193,14 +192,6 @@ where
     B: BitFlag + ToProtocol,
 {
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        // Currently set to a default empty extension type with MSB NOT set
-        // to indicate the message is intended to the direct recipient.
-        let extension_type = &[0x00, 0x00];
-
-        // The byte representation of the MessageType for SetupConnection.
-        let msg_type: &[u8] = &[MessageTypes::SetupConnection.into()];
-
-        // Serialize SetupConnection as the message payload.
         let mut payload = Vec::new();
         let size = *&self.serialize(&mut payload)?;
 
@@ -208,13 +199,14 @@ where
         let mut payload_length = (size as u16).to_le_bytes().to_vec();
         payload_length.push(0x00);
 
-        let mut result = Vec::new();
-        result.extend_from_slice(extension_type);
-        result.extend_from_slice(msg_type);
-        result.extend_from_slice(&payload_length);
-        result.extend_from_slice(&payload);
+        let buffer = serialize!(
+            &[0x00, 0x00],                           // empty extension type
+            &[MessageTypes::SetupConnection.into()], // msg_type
+            &payload_length,
+            &payload
+        );
 
-        Ok(writer.write(&result)?)
+        Ok(writer.write(&buffer)?)
     }
 }
 
@@ -251,10 +243,6 @@ where
     B: BitFlag + ToProtocol,
 {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let mut buffer: Vec<u8> = Vec::new();
-
-        buffer.extend_from_slice(&self.used_version.to_le_bytes());
-
         let byte_flags = self
             .flags
             .iter()
@@ -262,8 +250,7 @@ where
             .fold(0, |accumulator, byte| (accumulator | byte))
             .to_le_bytes();
 
-        buffer.extend_from_slice(&byte_flags);
-
+        let buffer = serialize!(&self.used_version.to_le_bytes(), &byte_flags);
         Ok(writer.write(&buffer)?)
     }
 }
@@ -273,16 +260,6 @@ where
     B: BitFlag + ToProtocol,
 {
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        // TODO: Need to move to a macro or function to reduce repetition
-        // in each frame implemenation.
-        // Currently set to a default empty extension type with MSB NOT set
-        // to indicate the message is intended to the direct recipient.
-        let extension_type = &[0x00, 0x00];
-
-        // The byte representation of the MessageType for SetupConnectionSuccess.
-        let msg_type: &[u8] = &[MessageTypes::SetupConnectionSuccess.into()];
-
-        // Serialize SetupConnection as the message payload.
         let mut payload = Vec::new();
         let size = *&self.serialize(&mut payload)?;
 
@@ -290,11 +267,12 @@ where
         let mut payload_length = (size as u16).to_le_bytes().to_vec();
         payload_length.push(0x00);
 
-        let mut result = Vec::new();
-        result.extend_from_slice(extension_type);
-        result.extend_from_slice(msg_type);
-        result.extend_from_slice(&payload_length);
-        result.extend_from_slice(&payload);
+        let result = serialize!(
+            &[0x00, 0x00],                                  // extention_type
+            &[MessageTypes::SetupConnectionSuccess.into()], // msg_type
+            &payload_length,
+            &payload
+        );
 
         Ok(writer.write(&result)?)
     }
@@ -378,8 +356,6 @@ where
     B: BitFlag + ToProtocol,
 {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let mut buffer: Vec<u8> = Vec::new();
-
         let byte_flags = self
             .flags
             .iter()
@@ -387,10 +363,12 @@ where
             .fold(0, |accumulator, byte| (accumulator | byte))
             .to_le_bytes();
 
-        buffer.extend_from_slice(&byte_flags);
-        buffer.extend_from_slice(&STR0_255::new(&self.error_code.to_string())?.as_bytes());
+        let result = serialize!(
+            &byte_flags,
+            &STR0_255::new(&self.error_code.to_string())?.as_bytes()
+        );
 
-        Ok(writer.write(&buffer)?)
+        Ok(writer.write(&result)?)
     }
 }
 
@@ -399,12 +377,6 @@ where
     B: BitFlag + ToProtocol,
 {
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let extension_type = &[0x00, 0x00];
-
-        // The byte representation of the MessageType for SetupConnectionError.
-        let msg_type: &[u8] = &[MessageTypes::SetupConnectionError.into()];
-
-        // Serialize SetupConnectionError as the message payload.
         let mut payload = Vec::new();
         let size = *&self.serialize(&mut payload)?;
 
@@ -412,11 +384,12 @@ where
         let mut payload_length = (size as u16).to_le_bytes().to_vec();
         payload_length.push(0x00);
 
-        let mut result = Vec::new();
-        result.extend_from_slice(extension_type);
-        result.extend_from_slice(msg_type);
-        result.extend_from_slice(&payload_length);
-        result.extend_from_slice(&payload);
+        let result = serialize!(
+            &[0x00, 0x00], // extension_type
+            &[MessageTypes::SetupConnectionError.into()],
+            &payload_length,
+            &payload
+        );
 
         Ok(writer.write(&result)?)
     }

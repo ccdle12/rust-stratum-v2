@@ -6,6 +6,9 @@
 
 #![allow(dead_code)]
 
+#[macro_use]
+mod internal_macros;
+
 /// Errors returned in the library.
 mod error;
 
