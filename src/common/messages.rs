@@ -1,8 +1,7 @@
 use crate::common::types::{MessageTypes, STR0_255};
 use crate::common::{BitFlag, Framable, Protocol, Serializable, ToProtocol};
 use crate::error::{Error, Result};
-use std::fmt;
-use std::io;
+use std::{fmt, io};
 
 /// SetupConnection is the first message sent by a client on a new connection.
 /// The SetupConnection struct contains all the common fields for the
@@ -559,7 +558,6 @@ mod setup_connection_tests {
         let mut buffer: Vec<u8> = Vec::new();
         message.frame(&mut buffer).unwrap();
 
-        // Feature flag.
         let expected = [
             0x00, 0x00, // extension_type
             0x03, // msg_type
@@ -597,7 +595,6 @@ mod mining_connection_tests {
         .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
-
         let size = message.serialize(&mut buffer).unwrap();
         assert_eq!(size, 75);
 
@@ -640,7 +637,6 @@ mod mining_connection_tests {
         .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
-
         let size = message.serialize(&mut buffer).unwrap();
         assert_eq!(size, 75);
 
