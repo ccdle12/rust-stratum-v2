@@ -28,10 +28,7 @@ impl STR0_255 {
     /// it returns the byte representation for serializing according to the
     /// protocol specification which is <1 byte length prefix + variable length STR0_255>.
     pub fn as_bytes(&self) -> Vec<u8> {
-        let mut buffer = vec![self.0.len() as u8];
-        buffer.extend_from_slice(self.0.as_bytes());
-
-        buffer
+        serialize!(&[self.0.len() as u8], self.0.as_bytes())
     }
 }
 
@@ -74,16 +71,16 @@ mod tests {
     fn str0_255_into_string() {
         let input = "hello";
         let str_255 = STR0_255::new(input);
-
         let result: String = str_255.unwrap().into();
+
         assert_eq!(result, input);
     }
 
     #[test]
     fn str0_255_to_bytes() {
         let expected = vec![0x05, 0x68, 0x65, 0x6c, 0x6c, 0x6f];
-
         let result: Vec<u8> = STR0_255::new("hello").unwrap().as_bytes();
+
         assert_eq!(result, expected);
     }
 
@@ -94,6 +91,7 @@ mod tests {
         for _ in 0..300 {
             input.push('a');
         }
+
         assert_eq!(input.len(), 300);
         assert!(STR0_255::new(input).is_err());
     }
