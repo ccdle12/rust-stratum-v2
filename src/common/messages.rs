@@ -1,7 +1,9 @@
 use crate::common::types::{MessageTypes, STR0_255};
-use crate::common::{BitFlag, Framable, Protocol, Serializable, ToProtocol};
+use crate::common::{BitFlag, Deserializable, Framable, Protocol, Serializable, ToProtocol};
 use crate::error::{Error, Result};
-use std::{fmt, io};
+// use crate::mining::SetupConnectionFlags;
+use crate::mining;
+use std::{fmt, io, str};
 
 /// SetupConnection is the first message sent by a client on a new connection.
 /// The SetupConnection struct contains all the common fields for the
@@ -151,6 +153,81 @@ where
             device_id: STR0_255::new(device_id)?,
         })
     }
+
+    pub fn deserialize(bytes: &[u8]) -> Result<SetupConnection<mining::SetupConnectionFlags>> {
+        // pub fn deserialize(bytes: &[u8]) -> Result<Vec<u8>> {
+        // TODO: This isn't correct, each str0_255 has a length first.
+        // TODO: Don't handle errors yet.
+        let offset = 0;
+        let protocol = &bytes[offset];
+
+        let start = 1;
+        let offset = 3;
+        let min_version_bytes = &bytes[start..offset];
+        let min_version = min_version_bytes
+            .iter()
+            .map(|x| *x as u16)
+            .fold(0, |accumulator, byte| (accumulator | byte));
+
+        let start = offset;
+        let offset = 5;
+        let max_version_bytes = &bytes[start..offset];
+        let max_version = max_version_bytes
+            .iter()
+            .map(|x| *x as u16)
+            .fold(0, |accumulator, byte| (accumulator | byte));
+
+        // TODO: Read the next 4 bytes, add a flag for each set bit?
+        let start = offset;
+        let offset = start + 4;
+        let flags = &bytes[start..offset];
+
+        let start = offset;
+        let endpoint_host_length = *&bytes[start] as usize;
+        let offset = start + endpoint_host_length;
+        let endpoint_host = &bytes[start..offset];
+
+        let start = offset;
+        let offset = start + 3;
+        let endpoint_port_bytes = &bytes[start..offset];
+        let endpoint_port = endpoint_port_bytes
+            .iter()
+            .map(|x| *x as u16)
+            .fold(0, |accumulator, byte| (accumulator | byte));
+
+        let start = offset;
+        let vendor_length = *&bytes[start] as u8;
+        let offset = start as u8 + vendor_length;
+        let vendor = &bytes[start..offset as usize];
+
+        let start = offset + 1;
+        let hardware_version_length = *&bytes[start as usize] as u8;
+        let offset = start + hardware_version_length;
+        let hardware_version = &bytes[start as usize..offset as usize];
+
+        let start = offset + 1;
+        let firmware_length = *&bytes[start as usize] as u8;
+        let offset = start + firmware_length;
+        let firmware = &bytes[start as usize..offset as usize];
+
+        let start = offset + 1;
+        let device_id_length = *&bytes[start as usize] as u8;
+        let offset = start + device_id_length;
+        let device_id = &bytes[start as usize..offset as usize];
+
+        SetupConnection::new(
+            Protocol::Mining,
+            min_version,
+            max_version,
+            &[mining::SetupConnectionFlags::RequiresStandardJobs], // TODO: placeholder
+            str::from_utf8(endpoint_host)?,
+            endpoint_port,
+            str::from_utf8(vendor)?,
+            str::from_utf8(hardware_version)?,
+            str::from_utf8(firmware)?,
+            str::from_utf8(device_id)?,
+        )
+    }
 }
 
 /// Implementation of the Serializable trait to serialize the contents
@@ -208,6 +285,28 @@ where
         Ok(writer.write(&buffer)?)
     }
 }
+
+// TODO: Deserializable
+//
+// 1. Given a &[u8] create a SetupConnection
+//   - [] If the first byte doesn't match, raise an error
+//   - [] Read bytes and assign bytes to a deserialized type
+//   - [] Pass the variables into a constructor and return errors or value
+// 2. Add docstrings
+// impl<B> Deserializable for SetupConnection<'_, B>
+// where
+//     B: BitFlag + ToProtocol,
+// {
+//     // min_version: u16,
+//     // max_version: u16,
+//     // flags: &'a [B],
+//     // endpoint_host: T,
+//     // endpoint_port: u16,
+//     // vendor: T,
+//     // hardware_version: T,
+//     // firmware: T,
+//     // device_id: T,
+// }
 
 /// SetupConnectionSuccess is one of the required responses from a
 /// Server to a Client when a connection is accepted.
@@ -618,6 +717,32 @@ mod mining_connection_tests {
             0x73, 0x6f, 0x6d, 0x65, 0x2d, 0x75, 0x75, 0x69, 0x64, // device_id
         ];
         assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn deserialize_mining_connection() {
+        let input = [
+            0x00, // protocol
+            0x02, 0x00, // min_version
+            0x02, 0x00, // max_version
+            0x01, 0x00, 0x00, 0x00, // flags
+            0x07, // length_endpoint_host
+            0x30, 0x2e, 0x30, 0x2e, 0x30, 0x2e, 0x30, // endpoint_host
+            0x61, 0x21, // endpoint_port
+            0x07, // length_vendor
+            0x42, 0x69, 0x74, 0x6d, 0x61, 0x69, 0x6e, // vendor
+            0x08, // length_hardware_version
+            0x53, 0x39, 0x69, 0x20, 0x31, 0x33, 0x2e, 0x35, // hardware_version
+            0x1c, // length_firmware
+            0x62, 0x72, 0x61, 0x69, 0x69, 0x6e, 0x73, 0x2d, 0x6f, 0x73, 0x2d, 0x32, 0x30, 0x31,
+            0x38, 0x2d, 0x30, 0x39, 0x2d, 0x32, 0x32, 0x2d, 0x31, 0x2d, 0x68, 0x61, 0x73,
+            0x68, // firmware
+            0x09, // length_device_id
+            0x73, 0x6f, 0x6d, 0x65, 0x2d, 0x75, 0x75, 0x69, 0x64, // device_id
+        ];
+
+        let message = SetupConnection::<mining::SetupConnectionFlags>::deserialize(&input).unwrap();
+        assert_eq!(message.min_version, 2);
     }
 
     #[test]

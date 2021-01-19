@@ -34,6 +34,13 @@ pub trait Serializable {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize>;
 }
 
+/// Trait for deserializing bytes to most Stratum V2 messages.
+pub trait Deserializable {
+    fn deserialize(bytes: &[u8]) -> Result<Self>
+    where
+        Self: std::marker::Sized;
+}
+
 /// Trait for getting a types bit flag representation as a u32, according to the
 /// Stratum V2 specification.
 pub trait BitFlag {
