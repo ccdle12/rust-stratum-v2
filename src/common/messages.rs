@@ -7,7 +7,7 @@ use std::{fmt, io, str};
 /// SetupConnection is the first message sent by a client on a new connection.
 /// The SetupConnection struct contains all the common fields for the
 /// SetupConnection message for each Stratum V2 subprotocol.
-pub struct SetupConnection<'a, B>
+pub struct SetupConnection<B>
 where
     B: BitFlag + ToProtocol,
 {
@@ -21,7 +21,7 @@ where
     pub max_version: u16,
 
     /// Flags indicating the optional protocol features the client supports.
-    pub flags: &'a [B],
+    pub flags: Vec<B>,
 
     /// Used to indicate the hostname or IP address of the endpoint.
     pub endpoint_host: STR0_255,
@@ -45,7 +45,7 @@ where
     pub device_id: STR0_255,
 }
 
-impl<'a, B> SetupConnection<'a, B>
+impl<B> SetupConnection<B>
 where
     B: BitFlag + ToProtocol,
 {
@@ -68,7 +68,7 @@ where
     ///    Protocol::Mining,
     ///    2,
     ///    2,
-    ///    &[
+    ///    vec![
     ///        mining::SetupConnectionFlags::RequiresStandardJobs,
     ///        mining::SetupConnectionFlags::RequiresVersionRolling
     ///     ],
@@ -84,7 +84,7 @@ where
     ///    Protocol::JobNegotiation,
     ///    2,
     ///    2,
-    ///    &[
+    ///    vec![
     ///        job_negotiation::SetupConnectionFlags::RequiresAsyncJobMining,
     ///     ],
     ///    "0.0.0.0",
@@ -102,7 +102,7 @@ where
         protocol: Protocol,
         min_version: u16,
         max_version: u16,
-        flags: &'a [B],
+        flags: Vec<B>,
         endpoint_host: T,
         endpoint_port: u16,
         vendor: T,
@@ -110,7 +110,7 @@ where
         firmware: T,
         device_id: T,
     ) -> Result<SetupConnection<B>> {
-        let invalid_flag = &flags.into_iter().any(|x| x.as_protocol() != protocol);
+        let invalid_flag = &flags.iter().any(|x| x.as_protocol() != protocol);
         if *invalid_flag {
             return Err(Error::ProtocolMismatchError(
                 "flags do not match protocol".into(),
@@ -222,7 +222,6 @@ where
             Protocol::Mining,
             min_version,
             max_version,
-            // &[mining::SetupConnectionFlags::RequiresStandardJobs], // TODO: placeholder
             flags,
             str::from_utf8(endpoint_host)?,
             endpoint_port,
@@ -236,7 +235,7 @@ where
 
 /// Implementation of the Serializable trait to serialize the contents
 /// of the SetupConnection message to the valid message format.
-impl<B> Serializable for SetupConnection<'_, B>
+impl<B> Serializable for SetupConnection<B>
 where
     B: BitFlag + ToProtocol,
 {
@@ -267,7 +266,7 @@ where
 
 /// Implementation of the Framable trait to build a network frame for the
 /// SetupConnection message.
-impl<B> Framable for SetupConnection<'_, B>
+impl<B> Framable for SetupConnection<B>
 where
     B: BitFlag + ToProtocol,
 {
@@ -509,7 +508,7 @@ mod setup_connection_tests {
             Protocol::Mining,
             2,
             2,
-            &[mining::SetupConnectionFlags::RequiresStandardJobs],
+            vec![mining::SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -527,7 +526,7 @@ mod setup_connection_tests {
             Protocol::JobNegotiation,
             2,
             2,
-            &[mining::SetupConnectionFlags::RequiresStandardJobs],
+            vec![mining::SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -545,7 +544,7 @@ mod setup_connection_tests {
             Protocol::Mining,
             1,
             2,
-            &[mining::SetupConnectionFlags::RequiresStandardJobs],
+            vec![mining::SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -563,7 +562,7 @@ mod setup_connection_tests {
             Protocol::Mining,
             2,
             0,
-            &[mining::SetupConnectionFlags::RequiresStandardJobs],
+            vec![mining::SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -581,7 +580,7 @@ mod setup_connection_tests {
             Protocol::Mining,
             2,
             2,
-            &[mining::SetupConnectionFlags::RequiresStandardJobs],
+            vec![mining::SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "",
@@ -599,7 +598,7 @@ mod setup_connection_tests {
             Protocol::Mining,
             2,
             2,
-            &[mining::SetupConnectionFlags::RequiresStandardJobs],
+            vec![mining::SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -687,7 +686,7 @@ mod mining_connection_tests {
             Protocol::Mining,
             2,
             2,
-            &[mining::SetupConnectionFlags::RequiresStandardJobs],
+            vec![mining::SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -773,11 +772,11 @@ mod mining_connection_tests {
 
     #[test]
     fn serialize_no_flags() {
-        let message: SetupConnection<'_, mining::SetupConnectionFlags> = SetupConnection::new(
+        let message: SetupConnection<mining::SetupConnectionFlags> = SetupConnection::new(
             Protocol::Mining,
             2,
             2,
-            &[],
+            vec![],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -801,7 +800,7 @@ mod mining_connection_tests {
             Protocol::Mining,
             2,
             2,
-            &[
+            vec![
                 mining::SetupConnectionFlags::RequiresStandardJobs,
                 mining::SetupConnectionFlags::RequiresVersionRolling,
             ],
@@ -827,7 +826,7 @@ mod mining_connection_tests {
             Protocol::Mining,
             2,
             2,
-            &[
+            vec![
                 mining::SetupConnectionFlags::RequiresStandardJobs,
                 mining::SetupConnectionFlags::RequiresWorkSelection,
                 mining::SetupConnectionFlags::RequiresVersionRolling,
@@ -854,7 +853,7 @@ mod mining_connection_tests {
             Protocol::Mining,
             2,
             2,
-            &[mining::SetupConnectionFlags::RequiresStandardJobs],
+            vec![mining::SetupConnectionFlags::RequiresStandardJobs],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -979,7 +978,7 @@ mod job_negotiation_connection_tests {
             Protocol::JobNegotiation,
             2,
             2,
-            &[job_negotiation::SetupConnectionFlags::RequiresAsyncJobMining],
+            vec![job_negotiation::SetupConnectionFlags::RequiresAsyncJobMining],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -997,7 +996,7 @@ mod job_negotiation_connection_tests {
             Protocol::JobNegotiation,
             2,
             2,
-            &[job_negotiation::SetupConnectionFlags::RequiresAsyncJobMining],
+            vec![job_negotiation::SetupConnectionFlags::RequiresAsyncJobMining],
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -1017,20 +1016,19 @@ mod job_negotiation_connection_tests {
 
     #[test]
     fn serialize_job_negotiation_no_flags() {
-        let message: SetupConnection<'_, job_negotiation::SetupConnectionFlags> =
-            SetupConnection::new(
-                Protocol::JobNegotiation,
-                2,
-                2,
-                &[],
-                "0.0.0.0",
-                8545,
-                "Bitmain",
-                "S9i 13.5",
-                "braiins-os-2018-09-22-1-hash",
-                "some-uuid",
-            )
-            .unwrap();
+        let message: SetupConnection<job_negotiation::SetupConnectionFlags> = SetupConnection::new(
+            Protocol::JobNegotiation,
+            2,
+            2,
+            vec![],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        )
+        .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
         let size = message.serialize(&mut buffer).unwrap();
