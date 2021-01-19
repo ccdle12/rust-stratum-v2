@@ -2,6 +2,7 @@ use crate::common::{BitFlag, Protocol, ToProtocol};
 
 /// Feature flags that can be passed to a SetupConnection message in the mining
 /// sub protocol. Each flag corresponds to a set bit.
+#[derive(Debug, PartialEq)]
 pub enum SetupConnectionFlags {
     /// Flag indicating the downstream node requires standard jobs. The node
     /// doesn't undestand group channels and extended jobs.
