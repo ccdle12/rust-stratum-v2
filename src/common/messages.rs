@@ -152,86 +152,6 @@ where
             device_id: STR0_255::new(device_id)?,
         })
     }
-
-    // TODO: Move this back to a trait after refactoring the different constructors
-    pub fn deserialize(bytes: &[u8]) -> Result<SetupConnection<mining::SetupConnectionFlags>> {
-        // TODO: Don't handle errors yet.
-        // TODO: Fuzz test this
-        let offset = 0;
-        let protocol_byte = &bytes[offset];
-        let protocol: Protocol = Protocol::from(*protocol_byte);
-
-        let start = 1;
-        let offset = 3;
-        let min_version_bytes = &bytes[start..offset];
-        let min_version = (min_version_bytes[1] as u16) << 8 | min_version_bytes[0] as u16;
-
-        let start = offset;
-        let offset = 5;
-        let max_version_bytes = &bytes[start..offset];
-        let max_version = (max_version_bytes[1] as u16) << 8 | max_version_bytes[0] as u16;
-
-        // TODO: Read the next 4 bytes, add a flag for each set bit?
-        // TODO: deserialize byte to flag
-        let start = offset;
-        let offset = start + 4;
-        let flags_bytes = &bytes[start..offset];
-        let set_flags = flags_bytes
-            .iter()
-            .map(|x| *x as u32)
-            .fold(0, |accumulator, byte| (accumulator | byte));
-        let flags = mining::SetupConnectionFlags::to_vec_flags(set_flags);
-
-        let mut start = offset;
-        let endpoint_host_length = *&bytes[start] as usize;
-        start += 1;
-        let offset = start + endpoint_host_length;
-        let endpoint_host = &bytes[start..offset];
-
-        let start = offset;
-        let offset = start + 2;
-        let endpoint_port_bytes = &bytes[start..offset];
-        // TODO: This might apply to all conversions right? I think using the accumulator and fold
-        // won't work for high numbers
-        let endpoint_port = (endpoint_port_bytes[1] as u16) << 8 | endpoint_port_bytes[0] as u16;
-
-        let mut start = offset;
-        let vendor_length = *&bytes[start] as u8;
-        start += 1;
-        let offset = start as u8 + vendor_length;
-        let vendor = &bytes[start..offset as usize];
-
-        let mut start = offset;
-        let hardware_version_length = *&bytes[start as usize] as u8;
-        start += 1;
-        let offset = start + hardware_version_length;
-        let hardware_version = &bytes[start as usize..offset as usize];
-
-        let mut start = offset;
-        let firmware_length = *&bytes[start as usize] as u8;
-        start += 1;
-        let offset = start + firmware_length;
-        let firmware = &bytes[start as usize..offset as usize];
-
-        let mut start = offset;
-        let device_id_length = *&bytes[start as usize] as u8;
-        start += 1;
-        let offset = start + device_id_length;
-        let device_id = &bytes[start as usize..offset as usize];
-
-        SetupConnection::new(
-            protocol,
-            min_version,
-            max_version,
-            flags,
-            str::from_utf8(endpoint_host)?,
-            endpoint_port,
-            str::from_utf8(vendor)?,
-            str::from_utf8(hardware_version)?,
-            str::from_utf8(firmware)?,
-            str::from_utf8(device_id)?,
-        )
-    }
 }
 
 /// Implementation of the Serializable trait to serialize the contents
@@ -290,27 +210,92 @@ where
     }
 }
 
-// TODO: Deserializable
-//
-// 1. Given a &[u8] create a SetupConnection
+// TODO:
+// 1. Error handling
 //   - [] If the first byte doesn't match, raise an error
 //   - [] Read bytes and assign bytes to a deserialized type
 //   - [] Pass the variables into a constructor and return errors or value
 // 2. Add docstrings
-// impl<B> Deserializable for SetupConnection<'_, B>
-// where
-//     B: BitFlag + ToProtocol,
-// {
-//     // min_version: u16,
-//     // max_version: u16,
-//     // flags: &'a [B],
-//     // endpoint_host: T,
-//     // endpoint_port: u16,
-//     // vendor: T,
-//     // hardware_version: T,
-//     // firmware: T,
-//     // device_id: T,
-// }
+impl Deserializable for SetupConnection<mining::SetupConnectionFlags> {
+    fn deserialize(bytes: &[u8]) -> Result<SetupConnection<mining::SetupConnectionFlags>> {
+        // TODO: Don't handle errors yet.
+        // TODO: Fuzz test this
+        let offset = 0;
+        let protocol_byte = &bytes[offset];
+        let protocol: Protocol = Protocol::from(*protocol_byte);
+
+        let start = 1;
+        let offset = 3;
+        let min_version_bytes = &bytes[start..offset];
+        let min_version = (min_version_bytes[1] as u16) << 8 | min_version_bytes[0] as u16;
+
+        let start = offset;
+        let offset = 5;
+        let max_version_bytes = &bytes[start..offset];
+        let max_version = (max_version_bytes[1] as u16) << 8 | max_version_bytes[0] as u16;
+
+        let start = offset;
+        let offset = start + 4;
+        let flags_bytes = &bytes[start..offset];
+        // TODO: This might apply to all conversions right? I think using the accumulator and fold
+        // won't work for high numbers
+        let set_flags = flags_bytes
+            .iter()
+            .map(|x| *x as u32)
+            .fold(0, |accumulator, byte| (accumulator | byte));
+        let flags = mining::SetupConnectionFlags::to_vec_flags(set_flags);
+
+        let mut start = offset;
+        let endpoint_host_length = *&bytes[start] as usize;
+        start += 1;
+        let offset = start + endpoint_host_length;
+        let endpoint_host = &bytes[start..offset];
+
+        let start = offset;
+        let offset = start + 2;
+        let endpoint_port_bytes = &bytes[start..offset];
+        // TODO: This might apply to all conversions right? I think using the accumulator and fold
+        // won't work for high numbers
+        let endpoint_port = (endpoint_port_bytes[1] as u16) << 8 | endpoint_port_bytes[0] as u16;
+
+        let mut start = offset;
+        let vendor_length = *&bytes[start] as u8;
+        start += 1;
+        let offset = start as u8 + vendor_length;
+        let vendor = &bytes[start..offset as usize];
+
+        let mut start = offset;
+        let hardware_version_length = *&bytes[start as usize] as u8;
+        start += 1;
+        let offset = start + hardware_version_length;
+        let hardware_version = &bytes[start as usize..offset as usize];
+
+        let mut start = offset;
+        let firmware_length = *&bytes[start as usize] as u8;
+        start += 1;
+        let offset = start + firmware_length;
+        let firmware = &bytes[start as usize..offset as usize];
+
+        let mut start = offset;
+        let device_id_length = *&bytes[start as usize] as u8;
+        start += 1;
+        let offset = start + device_id_length;
+        let device_id = &bytes[start as usize..offset as usize];
+
+        SetupConnection::new(
+            protocol,
+            min_version,
+            max_version,
+            flags,
+            str::from_utf8(endpoint_host)?,
+            endpoint_port,
+            str::from_utf8(vendor)?,
+            str::from_utf8(hardware_version)?,
+            str::from_utf8(firmware)?,
+            str::from_utf8(device_id)?,
+        )
+    }
+}
 
 /// SetupConnectionSuccess is one of the required responses from a
 /// Server to a Client when a connection is accepted.
