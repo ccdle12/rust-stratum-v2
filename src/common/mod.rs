@@ -26,6 +26,23 @@ pub enum Protocol {
     /// their transaction sets, then jobs will be distributed from pools directly
     /// to proxies/mining devices.
     JobDistribution = 3,
+
+    /// Unknown is catch-all variant. This should be used when attempting to
+    /// convert another type into the Protocol enum but doesn't match any
+    /// known variants.
+    Unknown,
+}
+
+impl From<u8> for Protocol {
+    fn from(byte: u8) -> Self {
+        match byte {
+            0 => Protocol::Mining,
+            1 => Protocol::JobNegotiation,
+            2 => Protocol::TemplateDistribution,
+            3 => Protocol::JobDistribution,
+            _ => Protocol::Unknown,
+        }
+    }
 }
 
 /// Trait for encoding and serializing messages and objects according to the

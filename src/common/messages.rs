@@ -158,7 +158,8 @@ where
         // TODO: Don't handle errors yet.
         // TODO: Fuzz test this
         let offset = 0;
-        let protocol = &bytes[offset];
+        let protocol_byte = &bytes[offset];
+        let protocol: Protocol = Protocol::from(*protocol_byte);
 
         let start = 1;
         let offset = 3;
@@ -219,7 +220,7 @@ where
         let device_id = &bytes[start as usize..offset as usize];
 
         SetupConnection::new(
-            Protocol::Mining,
+            protocol,
             min_version,
             max_version,
             flags,
