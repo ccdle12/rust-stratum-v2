@@ -1,7 +1,6 @@
 use crate::common::types::{MessageTypes, STR0_255};
 use crate::common::{BitFlag, Deserializable, Framable, Protocol, Serializable, ToProtocol};
 use crate::error::{Error, Result};
-// use crate::mining::SetupConnectionFlags;
 use crate::mining;
 use std::{fmt, io, str};
 
@@ -154,64 +153,68 @@ where
         })
     }
 
+    // TODO: Move this back to a trait after refactoring the different constructors
     pub fn deserialize(bytes: &[u8]) -> Result<SetupConnection<mining::SetupConnectionFlags>> {
-        // pub fn deserialize(bytes: &[u8]) -> Result<Vec<u8>> {
-        // TODO: This isn't correct, each str0_255 has a length first.
         // TODO: Don't handle errors yet.
+        // TODO: Fuzz test this
         let offset = 0;
         let protocol = &bytes[offset];
 
         let start = 1;
         let offset = 3;
         let min_version_bytes = &bytes[start..offset];
-        let min_version = min_version_bytes
-            .iter()
-            .map(|x| *x as u16)
-            .fold(0, |accumulator, byte| (accumulator | byte));
+        let min_version = (min_version_bytes[1] as u16) << 8 | min_version_bytes[0] as u16;
 
         let start = offset;
         let offset = 5;
         let max_version_bytes = &bytes[start..offset];
-        let max_version = max_version_bytes
-            .iter()
-            .map(|x| *x as u16)
-            .fold(0, |accumulator, byte| (accumulator | byte));
+        let max_version = (max_version_bytes[1] as u16) << 8 | max_version_bytes[0] as u16;
 
         // TODO: Read the next 4 bytes, add a flag for each set bit?
+        // TODO: deserialize byte to flag
         let start = offset;
         let offset = start + 4;
-        let flags = &bytes[start..offset];
+        let flags_bytes = &bytes[start..offset];
+        let set_flags = flags_bytes
+            .iter()
+            .map(|x| *x as u32)
+            .fold(0, |accumulator, byte| (accumulator | byte));
+        let flags = mining::SetupConnectionFlags::to_vec_flags(set_flags);
 
-        let start = offset;
+        let mut start = offset;
         let endpoint_host_length = *&bytes[start] as usize;
+        start += 1;
         let offset = start + endpoint_host_length;
         let endpoint_host = &bytes[start..offset];
 
         let start = offset;
-        let offset = start + 3;
+        let offset = start + 2;
         let endpoint_port_bytes = &bytes[start..offset];
-        let endpoint_port = endpoint_port_bytes
-            .iter()
-            .map(|x| *x as u16)
-            .fold(0, |accumulator, byte| (accumulator | byte));
+        // TODO: This might apply to all conversions right? I think using the accumulator and fold
+        // won't work for high numbers
+        let endpoint_port = (endpoint_port_bytes[1] as u16) << 8 | endpoint_port_bytes[0] as u16;
 
-        let start = offset;
+        let mut start = offset;
         let vendor_length = *&bytes[start] as u8;
+        start += 1;
         let offset = start as u8 + vendor_length;
         let vendor = &bytes[start..offset as usize];
 
-        let start = offset + 1;
+        let mut start = offset;
         let hardware_version_length = *&bytes[start as usize] as u8;
+        start += 1;
         let offset = start + hardware_version_length;
         let hardware_version = &bytes[start as usize..offset as usize];
 
-        let start = offset + 1;
+        let mut start = offset;
         let firmware_length = *&bytes[start as usize] as u8;
+        start += 1;
         let offset = start + firmware_length;
         let firmware = &bytes[start as usize..offset as usize];
 
-        let start = offset + 1;
+        let mut start = offset;
         let device_id_length = *&bytes[start as usize] as u8;
+        start += 1;
         let offset = start + device_id_length;
         let device_id = &bytes[start as usize..offset as usize];
 
@@ -219,7 +222,8 @@ where
             Protocol::Mining,
             min_version,
             max_version,
-            &[mining::SetupConnectionFlags::RequiresStandardJobs], // TODO: placeholder
+            // &[mining::SetupConnectionFlags::RequiresStandardJobs], // TODO: placeholder
+            flags,
             str::from_utf8(endpoint_host)?,
             endpoint_port,
             str::from_utf8(vendor)?,
@@ -743,6 +747,28 @@ mod mining_connection_tests {
 
         let message = SetupConnection::<mining::SetupConnectionFlags>::deserialize(&input).unwrap();
         assert_eq!(message.min_version, 2);
+        assert_eq!(message.max_version, 2);
+        assert_eq!(
+            message.flags[0],
+            mining::SetupConnectionFlags::RequiresStandardJobs
+        );
+
+        let endpoint_host: String = message.endpoint_host.into();
+        assert_eq!(endpoint_host, "0.0.0.0".to_string()); // TODO: Do an auto string comparison from STR0_255 TO &str and String
+        assert_eq!(message.endpoint_port, 8545);
+
+        // TODO: Auto comparison between STR0_255 into &str and String
+        let vendor: String = message.vendor.into();
+        assert_eq!(vendor, "Bitmain".to_string());
+
+        let hardware_version: String = message.hardware_version.into();
+        assert_eq!(hardware_version, "S9i 13.5");
+
+        let firmware: String = message.firmware.into();
+        assert_eq!(firmware, "braiins-os-2018-09-22-1-hash");
+
+        let device_id: String = message.device_id.into();
+        assert_eq!(device_id, "some-uuid");
     }
 
     #[test]
