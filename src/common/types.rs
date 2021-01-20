@@ -55,6 +55,13 @@ impl PartialEq<STR0_255> for String {
     }
 }
 
+/// PartialEq implementation allowing direct comparison between STR0_255 types.
+impl PartialEq<STR0_255> for STR0_255 {
+    fn eq(&self, other: &STR0_255) -> bool {
+        *self.0 == other.0
+    }
+}
+
 /// MessageTypes contain all the variations for the byte representation of a
 /// messages used in a message frame.
 pub(crate) enum MessageTypes {
@@ -118,5 +125,15 @@ mod tests {
 
         assert!(str_255 == input.to_string());
         assert!(input.to_string() == str_255);
+    }
+
+    #[test]
+    fn str0_255_comparison() {
+        let a = STR0_255::new("foo").unwrap();
+        let b = STR0_255::new("foo").unwrap();
+        assert_eq!(a, b);
+
+        let c = STR0_255::new("bar").unwrap();
+        assert!(a != c);
     }
 }
