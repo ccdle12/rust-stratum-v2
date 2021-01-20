@@ -7,6 +7,7 @@ pub(crate) type U256 = [u8; 32];
 
 /// STR0_255 is a struct that contains a String limited to a maximum of 255 bytes.
 /// The byte representation will contain a <1 byte length prefix + variable length STR0_255>.
+#[derive(Debug)]
 pub struct STR0_255(String);
 
 impl STR0_255 {
@@ -37,6 +38,20 @@ impl STR0_255 {
 impl From<STR0_255> for String {
     fn from(s: STR0_255) -> Self {
         s.0
+    }
+}
+
+/// PartialEq implementation allowing direct comparison between STR0_255 and
+/// String.
+impl PartialEq<String> for STR0_255 {
+    fn eq(&self, other: &String) -> bool {
+        self.0 == *other
+    }
+}
+
+impl PartialEq<STR0_255> for String {
+    fn eq(&self, other: &STR0_255) -> bool {
+        *self == other.0
     }
 }
 
@@ -94,5 +109,14 @@ mod tests {
 
         assert_eq!(input.len(), 300);
         assert!(STR0_255::new(input).is_err());
+    }
+
+    #[test]
+    fn str0_255_str_comparison() {
+        let input = "hello";
+        let str_255 = STR0_255::new(input).unwrap();
+
+        assert!(str_255 == input.to_string());
+        assert!(input.to_string() == str_255);
     }
 }
