@@ -1,89 +1,175 @@
-// use crate::common::types::STR0_255;
-//use crate::common::types::U256;
-//use crate::common::Protocol;
-//use crate::error::{Error, Result};
-//use crate::job_negotiation;
+use crate::common::messages::RawSetupConnection;
+use crate::common::{BitFlag, Deserializable, Framable, Protocol, Serializable};
+use crate::error::{Error, Result};
+use crate::job_negotiation;
+use crate::job_negotiation::SetupConnectionFlags;
+use std::{io, str};
 
-//pub struct SetupConnection<T: Into<String>> {
-//    /// Used to indicate the protocol the client wants to use on the new connection.
-//    pub protocol: Protocol,
+pub struct SetupConnection {
+    internal: RawSetupConnection,
+}
 
-//    /// The minimum protocol version the client supports. (current default: 2)
-//    pub min_version: u16,
+impl SetupConnection {
+    pub fn new<T: Into<String>>(
+        min_version: u16,
+        max_version: u16,
+        flags: &[job_negotiation::SetupConnectionFlags],
+        endpoint_host: T,
+        endpoint_port: u16,
+        vendor: T,
+        hardware_version: T,
+        firmware: T,
+        device_id: T,
+    ) -> Result<SetupConnection> {
+        let flags = flags
+            .iter()
+            .map(|x| x.as_bit_flag())
+            .fold(0, |acc, byte| (acc | byte));
 
-//    /// The maxmimum protocol version the client supports. (current default: 2)
-//    pub max_version: u16,
+        let internal = RawSetupConnection::new(
+            Protocol::JobNegotiation,
+            min_version,
+            max_version,
+            flags,
+            endpoint_host.into(),
+            endpoint_port,
+            vendor.into(),
+            hardware_version.into(),
+            firmware.into(),
+            device_id.into(),
+        )?;
 
-//    /// Flags indicating the optional protocol features the client supports.
-//    pub flags: Vec<job_negotiation::SetupConnectionFlags>,
+        Ok(SetupConnection { internal })
+    }
 
-//    /// Used to indicate the hostname or IP address of the endpoint.
-//    pub endpoint_host: STR0_255,
+    fn min_version(&self) -> u16 {
+        self.internal.min_version
+    }
 
-//    /// Used to indicate the connecting port value of the endpoint.
-//    pub endpoint_port: u16,
+    fn max_version(&self) -> u16 {
+        self.internal.max_version
+    }
 
-//    /// The following fields relay the new_mining device information.
-//    ///
-//    /// Used to indicate the vendor/manufacturer of the device.
-//    pub vendor: T,
+    fn flags(&self) -> Vec<job_negotiation::SetupConnectionFlags> {
+        SetupConnectionFlags::deserialize_flags(self.internal.flags)
+    }
 
-//    /// Used to indicate the hardware version of the device.
-//    pub hardware_version: T,
+    fn endpoint_host(&self) -> &str {
+        &self.internal.endpoint_host.0
+    }
 
-//    /// Used to indicate the firmware on the device.
-//    pub firmware: T,
+    fn endpoint_port(&self) -> u16 {
+        self.internal.endpoint_port
+    }
 
-//    /// Used to indicate the unique identifier of the device defined by the
-//    /// vendor.
-//    pub device_id: T,
-//}
+    fn vendor(&self) -> &str {
+        &self.internal.vendor.0
+    }
 
-//impl<T> SetupConnection<T> {
-//    pub fn new(
-//        min_version: u16,
-//        max_version: u16,
-//        flags: Vec<mining::SetupConnectionFlags>,
-//        endpoint_host: T,
-//        endpoint_port: u16,
-//        vendor: T,
-//        hardware_version: T,
-//        firmware: T,
-//        device_id: T,
-//    ) -> Result<SetupConnection> {
-//        let vendor = vendor.into();
-//        if *&vendor.is_empty() {
-//            return Err(Error::RequirementError(
-//                "vendor field in SetupConnection MUST NOT be empty".into(),
-//            ));
-//        }
+    fn hardware_version(&self) -> &str {
+        &self.internal.hardware_version.0
+    }
 
-//        let firmware = firmware.into();
-//        if *&firmware.is_empty() {
-//            return Err(Error::RequirementError(
-//                "firmware field in SetupConnection MUST NOT be empty".into(),
-//            ));
-//        }
+    fn firmware(&self) -> &str {
+        &self.internal.firmware.0
+    }
 
-//        if min_version < 2 {
-//            return Err(Error::VersionError("min_version must be atleast 2".into()));
-//        }
+    fn device_id(&self) -> &str {
+        &self.internal.device_id.0
+    }
+}
 
-//        if max_version < 2 {
-//            return Err(Error::VersionError("max_version must be atleast 2".into()));
-//        }
+/// Implementation of the Serializable trait to serialize the contents
+/// of the SetupConnection message to the valid message format.
+impl Serializable for SetupConnection {
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        Ok(writer.write(&self.internal.serialize())?)
+    }
+}
 
-//        Ok(SetupConnection {
-//            protocol: Protocol::JobNegotiation,
-//            min_version,
-//            max_version,
-//            flags,
-//            endpoint_host: STR0_255::new(endpoint_host)?,
-//            endpoint_port,
-//            vendor: STR0_255::new(vendor)?,
-//            hardware_version: STR0_255::new(hardware_version)?,
-//            firmware: STR0_255::new(firmware)?,
-//            device_id: STR0_255::new(device_id)?,
-//        })
-//    }
-//}
+// TODO: Docstring
+impl Deserializable for SetupConnection {
+    fn deserialize(bytes: &[u8]) -> Result<SetupConnection> {
+        Ok(SetupConnection {
+            internal: RawSetupConnection::deserialize(bytes)?,
+        })
+    }
+}
+
+/// Implementation of the Framable trait to build a network frame for the
+/// SetupConnection message.
+impl Framable for SetupConnection {
+    fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        Ok(writer.write(&self.internal.frame())?)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::common::Serializable;
+    use crate::job_negotiation;
+
+    #[test]
+    fn init_job_negotiation_connection() {
+        let message = SetupConnection::new(
+            2,
+            2,
+            &[job_negotiation::SetupConnectionFlags::RequiresAsyncJobMining],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        );
+
+        assert!(message.is_ok());
+    }
+
+    #[test]
+    fn serialize_job_negotiation() {
+        let message = SetupConnection::new(
+            2,
+            2,
+            &[job_negotiation::SetupConnectionFlags::RequiresAsyncJobMining],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        )
+        .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        let size = message.serialize(&mut buffer).unwrap();
+
+        assert_eq!(size, 75);
+        assert_eq!(buffer[0], 0x01);
+        assert_eq!(buffer[5], 0x01);
+    }
+
+    #[test]
+    fn serialize_job_negotiation_no_flags() {
+        let message: SetupConnection = SetupConnection::new(
+            2,
+            2,
+            &[],
+            "0.0.0.0",
+            8545,
+            "Bitmain",
+            "S9i 13.5",
+            "braiins-os-2018-09-22-1-hash",
+            "some-uuid",
+        )
+        .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        let size = message.serialize(&mut buffer).unwrap();
+
+        assert_eq!(size, 75);
+        assert_eq!(buffer[0], 0x01);
+        assert_eq!(buffer[5], 0x00);
+    }
+}

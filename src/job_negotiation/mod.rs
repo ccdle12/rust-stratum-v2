@@ -8,6 +8,7 @@
 //! their connections.
 
 mod flags;
+mod messages;
 
 /// Job Negotiation subprotocol messages.
 pub use flags::SetupConnectionFlags;
