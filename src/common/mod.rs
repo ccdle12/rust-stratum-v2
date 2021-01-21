@@ -9,7 +9,7 @@ pub mod messages;
 
 #[derive(PartialEq, Clone, Copy)]
 /// Protocol is an enum representing each sub protocol of Stratum V2.
-pub enum Protocol {
+pub(crate) enum Protocol {
     /// Mining is the main and only required sub protocol in Stratum V2.
     Mining = 0,
 
@@ -45,6 +45,11 @@ impl From<u8> for Protocol {
     }
 }
 
+/// Trait for identifying some struct/enum as part of a certain sub protocol.
+pub(crate) trait ToProtocol {
+    fn as_protocol(&self) -> Protocol;
+}
+
 /// Trait for encoding and serializing messages and objects according to the
 /// Stratum V2 protocol.
 pub trait Serializable {
@@ -62,6 +67,9 @@ pub trait Deserializable {
 /// Stratum V2 specification.
 pub trait BitFlag {
     fn as_bit_flag(&self) -> u32;
+    fn deserialize_flags(flags: u32) -> Vec<Self>
+    where
+        Self: std::marker::Sized;
 }
 
 /// Trait for creating a serialized frame for networked messages. This trait
@@ -69,9 +77,4 @@ pub trait BitFlag {
 /// the payload.
 pub trait Framable {
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize>;
-}
-
-/// Trait for identifying some struct/enum as part of a certain sub protocol.
-pub trait ToProtocol {
-    fn as_protocol(&self) -> Protocol;
 }
