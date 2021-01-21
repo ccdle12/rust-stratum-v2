@@ -36,27 +36,36 @@ impl BitFlag for SetupConnectionFlags {
             SetupConnectionFlags::RequiresVersionRolling => (1 << 2),
         }
     }
-}
 
-impl SetupConnectionFlags {
-    // TODO: Comments
-    // Maybe move to BitFlag trait?
-    pub fn to_vec_flags(flags: u32) -> Vec<SetupConnectionFlags> {
-        let mut result = Vec::new();
+    /// Gets a vector of flag enum representations from a u32.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// use stratumv2::mining::SetupConnectionFlags;
+    /// use stratumv2::common::BitFlag;
+    ///
+    /// let flags = SetupConnectionFlags::deserialize_flags(7);
+    /// assert_eq!(flags[0], SetupConnectionFlags::RequiresStandardJobs);
+    /// assert_eq!(flags[1], SetupConnectionFlags::RequiresWorkSelection);
+    /// assert_eq!(flags[2], SetupConnectionFlags::RequiresVersionRolling);
+    /// ```
+    fn deserialize_flags(flags: u32) -> Vec<SetupConnectionFlags> {
+        let mut der_flags = Vec::new();
 
         if flags & SetupConnectionFlags::RequiresStandardJobs.as_bit_flag() != 0 {
-            result.push(SetupConnectionFlags::RequiresStandardJobs)
+            der_flags.push(SetupConnectionFlags::RequiresStandardJobs)
         }
 
         if flags & SetupConnectionFlags::RequiresWorkSelection.as_bit_flag() != 0 {
-            result.push(SetupConnectionFlags::RequiresWorkSelection)
+            der_flags.push(SetupConnectionFlags::RequiresWorkSelection)
         }
 
         if flags & SetupConnectionFlags::RequiresVersionRolling.as_bit_flag() != 0 {
-            result.push(SetupConnectionFlags::RequiresVersionRolling)
+            der_flags.push(SetupConnectionFlags::RequiresVersionRolling)
         }
 
-        result
+        der_flags
     }
 }
 
@@ -68,8 +77,9 @@ impl ToProtocol for SetupConnectionFlags {
     }
 }
 
-/// Feature flags for the SetupConnectionSuccess message from the server to
-/// the client for the mining protocol.
+/// Feature flags for the SetupConnectionSuccess message from the Server to the
+/// Cliennt, specifically for the Mining Protocol.
+#[derive(Debug, PartialEq, Clone)]
 pub enum SetupConnectionSuccessFlags {
     // TODO: Link everthing between ``
     /// Flag indicating the upstream node does not accept any changes to the
@@ -89,11 +99,31 @@ impl BitFlag for SetupConnectionSuccessFlags {
             SetupConnectionSuccessFlags::RequiresExtendedChannels => (1 << 1),
         }
     }
-}
 
-impl ToProtocol for SetupConnectionSuccessFlags {
-    fn as_protocol(&self) -> Protocol {
-        Protocol::Mining
+    /// Gets a vector of flag enum representations from a u32.
+    ///
+    /// Example:
+    ///
+    /// ```rust
+    /// use stratumv2::mining::SetupConnectionSuccessFlags;
+    /// use stratumv2::common::BitFlag;
+    ///
+    /// let flags = SetupConnectionSuccessFlags::deserialize_flags(3);
+    /// assert_eq!(flags[0], SetupConnectionSuccessFlags::RequiresFixedVersion);
+    /// assert_eq!(flags[1], SetupConnectionSuccessFlags::RequiresExtendedChannels);
+    /// ```
+    fn deserialize_flags(flags: u32) -> Vec<SetupConnectionSuccessFlags> {
+        let mut der_flags = Vec::new();
+
+        if flags & SetupConnectionSuccessFlags::RequiresFixedVersion.as_bit_flag() != 0 {
+            der_flags.push(SetupConnectionSuccessFlags::RequiresFixedVersion)
+        }
+
+        if flags & SetupConnectionSuccessFlags::RequiresExtendedChannels.as_bit_flag() != 0 {
+            der_flags.push(SetupConnectionSuccessFlags::RequiresExtendedChannels)
+        }
+
+        der_flags
     }
 }
 
@@ -104,7 +134,7 @@ mod test {
     #[test]
     fn u32_to_vec_flags() {
         let set_flags = 7;
-        let flags = SetupConnectionFlags::to_vec_flags(set_flags);
+        let flags = SetupConnectionFlags::deserialize_flags(set_flags);
 
         assert_eq!(flags.len(), 3);
         assert_eq!(flags[0], SetupConnectionFlags::RequiresStandardJobs);
@@ -112,18 +142,18 @@ mod test {
         assert_eq!(flags[2], SetupConnectionFlags::RequiresVersionRolling);
 
         let set_flags = 3;
-        let flags = SetupConnectionFlags::to_vec_flags(set_flags);
+        let flags = SetupConnectionFlags::deserialize_flags(set_flags);
         assert_eq!(flags.len(), 2);
         assert_eq!(flags[0], SetupConnectionFlags::RequiresStandardJobs);
         assert_eq!(flags[1], SetupConnectionFlags::RequiresWorkSelection);
 
         let set_flags = 2;
-        let flags = SetupConnectionFlags::to_vec_flags(set_flags);
+        let flags = SetupConnectionFlags::deserialize_flags(set_flags);
         assert_eq!(flags.len(), 1);
         assert_eq!(flags[0], SetupConnectionFlags::RequiresWorkSelection);
 
         let set_flags = 8;
-        let flags = SetupConnectionFlags::to_vec_flags(set_flags);
+        let flags = SetupConnectionFlags::deserialize_flags(set_flags);
         assert_eq!(flags.len(), 0);
     }
 }
