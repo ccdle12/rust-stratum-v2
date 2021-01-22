@@ -10,104 +10,15 @@ use std::{io, str};
 /// SetupConnection is the first message sent by a client on a new connection.
 /// This SetupConnection struct contains all the fields required for the mining
 /// sub protocol.
-pub struct SetupConnection {
+pub struct MiningSetupConnection {
     internal: RawSetupConnection,
 }
 
-impl SetupConnection {
-    pub fn new<T: Into<String>>(
-        min_version: u16,
-        max_version: u16,
-        flags: &[mining::SetupConnectionFlags],
-        endpoint_host: T,
-        endpoint_port: u16,
-        vendor: T,
-        hardware_version: T,
-        firmware: T,
-        device_id: T,
-    ) -> Result<SetupConnection> {
-        let flags = flags
-            .iter()
-            .map(|x| x.as_bit_flag())
-            .fold(0, |acc, byte| (acc | byte));
-
-        let internal = RawSetupConnection::new(
-            Protocol::Mining,
-            min_version,
-            max_version,
-            flags,
-            endpoint_host.into(),
-            endpoint_port,
-            vendor.into(),
-            hardware_version.into(),
-            firmware.into(),
-            device_id.into(),
-        )?;
-
-        Ok(SetupConnection { internal })
-    }
-
-    fn min_version(&self) -> u16 {
-        self.internal.min_version
-    }
-
-    fn max_version(&self) -> u16 {
-        self.internal.max_version
-    }
-
-    fn flags(&self) -> Vec<mining::SetupConnectionFlags> {
-        SetupConnectionFlags::deserialize_flags(self.internal.flags)
-    }
-
-    fn endpoint_host(&self) -> &str {
-        &self.internal.endpoint_host.0
-    }
-
-    fn endpoint_port(&self) -> u16 {
-        self.internal.endpoint_port
-    }
-
-    fn vendor(&self) -> &str {
-        &self.internal.vendor.0
-    }
-
-    fn hardware_version(&self) -> &str {
-        &self.internal.hardware_version.0
-    }
-
-    fn firmware(&self) -> &str {
-        &self.internal.firmware.0
-    }
-
-    fn device_id(&self) -> &str {
-        &self.internal.device_id.0
-    }
-}
-
-/// Implementation of the Serializable trait to serialize the contents
-/// of the SetupConnection message to the valid message format.
-impl Serializable for SetupConnection {
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        Ok(writer.write(&self.internal.serialize())?)
-    }
-}
-
-// TODO: Docstring
-impl Deserializable for SetupConnection {
-    fn deserialize(bytes: &[u8]) -> Result<SetupConnection> {
-        Ok(SetupConnection {
-            internal: RawSetupConnection::deserialize(bytes)?,
-        })
-    }
-}
-
-/// Implementation of the Framable trait to build a network frame for the
-/// SetupConnection message.
-impl Framable for SetupConnection {
-    fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        Ok(writer.write(&self.internal.frame())?)
-    }
-}
+impl_setup_connection!(
+    Protocol::Mining,
+    SetupConnectionFlags,
+    MiningSetupConnection
+);
 
 /// OpenStandardMiningChannel is a message sent by the client to the server
 /// after a [SetupConnection.Success](struct.SetupConnectionSuccess.html) is
@@ -144,7 +55,7 @@ mod test {
 
     #[test]
     fn new_mining_connection() {
-        let message = SetupConnection::new(
+        let message = MiningSetupConnection::new(
             2,
             2,
             &[mining::SetupConnectionFlags::RequiresStandardJobs],
@@ -161,7 +72,7 @@ mod test {
 
     #[test]
     fn setup_connection_invalid_min_value() {
-        let message = SetupConnection::new(
+        let message = MiningSetupConnection::new(
             1,
             2,
             &[mining::SetupConnectionFlags::RequiresStandardJobs],
@@ -178,7 +89,7 @@ mod test {
 
     #[test]
     fn setup_connection_invalid_max_value() {
-        let message = SetupConnection::new(
+        let message = MiningSetupConnection::new(
             2,
             0,
             &[mining::SetupConnectionFlags::RequiresStandardJobs],
@@ -195,7 +106,7 @@ mod test {
 
     #[test]
     fn setup_connection_empty_vendor() {
-        let message = SetupConnection::new(
+        let message = MiningSetupConnection::new(
             2,
             2,
             &[mining::SetupConnectionFlags::RequiresStandardJobs],
@@ -212,7 +123,7 @@ mod test {
 
     #[test]
     fn setup_connection_empty_firmware() {
-        let message = SetupConnection::new(
+        let message = MiningSetupConnection::new(
             2,
             2,
             &[mining::SetupConnectionFlags::RequiresStandardJobs],
@@ -229,7 +140,7 @@ mod test {
 
     #[test]
     fn serialize_mining_connection() {
-        let message = SetupConnection::new(
+        let message = MiningSetupConnection::new(
             2,
             2,
             &[mining::SetupConnectionFlags::RequiresStandardJobs],
@@ -270,7 +181,7 @@ mod test {
 
     #[test]
     fn serialize_no_flags() {
-        let message = SetupConnection::new(
+        let message = MiningSetupConnection::new(
             2,
             2,
             &[],
@@ -293,7 +204,7 @@ mod test {
 
     #[test]
     fn serialize_multiple_flags() {
-        let message = SetupConnection::new(
+        let message = MiningSetupConnection::new(
             2,
             2,
             &[
@@ -318,7 +229,7 @@ mod test {
 
     #[test]
     fn serialilze_all_flags() {
-        let message = SetupConnection::new(
+        let message = MiningSetupConnection::new(
             2,
             2,
             &[
@@ -364,7 +275,7 @@ mod test {
             0x73, 0x6f, 0x6d, 0x65, 0x2d, 0x75, 0x75, 0x69, 0x64, // device_id
         ];
 
-        let message = SetupConnection::deserialize(&input).unwrap();
+        let message = MiningSetupConnection::deserialize(&input).unwrap();
         assert_eq!(message.min_version(), 2);
         assert_eq!(message.max_version(), 2);
         assert_eq!(
@@ -381,7 +292,7 @@ mod test {
 
     #[test]
     fn frame_setup_connection() {
-        let message = SetupConnection::new(
+        let message = MiningSetupConnection::new(
             2,
             2,
             &[mining::SetupConnectionFlags::RequiresStandardJobs],
