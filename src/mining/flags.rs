@@ -54,15 +54,24 @@ mod test {
         let flags = SetupConnectionFlags::deserialize_flags(set_flags);
 
         assert_eq!(flags.len(), 3);
-        assert_eq!(flags[0], SetupConnectionFlags::RequiresStandardJobs);
-        assert_eq!(flags[1], SetupConnectionFlags::RequiresWorkSelection);
-        assert_eq!(flags[2], SetupConnectionFlags::RequiresVersionRolling);
+        assert_eq!(
+            flags,
+            &[
+                SetupConnectionFlags::RequiresStandardJobs,
+                SetupConnectionFlags::RequiresWorkSelection,
+                SetupConnectionFlags::RequiresVersionRolling
+            ]
+        );
 
         let set_flags = 3;
         let flags = SetupConnectionFlags::deserialize_flags(set_flags);
-        assert_eq!(flags.len(), 2);
-        assert_eq!(flags[0], SetupConnectionFlags::RequiresStandardJobs);
-        assert_eq!(flags[1], SetupConnectionFlags::RequiresWorkSelection);
+        assert_eq!(
+            flags,
+            &[
+                SetupConnectionFlags::RequiresStandardJobs,
+                SetupConnectionFlags::RequiresWorkSelection,
+            ]
+        );
 
         let set_flags = 2;
         let flags = SetupConnectionFlags::deserialize_flags(set_flags);
