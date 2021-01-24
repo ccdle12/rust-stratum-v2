@@ -2,9 +2,11 @@ use crate::common::types::{MessageTypes, STR0_255};
 use crate::common::{BitFlag, Deserializable, Framable, Protocol, Serializable};
 use crate::error::{Error, Result};
 use crate::job_negotiation::SetupConnectionFlags;
+use std::borrow::Cow;
 use std::{io, str};
 
 // Implementation of the SetupConenction message for the Job Negotiation Protocol.
+// use std::borrow::Cow;
 impl_setup_connection!(
     Protocol::JobNegotiation,
     SetupConnectionFlags,
@@ -19,7 +21,7 @@ mod tests {
         let message = SetupConnection::new(
             2,
             2,
-            vec![SetupConnectionFlags::RequiresAsyncJobMining],
+            Cow::Borrowed(&[SetupConnectionFlags::RequiresAsyncJobMining]),
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -36,7 +38,7 @@ mod tests {
         let message = SetupConnection::new(
             2,
             2,
-            vec![SetupConnectionFlags::RequiresAsyncJobMining],
+            Cow::Borrowed(&[SetupConnectionFlags::RequiresAsyncJobMining]),
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -59,7 +61,7 @@ mod tests {
         let message = SetupConnection::new(
             2,
             2,
-            vec![],
+            Cow::Borrowed(&[]),
             "0.0.0.0",
             8545,
             "Bitmain",
