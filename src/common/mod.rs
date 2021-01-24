@@ -70,8 +70,3 @@ pub trait BitFlag {
 pub trait Framable {
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize>;
 }
-
-/// Trait for identifying some struct/enum as part of a certain sub protocol.
-pub trait ToProtocol {
-    fn as_protocol(&self) -> Protocol;
-}

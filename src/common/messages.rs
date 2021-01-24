@@ -1,5 +1,5 @@
 use crate::common::types::{MessageTypes, STR0_255};
-use crate::common::{BitFlag, Framable, Serializable, ToProtocol};
+use crate::common::{BitFlag, Framable, Serializable};
 use crate::error::{Error, Result};
 use std::{fmt, io};
 
@@ -7,7 +7,7 @@ use std::{fmt, io};
 /// Server to a Client when a connection is accepted.
 pub struct SetupConnectionSuccess<'a, B>
 where
-    B: BitFlag + ToProtocol,
+    B: BitFlag,
 {
     /// Version proposed by the connecting node as one of the verions supported
     /// by the upstream node. The version will be used during the lifetime of
@@ -20,7 +20,7 @@ where
 
 impl<'a, B> SetupConnectionSuccess<'a, B>
 where
-    B: BitFlag + ToProtocol,
+    B: BitFlag,
 {
     /// Constructor for the SetupConnectionSuccess message.
     pub fn new(used_version: u16, flags: &[B]) -> SetupConnectionSuccess<B> {
@@ -33,7 +33,7 @@ where
 
 impl<B> Serializable for SetupConnectionSuccess<'_, B>
 where
-    B: BitFlag + ToProtocol,
+    B: BitFlag,
 {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let byte_flags = self
@@ -50,7 +50,7 @@ where
 
 impl<B> Framable for SetupConnectionSuccess<'_, B>
 where
-    B: BitFlag + ToProtocol,
+    B: BitFlag,
 {
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut payload = Vec::new();
@@ -113,7 +113,7 @@ impl fmt::Display for SetupConnectionErrorCodes {
 /// flags.
 pub struct SetupConnectionError<'a, B>
 where
-    B: BitFlag + ToProtocol,
+    B: BitFlag,
 {
     /// Indicates all the flags that the server does NOT support.
     pub flags: &'a [B],
@@ -124,7 +124,7 @@ where
 
 impl<B> SetupConnectionError<'_, B>
 where
-    B: BitFlag + ToProtocol,
+    B: BitFlag,
 {
     /// Constructor for the SetupConnectionError message.
     pub fn new(
@@ -146,7 +146,7 @@ where
 
 impl<B> Serializable for SetupConnectionError<'_, B>
 where
-    B: BitFlag + ToProtocol,
+    B: BitFlag,
 {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let byte_flags = self
@@ -167,7 +167,7 @@ where
 
 impl<B> Framable for SetupConnectionError<'_, B>
 where
-    B: BitFlag + ToProtocol,
+    B: BitFlag,
 {
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let mut payload = Vec::new();

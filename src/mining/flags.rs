@@ -1,4 +1,4 @@
-use crate::common::{BitFlag, Protocol, ToProtocol};
+use crate::common::BitFlag;
 
 /// Feature flags that can be passed to a SetupConnection message in the mining
 /// sub protocol. Each flag corresponds to a set bit.
@@ -24,15 +24,6 @@ impl_message_flag!(
     SetupConnectionFlags::RequiresVersionRolling => 2
 );
 
-// TODO: Remove
-/// Implement ToProtocol to be able to match the flags to a specific Stratum V2
-/// Protocol.
-impl ToProtocol for SetupConnectionFlags {
-    fn as_protocol(&self) -> Protocol {
-        Protocol::Mining
-    }
-}
-
 /// Feature flags for the SetupConnectionSuccess message from the server to
 /// the client for the mining protocol.
 pub enum SetupConnectionSuccessFlags {
@@ -52,13 +43,6 @@ impl_message_flag!(
     SetupConnectionSuccessFlags::RequiresFixedVersion => 0,
     SetupConnectionSuccessFlags::RequiresExtendedChannels => 1
 );
-
-// TODO: Remove
-impl ToProtocol for SetupConnectionSuccessFlags {
-    fn as_protocol(&self) -> Protocol {
-        Protocol::Mining
-    }
-}
 
 #[cfg(test)]
 mod test {
