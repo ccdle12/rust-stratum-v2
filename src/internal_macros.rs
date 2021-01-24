@@ -202,8 +202,8 @@ macro_rules! impl_setup_connection {
             fn deserialize(bytes: &[u8]) -> Result<$conn_type> {
                 // TODO: Don't handle errors yet.
                 // TODO: Fuzz test this
-                let offset = 0;
-                let protocol_byte = &bytes[offset];
+                // let offset = 0;
+                // let protocol_byte = &bytes[offset];
                 // TODO: Maybe return an error if the bytes doesn't match
                 // the protocol impl
                 // let protocol = Protocol::from(*protocol_byte);
