@@ -265,23 +265,12 @@ mod test {
         assert_eq!(message.min_version, 2);
         assert_eq!(message.max_version, 2);
         assert_eq!(message.flags[0], SetupConnectionFlags::RequiresStandardJobs);
-
-        let endpoint_host: String = message.endpoint_host.into();
-        assert_eq!(endpoint_host, "0.0.0.0".to_string()); // TODO: Do an auto string comparison from STR0_255 TO &str and String
+        assert_eq!(message.endpoint_host, "0.0.0.0".to_string());
         assert_eq!(message.endpoint_port, 8545);
-
-        // TODO: Auto comparison between STR0_255 into &str and String
-        let vendor: String = message.vendor.into();
-        assert_eq!(vendor, "Bitmain".to_string());
-
-        let hardware_version: String = message.hardware_version.into();
-        assert_eq!(hardware_version, "S9i 13.5");
-
-        let firmware: String = message.firmware.into();
-        assert_eq!(firmware, "braiins-os-2018-09-22-1-hash");
-
-        let device_id: String = message.device_id.into();
-        assert_eq!(device_id, "some-uuid");
+        assert_eq!(message.vendor, "Bitmain".to_string());
+        assert_eq!(message.hardware_version, "S9i 13.5".to_string());
+        assert_eq!(message.firmware, "braiins-os-2018-09-22-1-hash".to_string());
+        assert_eq!(message.device_id, "some-uuid".to_string());
     }
 
     #[test]
