@@ -2,6 +2,7 @@ use crate::common::{BitFlag, Protocol, ToProtocol};
 
 /// Feature flags that can be passed to a SetupConnection message for the
 /// job negotiation protocol. Each flag corresponds to a set bit.
+#[derive(Debug, PartialEq, Clone)]
 pub enum SetupConnectionFlags {
     // TODO: Add hyperlinks to all everything between ``
     /// Flag indicating that the `mining_job_token` from `AllocateMiningJobToken.Success`
@@ -26,6 +27,20 @@ impl BitFlag for SetupConnectionFlags {
         match self {
             SetupConnectionFlags::RequiresAsyncJobMining => 1,
         }
+    }
+}
+
+impl SetupConnectionFlags {
+    // TODO: Comments
+    // Maybe move to BitFlag trait?
+    pub fn to_vec_flags(flags: u32) -> Vec<SetupConnectionFlags> {
+        let mut result = Vec::new();
+
+        if flags & SetupConnectionFlags::RequiresAsyncJobMining.as_bit_flag() != 0 {
+            result.push(SetupConnectionFlags::RequiresAsyncJobMining)
+        }
+
+        result
     }
 }
 

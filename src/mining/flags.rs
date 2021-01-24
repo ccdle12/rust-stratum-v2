@@ -17,49 +17,14 @@ pub enum SetupConnectionFlags {
     RequiresVersionRolling,
 }
 
-impl BitFlag for SetupConnectionFlags {
-    /// Gets the set bit representation of a SetupConnectionFlag as a u32.
-    ///
-    /// Example:
-    ///
-    /// ```rust
-    /// use stratumv2::mining::SetupConnectionFlags;
-    /// use stratumv2::common::BitFlag;
-    ///
-    /// let standard_job = SetupConnectionFlags::RequiresStandardJobs.as_bit_flag();
-    /// assert_eq!(standard_job, 0x01);
-    /// ```
-    fn as_bit_flag(&self) -> u32 {
-        match self {
-            SetupConnectionFlags::RequiresStandardJobs => 1,
-            SetupConnectionFlags::RequiresWorkSelection => (1 << 1),
-            SetupConnectionFlags::RequiresVersionRolling => (1 << 2),
-        }
-    }
-}
+impl_message_flag!(
+    SetupConnectionFlags,
+    SetupConnectionFlags::RequiresStandardJobs => 0,
+    SetupConnectionFlags::RequiresWorkSelection => 1,
+    SetupConnectionFlags::RequiresVersionRolling => 2
+);
 
-impl SetupConnectionFlags {
-    // TODO: Comments
-    // Maybe move to BitFlag trait?
-    pub fn to_vec_flags(flags: u32) -> Vec<SetupConnectionFlags> {
-        let mut result = Vec::new();
-
-        if flags & SetupConnectionFlags::RequiresStandardJobs.as_bit_flag() != 0 {
-            result.push(SetupConnectionFlags::RequiresStandardJobs)
-        }
-
-        if flags & SetupConnectionFlags::RequiresWorkSelection.as_bit_flag() != 0 {
-            result.push(SetupConnectionFlags::RequiresWorkSelection)
-        }
-
-        if flags & SetupConnectionFlags::RequiresVersionRolling.as_bit_flag() != 0 {
-            result.push(SetupConnectionFlags::RequiresVersionRolling)
-        }
-
-        result
-    }
-}
-
+// TODO: Remove
 /// Implement ToProtocol to be able to match the flags to a specific Stratum V2
 /// Protocol.
 impl ToProtocol for SetupConnectionFlags {
@@ -82,15 +47,13 @@ pub enum SetupConnectionSuccessFlags {
     RequiresExtendedChannels,
 }
 
-impl BitFlag for SetupConnectionSuccessFlags {
-    fn as_bit_flag(&self) -> u32 {
-        match self {
-            SetupConnectionSuccessFlags::RequiresFixedVersion => 1,
-            SetupConnectionSuccessFlags::RequiresExtendedChannels => (1 << 1),
-        }
-    }
-}
+impl_message_flag!(
+    SetupConnectionSuccessFlags,
+    SetupConnectionSuccessFlags::RequiresFixedVersion => 0,
+    SetupConnectionSuccessFlags::RequiresExtendedChannels => 1
+);
 
+// TODO: Remove
 impl ToProtocol for SetupConnectionSuccessFlags {
     fn as_protocol(&self) -> Protocol {
         Protocol::Mining
