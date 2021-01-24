@@ -7,7 +7,7 @@ pub mod types;
 /// Messages common to all Stratum V2 protocols.
 pub mod messages;
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 /// Protocol is an enum representing each sub protocol of Stratum V2.
 pub enum Protocol {
     /// Mining is the main and only required sub protocol in Stratum V2.

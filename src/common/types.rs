@@ -7,7 +7,7 @@ pub(crate) type U256 = [u8; 32];
 
 /// STR0_255 is a struct that contains a String limited to a maximum of 255 bytes.
 /// The byte representation will contain a <1 byte length prefix + variable length STR0_255>.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct STR0_255(pub(crate) String);
 
 impl STR0_255 {
