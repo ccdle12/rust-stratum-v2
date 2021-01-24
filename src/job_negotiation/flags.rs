@@ -11,35 +11,4 @@ pub enum SetupConnectionFlags {
     RequiresAsyncJobMining,
 }
 
-impl BitFlag for SetupConnectionFlags {
-    /// Gets the set bit representation of a SetupConnectionFlag as a u32.
-    ///
-    /// Example:
-    ///
-    /// ```rust
-    /// use stratumv2::job_negotiation::SetupConnectionFlags;
-    /// use stratumv2::common::BitFlag;
-    ///
-    /// let standard_job = SetupConnectionFlags::RequiresAsyncJobMining.as_bit_flag();
-    /// assert_eq!(standard_job, 0x01);
-    /// ```
-    fn as_bit_flag(&self) -> u32 {
-        match self {
-            SetupConnectionFlags::RequiresAsyncJobMining => 1,
-        }
-    }
-}
-
-impl SetupConnectionFlags {
-    // TODO: Comments
-    // Maybe move to BitFlag trait?
-    pub fn to_vec_flags(flags: u32) -> Vec<SetupConnectionFlags> {
-        let mut result = Vec::new();
-
-        if flags & SetupConnectionFlags::RequiresAsyncJobMining.as_bit_flag() != 0 {
-            result.push(SetupConnectionFlags::RequiresAsyncJobMining)
-        }
-
-        result
-    }
-}
+impl_message_flag!(SetupConnectionFlags, SetupConnectionFlags::RequiresAsyncJobMining => 0);

@@ -49,9 +49,9 @@ mod test {
     use super::*;
 
     #[test]
-    fn u32_to_vec_flags() {
+    fn u32_deserialize_flags() {
         let set_flags = 7;
-        let flags = SetupConnectionFlags::to_vec_flags(set_flags);
+        let flags = SetupConnectionFlags::deserialize_flags(set_flags);
 
         assert_eq!(flags.len(), 3);
         assert_eq!(flags[0], SetupConnectionFlags::RequiresStandardJobs);
@@ -59,18 +59,18 @@ mod test {
         assert_eq!(flags[2], SetupConnectionFlags::RequiresVersionRolling);
 
         let set_flags = 3;
-        let flags = SetupConnectionFlags::to_vec_flags(set_flags);
+        let flags = SetupConnectionFlags::deserialize_flags(set_flags);
         assert_eq!(flags.len(), 2);
         assert_eq!(flags[0], SetupConnectionFlags::RequiresStandardJobs);
         assert_eq!(flags[1], SetupConnectionFlags::RequiresWorkSelection);
 
         let set_flags = 2;
-        let flags = SetupConnectionFlags::to_vec_flags(set_flags);
+        let flags = SetupConnectionFlags::deserialize_flags(set_flags);
         assert_eq!(flags.len(), 1);
         assert_eq!(flags[0], SetupConnectionFlags::RequiresWorkSelection);
 
         let set_flags = 8;
-        let flags = SetupConnectionFlags::to_vec_flags(set_flags);
+        let flags = SetupConnectionFlags::deserialize_flags(set_flags);
         assert_eq!(flags.len(), 0);
     }
 }

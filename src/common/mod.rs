@@ -62,6 +62,9 @@ pub trait Deserializable {
 /// Stratum V2 specification.
 pub trait BitFlag {
     fn as_bit_flag(&self) -> u32;
+    fn deserialize_flags(flags: u32) -> Vec<Self>
+    where
+        Self: std::marker::Sized;
 }
 
 /// Trait for creating a serialized frame for networked messages. This trait

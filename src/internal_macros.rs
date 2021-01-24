@@ -227,7 +227,7 @@ macro_rules! impl_setup_connection {
                     .iter()
                     .map(|x| *x as u32)
                     .fold(0, |accumulator, byte| (accumulator | byte));
-                let flags = $flags::to_vec_flags(set_flags);
+                let flags = $flags::deserialize_flags(set_flags);
 
                 let mut start = offset;
                 let endpoint_host_length = *&bytes[start] as usize;
@@ -291,25 +291,36 @@ macro_rules! impl_message_flag {
     ($flag_type:ident, $($variant:path => $shift:expr),*) => {
 
         impl BitFlag for $flag_type {
-            // /// Gets the set bit representation of a SetupConnectionFlag as a u32.
-            // /// Example:
-            // /// ```rust
-            // /// use stratumv2::mining::SetupConnectionFlags;
-            // /// use stratumv2::common::BitFlag;
-            // /// let standard_job = SetupConnectionFlags::RequiresStandardJobs.as_bit_flag();
-            // /// assert_eq!(standard_job, 0x01);
-            // /// ```
+            /// Gets the set bit representation of a SetupConnectionFlag as a u32.
+            ///
+            /// # Example
+            ///
+            /// ```rust
+            /// use stratumv2::common::BitFlag;
+            /// use stratumv2::mining;
+            ///
+            /// let standard_job = mining::SetupConnectionFlags::RequiresStandardJobs.as_bit_flag();
+            /// assert_eq!(standard_job, 0x01);
+            /// ```
             fn as_bit_flag(&self) -> u32 {
                 match self {
                     $($variant => (1 << $shift)),*
                 }
             }
-        }
 
-        impl $flag_type {
-            // TODO: Comments
-            // Maybe move to BitFlag trait?
-            pub fn to_vec_flags(flags: u32) -> Vec<$flag_type> {
+            /// Gets a vector of enums representing message flags.
+            ///
+            /// # Example
+            ///
+            /// ```rust
+            /// use stratumv2::common::BitFlag;
+            /// use stratumv2::mining;
+            ///
+            /// let flags = mining::SetupConnectionFlags::deserialize_flags(3);
+            /// assert_eq!(flags[0], mining::SetupConnectionFlags::RequiresStandardJobs);
+            /// assert_eq!(flags[1], mining::SetupConnectionFlags::RequiresWorkSelection);
+            /// ```
+            fn deserialize_flags(flags: u32) -> Vec<$flag_type> {
                 let mut result = Vec::new();
 
                 $(if flags & $variant.as_bit_flag() != 0 {
