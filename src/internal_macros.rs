@@ -285,8 +285,6 @@ macro_rules! impl_setup_connection {
 
 /// Implementation of the requirements for the flags in the SetupConnection
 /// messages for each sub protocol.
-// TODO:
-#[allow(unused_macros)]
 macro_rules! impl_message_flag {
     ($flag_type:ident, $($variant:path => $shift:expr),*) => {
 
@@ -330,5 +328,17 @@ macro_rules! impl_message_flag {
                 result
             }
         }
+    };
+}
+
+/// An internal macro for implementing the From trait for existing Error types
+/// into the projects Error type variants.
+macro_rules! impl_error_conversions {
+    ($($error_type:path => $error_variant:path),*) => {
+        $(impl From<$error_type> for Error {
+            fn from(err: $error_type) -> Error {
+                $error_variant(err)
+            }
+        })*
     };
 }

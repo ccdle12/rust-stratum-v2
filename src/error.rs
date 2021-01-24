@@ -5,7 +5,7 @@ use std::io;
 #[derive(Debug)]
 pub enum Error {
     VersionError(String),
-    IOErorr(io::Error),
+    IOError(io::Error),
     Utf8Error(std::str::Utf8Error),
     ProtocolMismatchError(String),
     RequirementError(String),
@@ -15,7 +15,7 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             Error::VersionError(ref message) => write!(f, "{}", message),
-            Error::IOErorr(ref message) => write!(f, "{}", message),
+            Error::IOError(ref message) => write!(f, "{}", message),
             Error::Utf8Error(ref message) => write!(f, "{}", message),
             Error::ProtocolMismatchError(ref message) => write!(f, "{}", message),
             Error::RequirementError(ref message) => write!(f, "{}", message),
@@ -23,17 +23,10 @@ impl fmt::Display for Error {
     }
 }
 
-impl From<io::Error> for Error {
-    fn from(err: io::Error) -> Error {
-        Error::IOErorr(err)
-    }
-}
-
-impl From<std::str::Utf8Error> for Error {
-    fn from(err: std::str::Utf8Error) -> Error {
-        Error::Utf8Error(err)
-    }
-}
+impl_error_conversions!(
+    std::str::Utf8Error => Error::Utf8Error,
+    io::Error => Error::IOError
+);
 
 /// Alias Result type for the library.
 pub type Result<T> = std::result::Result<T, Error>;
