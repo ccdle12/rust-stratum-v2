@@ -1,7 +1,8 @@
 use crate::common::types::{MessageTypes, STR0_255};
 use crate::common::{BitFlag, Framable, Serializable, ToProtocol};
 use crate::error::{Error, Result};
-use std::{fmt, io};
+use crate::mining;
+use std::{fmt, io, str};
 
 /// SetupConnectionSuccess is one of the required responses from a
 /// Server to a Client when a connection is accepted.
