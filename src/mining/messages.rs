@@ -6,7 +6,7 @@ use std::borrow::Cow;
 use std::{io, str};
 
 // Implementation of the SetupConenction message for the Mining Protocol.
-impl_setup_connection!(Protocol::Mining, SetupConnectionFlags, SetupConnection);
+impl_setup_connection!(Protocol::Mining, SetupConnectionFlags);
 
 /// OpenStandardMiningChannel is a message sent by the client to the server
 /// after a [SetupConnection.Success](struct.SetupConnectionSuccess.html) is
