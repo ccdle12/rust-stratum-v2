@@ -20,16 +20,17 @@ macro_rules! impl_setup_connection {
         /// # Examples
         ///
         /// ```rust
+        /// use std::borrow::Cow;
         /// use stratumv2::mining;
         /// use stratumv2::job_negotiation;
         ///
         /// let mining_connection = mining::SetupConnection::new(
         ///    2,
         ///    2,
-        ///    vec![
+        ///    Cow::Borrowed(&[
         ///        mining::SetupConnectionFlags::RequiresStandardJobs,
         ///        mining::SetupConnectionFlags::RequiresVersionRolling
-        ///     ],
+        ///     ]),
         ///    "0.0.0.0",
         ///    8545,
         ///    "Bitmain",
@@ -46,9 +47,9 @@ macro_rules! impl_setup_connection {
         /// let job_negotiation_connection = job_negotiation::SetupConnection::new(
         ///    2,
         ///    2,
-        ///    vec![
+        ///    Cow::Borrowed(&[
         ///        job_negotiation::SetupConnectionFlags::RequiresAsyncJobMining,
-        ///     ],
+        ///     ]),
         ///    "0.0.0.0",
         ///    8545,
         ///    "Bitmain",
@@ -58,7 +59,8 @@ macro_rules! impl_setup_connection {
         /// );
         /// assert!(job_negotiation_connection.is_ok());
         /// ```
-        pub struct $conn_type {
+        #[derive(Debug, Clone)]
+        pub struct $conn_type<'a> {
             /// Used to indicate the protocol the client wants to use on the new connection.
             protocol: Protocol,
 
@@ -69,7 +71,7 @@ macro_rules! impl_setup_connection {
             pub max_version: u16,
 
             /// Flags indicating the optional protocol features the client supports.
-            pub flags: Vec<$flags>,
+            pub flags: Cow<'a, [$flags]>,
 
             /// Used to indicate the hostname or IP address of the endpoint.
             pub endpoint_host: STR0_255,
@@ -93,11 +95,11 @@ macro_rules! impl_setup_connection {
             pub device_id: STR0_255,
         }
 
-        impl $conn_type {
+        impl<'a> $conn_type<'a> {
             pub fn new<T: Into<String>>(
                 min_version: u16,
                 max_version: u16,
-                flags: Vec<$flags>,
+                flags: Cow<'a, [$flags]>,
                 endpoint_host: T,
                 endpoint_port: u16,
                 vendor: T,
@@ -144,7 +146,7 @@ macro_rules! impl_setup_connection {
 
         /// Implementation of the Serializable trait to serialize the contents
         /// of the SetupConnection message to the valid message format.
-        impl Serializable for $conn_type {
+        impl<'a> Serializable for $conn_type<'a> {
             fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
                 let byte_flags = self
                     .flags
@@ -172,7 +174,7 @@ macro_rules! impl_setup_connection {
 
         /// Implementation of the Framable trait to build a network frame for the
         /// SetupConnection message.
-        impl Framable for $conn_type {
+        impl<'a> Framable for $conn_type<'a> {
             fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
                 let mut payload = Vec::new();
                 let size = *&self.serialize(&mut payload)?;
@@ -198,8 +200,8 @@ macro_rules! impl_setup_connection {
         //   - [] Read bytes and assign bytes to a deserialized type
         //   - [] Pass the variables into a constructor and return errors or value
         // 2. Add docstrings
-        impl Deserializable for $conn_type {
-            fn deserialize(bytes: &[u8]) -> Result<$conn_type> {
+        impl<'a> Deserializable for $conn_type<'a> {
+            fn deserialize(bytes: &[u8]) -> Result<$conn_type<'a>> {
                 // TODO: Don't handle errors yet.
                 // TODO: Fuzz test this
                 // let offset = 0;
@@ -227,7 +229,7 @@ macro_rules! impl_setup_connection {
                     .iter()
                     .map(|x| *x as u32)
                     .fold(0, |accumulator, byte| (accumulator | byte));
-                let flags = $flags::deserialize_flags(set_flags);
+                let flags = Cow::from($flags::deserialize_flags(set_flags));
 
                 let mut start = offset;
                 let endpoint_host_length = *&bytes[start] as usize;

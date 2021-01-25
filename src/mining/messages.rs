@@ -2,6 +2,7 @@ use crate::common::types::{MessageTypes, STR0_255, U256};
 use crate::common::{BitFlag, Deserializable, Framable, Protocol, Serializable};
 use crate::error::{Error, Result};
 use crate::mining::SetupConnectionFlags;
+use std::borrow::Cow;
 use std::{io, str};
 
 // Implementation of the SetupConenction message for the Mining Protocol.
@@ -45,7 +46,7 @@ mod test {
         let message = SetupConnection::new(
             2,
             2,
-            vec![SetupConnectionFlags::RequiresStandardJobs],
+            Cow::Borrowed(&[SetupConnectionFlags::RequiresStandardJobs]),
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -62,7 +63,7 @@ mod test {
         let message = SetupConnection::new(
             1,
             2,
-            vec![SetupConnectionFlags::RequiresStandardJobs],
+            Cow::Borrowed(&[SetupConnectionFlags::RequiresStandardJobs]),
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -79,7 +80,7 @@ mod test {
         let message = SetupConnection::new(
             2,
             0,
-            vec![SetupConnectionFlags::RequiresStandardJobs],
+            Cow::Borrowed(&[SetupConnectionFlags::RequiresStandardJobs]),
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -95,7 +96,7 @@ mod test {
         let message = SetupConnection::new(
             2,
             2,
-            vec![SetupConnectionFlags::RequiresStandardJobs],
+            Cow::Borrowed(&[SetupConnectionFlags::RequiresStandardJobs]),
             "0.0.0.0",
             8545,
             "",
@@ -112,7 +113,7 @@ mod test {
         let message = SetupConnection::new(
             2,
             2,
-            vec![SetupConnectionFlags::RequiresStandardJobs],
+            Cow::Borrowed(&[SetupConnectionFlags::RequiresStandardJobs]),
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -129,7 +130,7 @@ mod test {
         let message = SetupConnection::new(
             2,
             2,
-            vec![SetupConnectionFlags::RequiresStandardJobs],
+            Cow::Borrowed(&[SetupConnectionFlags::RequiresStandardJobs]),
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -170,7 +171,7 @@ mod test {
         let message = SetupConnection::new(
             2,
             2,
-            vec![],
+            Cow::Borrowed(&[]),
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -193,10 +194,10 @@ mod test {
         let message = SetupConnection::new(
             2,
             2,
-            vec![
+            Cow::Borrowed(&[
                 SetupConnectionFlags::RequiresStandardJobs,
                 SetupConnectionFlags::RequiresVersionRolling,
-            ],
+            ]),
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -218,11 +219,11 @@ mod test {
         let message = SetupConnection::new(
             2,
             2,
-            vec![
+            Cow::Borrowed(&[
                 SetupConnectionFlags::RequiresStandardJobs,
                 SetupConnectionFlags::RequiresWorkSelection,
                 SetupConnectionFlags::RequiresVersionRolling,
-            ],
+            ]),
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -278,7 +279,7 @@ mod test {
         let message = SetupConnection::new(
             2,
             2,
-            vec![SetupConnectionFlags::RequiresStandardJobs],
+            Cow::Borrowed(&[SetupConnectionFlags::RequiresStandardJobs]),
             "0.0.0.0",
             8545,
             "Bitmain",
