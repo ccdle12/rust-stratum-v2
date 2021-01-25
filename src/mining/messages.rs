@@ -125,7 +125,7 @@ mod test {
     }
 
     #[test]
-    fn serialize_mining_connection() {
+    fn serialize_setup_connection() {
         let message = SetupConnection::new(
             2,
             2,
@@ -240,7 +240,7 @@ mod test {
     }
 
     #[test]
-    fn deserialize_mining_connection() {
+    fn deserialize_setup_connection() {
         let input = [
             0x00, // protocol
             0x02, 0x00, // min_version
