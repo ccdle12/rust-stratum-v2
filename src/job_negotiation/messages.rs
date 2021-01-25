@@ -7,11 +7,7 @@ use std::{io, str};
 
 // Implementation of the SetupConenction message for the Job Negotiation Protocol.
 // use std::borrow::Cow;
-impl_setup_connection!(
-    Protocol::JobNegotiation,
-    SetupConnectionFlags,
-    SetupConnection
-);
+impl_setup_connection!(Protocol::JobNegotiation, SetupConnectionFlags);
 
 mod tests {
     use super::*;

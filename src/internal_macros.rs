@@ -11,7 +11,7 @@ macro_rules! serialize {
 /// Implemention of the requirements for a SetupConnection message for each
 /// sub protocol.
 macro_rules! impl_setup_connection {
-    ($protocol:expr, $flags:ident, $conn_type:ident) => {
+    ($protocol:expr, $flags:ident) => {
         /// SetupConnection is the first message sent by a client on a new connection.
         ///
         /// The SetupConnection struct contains all the common fields for the
@@ -60,7 +60,7 @@ macro_rules! impl_setup_connection {
         /// assert!(job_negotiation_connection.is_ok());
         /// ```
         #[derive(Debug, Clone)]
-        pub struct $conn_type<'a> {
+        pub struct SetupConnection<'a> {
             /// Used to indicate the protocol the client wants to use on the new connection.
             protocol: Protocol,
 
@@ -95,7 +95,7 @@ macro_rules! impl_setup_connection {
             pub device_id: STR0_255,
         }
 
-        impl<'a> $conn_type<'a> {
+        impl<'a> SetupConnection<'a> {
             pub fn new<T: Into<String>>(
                 min_version: u16,
                 max_version: u16,
@@ -106,7 +106,7 @@ macro_rules! impl_setup_connection {
                 hardware_version: T,
                 firmware: T,
                 device_id: T,
-            ) -> Result<$conn_type> {
+            ) -> Result<SetupConnection> {
                 let vendor = vendor.into();
                 if *&vendor.is_empty() {
                     return Err(Error::RequirementError(
@@ -129,7 +129,7 @@ macro_rules! impl_setup_connection {
                     return Err(Error::VersionError("max_version must be atleast 2".into()));
                 }
 
-                Ok($conn_type {
+                Ok(SetupConnection {
                     protocol: $protocol,
                     min_version,
                     max_version,
@@ -146,7 +146,7 @@ macro_rules! impl_setup_connection {
 
         /// Implementation of the Serializable trait to serialize the contents
         /// of the SetupConnection message to the valid message format.
-        impl<'a> Serializable for $conn_type<'a> {
+        impl<'a> Serializable for SetupConnection<'a> {
             fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
                 let byte_flags = self
                     .flags
@@ -174,7 +174,7 @@ macro_rules! impl_setup_connection {
 
         /// Implementation of the Framable trait to build a network frame for the
         /// SetupConnection message.
-        impl<'a> Framable for $conn_type<'a> {
+        impl<'a> Framable for SetupConnection<'a> {
             fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
                 let mut payload = Vec::new();
                 let size = *&self.serialize(&mut payload)?;
@@ -200,8 +200,8 @@ macro_rules! impl_setup_connection {
         //   - [] Read bytes and assign bytes to a deserialized type
         //   - [] Pass the variables into a constructor and return errors or value
         // 2. Add docstrings
-        impl<'a> Deserializable for $conn_type<'a> {
-            fn deserialize(bytes: &[u8]) -> Result<$conn_type<'a>> {
+        impl<'a> Deserializable for SetupConnection<'a> {
+            fn deserialize(bytes: &[u8]) -> Result<SetupConnection<'a>> {
                 // TODO: Don't handle errors yet.
                 // TODO: Fuzz test this
                 // let offset = 0;
@@ -269,7 +269,7 @@ macro_rules! impl_setup_connection {
                 let offset = start + device_id_length;
                 let device_id = &bytes[start as usize..offset as usize];
 
-                $conn_type::new(
+                SetupConnection::new(
                     min_version,
                     max_version,
                     flags,
