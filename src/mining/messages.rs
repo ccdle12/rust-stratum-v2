@@ -21,7 +21,6 @@ pub struct OpenStandardMiningChannel {
 }
 
 impl OpenStandardMiningChannel {
-    /// Constructor for the OpenStandardMiningChannel message.
     fn new(
         request_id: u32,
         user_identity: String,
@@ -290,7 +289,6 @@ mod test {
         .unwrap();
 
         let mut buffer: Vec<u8> = Vec::new();
-
         let size = message.frame(&mut buffer).unwrap();
         assert_eq!(size, 81);
 
