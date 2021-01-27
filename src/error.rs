@@ -9,6 +9,7 @@ pub enum Error {
     Utf8Error(std::str::Utf8Error),
     ProtocolMismatchError(String),
     RequirementError(String),
+    DeserializationError(String),
 }
 
 impl fmt::Display for Error {
@@ -19,6 +20,7 @@ impl fmt::Display for Error {
             Error::Utf8Error(ref message) => write!(f, "{}", message),
             Error::ProtocolMismatchError(ref message) => write!(f, "{}", message),
             Error::RequirementError(ref message) => write!(f, "{}", message),
+            Error::DeserializationError(ref message) => write!(f, "{}", message),
         }
     }
 }

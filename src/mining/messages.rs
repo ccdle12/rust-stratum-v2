@@ -305,7 +305,7 @@ mod test {
 
         // Append each byte from input to a new vector of bytes. This should
         // return errors each time on deserialization since the message is
-        // malformed.
+        // malformed because the message is incomplete.
         let mut output = vec![];
         for i in input.iter() {
             assert!(SetupConnection::deserialize(&output).is_err());
