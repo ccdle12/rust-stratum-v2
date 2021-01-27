@@ -30,3 +30,8 @@ Documentation can be built locally using cargo:
 ```
 cargo doc --no-deps --open
 ```
+
+## Examples
+
+Examples can be found [here](/examples) and the [README](/examples/README.md)
+contains instructions on how to run the example.
