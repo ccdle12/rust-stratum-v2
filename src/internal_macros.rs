@@ -194,91 +194,174 @@ macro_rules! impl_setup_connection {
             }
         }
 
-        // TODO:
-        // 1. Error handling
-        //   - [] If the first byte doesn't match, raise an error
-        //   - [] Read bytes and assign bytes to a deserialized type
-        //   - [] Pass the variables into a constructor and return errors or value
-        // 2. Add docstrings
         impl<'a> Deserializable for SetupConnection<'a> {
             fn deserialize(bytes: &[u8]) -> Result<SetupConnection<'a>> {
-                // TODO: Don't handle errors yet.
                 // TODO: Fuzz test this
-                // let offset = 0;
-                // let protocol_byte = &bytes[offset];
-                // TODO: Maybe return an error if the bytes doesn't match
-                // the protocol impl
-                // let protocol = Protocol::from(*protocol_byte);
+                let offset = 0;
+                let protocol_byte = bytes.get(offset);
+                if protocol_byte.is_none() {
+                    return Err(Error::DeserializationError(
+                        "received empty bytes in setup connection message".into(),
+                    ));
+                }
 
+                if Protocol::from(*protocol_byte.unwrap()) == Protocol::Unknown {
+                    return Err(Error::DeserializationError(
+                        "received unknown protocol byte in setup connection message".into(),
+                    ));
+                }
+
+                // Get the min_version bytes.
                 let start = 1;
                 let offset = 3;
-                let min_version_bytes = &bytes[start..offset];
-                let min_version = (min_version_bytes[1] as u16) << 8 | min_version_bytes[0] as u16;
+                let min_version_bytes = &bytes.get(start..offset);
+                if min_version_bytes.is_none() {
+                    return Err(Error::DeserializationError(
+                        "min_version is missing from setup connection message".into(),
+                    ));
+                }
+                let min_version = (min_version_bytes.unwrap()[1] as u16) << 8
+                    | min_version_bytes.unwrap()[0] as u16;
 
+                // Get the max_version bytes.
                 let start = offset;
                 let offset = 5;
-                let max_version_bytes = &bytes[start..offset];
-                let max_version = (max_version_bytes[1] as u16) << 8 | max_version_bytes[0] as u16;
+                let max_version_bytes = &bytes.get(start..offset);
+                if max_version_bytes.is_none() {
+                    return Err(Error::DeserializationError(
+                        "max_version is missing from setup connection message".into(),
+                    ));
+                }
+                let max_version = (max_version_bytes.unwrap()[1] as u16) << 8
+                    | max_version_bytes.unwrap()[0] as u16;
 
+                // Get the flag bytes.
                 let start = offset;
                 let offset = start + 4;
-                let flags_bytes = &bytes[start..offset];
-                // TODO: This might apply to all conversions right? I think using the accumulator and fold
-                // won't work for high numbers
+                let flags_bytes = &bytes.get(start..offset);
+                if flags_bytes.is_none() {
+                    return Err(Error::DeserializationError(
+                        "setup connection flags are missing from setup connection message".into(),
+                    ));
+                }
                 let set_flags = flags_bytes
+                    .unwrap()
                     .iter()
                     .map(|x| *x as u32)
                     .fold(0, |accumulator, byte| (accumulator | byte));
                 let flags = Cow::from($flags::deserialize_flags(set_flags));
 
+                // Get the endpoint_host_length.
                 let mut start = offset;
-                let endpoint_host_length = *&bytes[start] as usize;
+                let endpoint_host_length = &bytes.get(start);
+                if endpoint_host_length.is_none() {
+                    return Err(Error::DeserializationError(
+                        "endpoint_host length is missing from setup connection message".into(),
+                    ));
+                }
                 start += 1;
-                let offset = start + endpoint_host_length;
-                let endpoint_host = &bytes[start..offset];
+                let offset = start + *endpoint_host_length.unwrap() as usize;
+                let endpoint_host = &bytes.get(start..offset);
+                if endpoint_host.is_none() {
+                    return Err(Error::DeserializationError(
+                        "endpoint_host is missing from setup connection message".into(),
+                    ));
+                }
 
+                // Get the variable length bytes for the endpoint host.
                 let start = offset;
                 let offset = start + 2;
-                let endpoint_port_bytes = &bytes[start..offset];
-                // TODO: This might apply to all conversions right? I think using the accumulator and fold
-                // won't work for high numbers
-                let endpoint_port =
-                    (endpoint_port_bytes[1] as u16) << 8 | endpoint_port_bytes[0] as u16;
+                let endpoint_port_bytes = &bytes.get(start..offset);
+                if endpoint_port_bytes.is_none() {
+                    return Err(Error::DeserializationError(
+                        "endpoint_port is missing from setup connection message".into(),
+                    ));
+                }
+                let endpoint_port = (endpoint_port_bytes.unwrap()[1] as u16) << 8
+                    | endpoint_port_bytes.unwrap()[0] as u16;
 
+                // Get the vendor bytes length.
                 let mut start = offset;
-                let vendor_length = *&bytes[start] as u8;
-                start += 1;
-                let offset = start as u8 + vendor_length;
-                let vendor = &bytes[start..offset as usize];
+                let vendor_length = &bytes.get(start);
+                if vendor_length.is_none() {
+                    return Err(Error::DeserializationError(
+                        "vendor is missing from setup connection message".into(),
+                    ));
+                }
 
-                let mut start = offset;
-                let hardware_version_length = *&bytes[start as usize] as u8;
+                // Get the vendor bytes.
                 start += 1;
-                let offset = start + hardware_version_length;
-                let hardware_version = &bytes[start as usize..offset as usize];
+                let offset = start as u8 + vendor_length.unwrap();
+                let vendor = &bytes.get(start..offset as usize);
+                if vendor.is_none() {
+                    return Err(Error::DeserializationError(
+                        "vendor is missing from setup connection message".into(),
+                    ));
+                }
 
+                // Get the hardware version length.
                 let mut start = offset;
-                let firmware_length = *&bytes[start as usize] as u8;
+                let hardware_version_length = bytes.get(start as usize);
+                if hardware_version_length.is_none() {
+                    return Err(Error::DeserializationError(
+                        "hardware version length is missing from setup connection message".into(),
+                    ));
+                }
                 start += 1;
-                let offset = start + firmware_length;
-                let firmware = &bytes[start as usize..offset as usize];
+                let offset = start + hardware_version_length.unwrap();
+                let hardware_version = &bytes.get(start as usize..offset as usize);
+                if hardware_version.is_none() {
+                    return Err(Error::DeserializationError(
+                        "hardware version is missing from setup connection message".into(),
+                    ));
+                }
 
+                // Get the hardware version.
                 let mut start = offset;
-                let device_id_length = *&bytes[start as usize] as u8;
+                let firmware_length = &bytes.get(start as usize);
+                if firmware_length.is_none() {
+                    return Err(Error::DeserializationError(
+                        "firmware length is missing from setup connection message".into(),
+                    ));
+                }
                 start += 1;
-                let offset = start + device_id_length;
-                let device_id = &bytes[start as usize..offset as usize];
+                let offset = start + firmware_length.unwrap();
+                let firmware = &bytes.get(start as usize..offset as usize);
+                if firmware.is_none() {
+                    return Err(Error::DeserializationError(
+                        "firmware is missing from setup connection message".into(),
+                    ));
+                }
+
+                // Get device id length.
+                let mut start = offset;
+                let device_id_length = &bytes.get(start as usize);
+                if device_id_length.is_none() {
+                    return Err(Error::DeserializationError(
+                        "device id length is missing from setup connection message".into(),
+                    ));
+                }
+                start += 1;
+                let offset = start + device_id_length.unwrap();
+
+                // Get device id.
+                let device_id = &bytes.get(start as usize..offset as usize);
+                if device_id.is_none() {
+                    return Err(Error::DeserializationError(
+                        "device id is missing from setup connection message".into(),
+                    ));
+                }
 
                 SetupConnection::new(
                     min_version,
                     max_version,
                     flags,
-                    str::from_utf8(endpoint_host)?,
+                    str::from_utf8(endpoint_host.unwrap())?,
                     endpoint_port,
-                    str::from_utf8(vendor)?,
-                    str::from_utf8(hardware_version)?,
-                    str::from_utf8(firmware)?,
-                    str::from_utf8(device_id)?,
+                    str::from_utf8(vendor.unwrap())?,
+                    str::from_utf8(hardware_version.unwrap())?,
+                    str::from_utf8(firmware.unwrap())?,
+                    str::from_utf8(device_id.unwrap())?,
                 )
             }
         }

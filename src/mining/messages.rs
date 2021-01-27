@@ -125,7 +125,7 @@ mod test {
     }
 
     #[test]
-    fn serialize_mining_connection() {
+    fn serialize_setup_connection() {
         let message = SetupConnection::new(
             2,
             2,
@@ -240,7 +240,7 @@ mod test {
     }
 
     #[test]
-    fn deserialize_mining_connection() {
+    fn deserialize_setup_connection() {
         let input = [
             0x00, // protocol
             0x02, 0x00, // min_version
@@ -271,6 +271,50 @@ mod test {
         assert_eq!(message.hardware_version, "S9i 13.5".to_string());
         assert_eq!(message.firmware, "braiins-os-2018-09-22-1-hash".to_string());
         assert_eq!(message.device_id, "some-uuid".to_string());
+    }
+
+    #[test]
+    fn deserialize_malformed_setup_connection() {
+        // Empty message.
+        let input = [];
+        assert!(SetupConnection::deserialize(&input).is_err());
+
+        // Unknown protocol.
+        let input = [0xAF];
+        assert!(SetupConnection::deserialize(&input).is_err());
+
+        let input = [
+            0x00, // protocol
+            0x02, 0x00, // min_version
+            0x02, 0x00, // max_version
+            0x01, 0x00, 0x00, 0x00, // flags
+            0x07, // length_endpoint_host
+            0x30, 0x2e, 0x30, 0x2e, 0x30, 0x2e, 0x30, // endpoint_host
+            0x61, 0x21, // endpoint_port
+            0x07, // length_vendor
+            0x42, 0x69, 0x74, 0x6d, 0x61, 0x69, 0x6e, // vendor
+            0x08, // length_hardware_version
+            0x53, 0x39, 0x69, 0x20, 0x31, 0x33, 0x2e, 0x35, // hardware_version
+            0x1c, // length_firmware
+            0x62, 0x72, 0x61, 0x69, 0x69, 0x6e, 0x73, 0x2d, 0x6f, 0x73, 0x2d, 0x32, 0x30, 0x31,
+            0x38, 0x2d, 0x30, 0x39, 0x2d, 0x32, 0x32, 0x2d, 0x31, 0x2d, 0x68, 0x61, 0x73,
+            0x68, // firmware
+            0x09, // length_device_id
+            0x73, 0x6f, 0x6d, 0x65, 0x2d, 0x75, 0x75, 0x69, 0x64, // device_id
+        ];
+
+        // Append each byte from input to a new vector of bytes. This should
+        // return errors each time on deserialization since the message is
+        // malformed because the message is incomplete.
+        let mut output = vec![];
+        for i in input.iter() {
+            assert!(SetupConnection::deserialize(&output).is_err());
+            output.push(*i);
+        }
+
+        // Now that the vector of bytes contains the full message, deserializing
+        // should return ok.
+        assert!(SetupConnection::deserialize(&output).is_ok());
     }
 
     #[test]
