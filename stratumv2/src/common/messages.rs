@@ -1,6 +1,6 @@
-use crate::common::types::{MessageTypes, STR0_255};
 use crate::common::{BitFlag, Framable, Serializable};
 use crate::error::{Error, Result};
+use crate::types::{MessageTypes, STR0_255};
 use std::{fmt, io};
 
 /// SetupConnectionSuccess is one of the required responses from a

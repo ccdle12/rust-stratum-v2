@@ -10,6 +10,9 @@ mod internal_macros;
 /// Errors returned in the library.
 mod error;
 
+/// Types used in all Stratum V2 Protocols.
+pub mod types;
+
 /// Utility functions that help with generating messages or other Stratum V2
 /// functionality.
 pub mod util;

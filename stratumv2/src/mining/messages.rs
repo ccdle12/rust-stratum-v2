@@ -1,7 +1,7 @@
-use crate::common::types::{MessageTypes, STR0_255, U256};
 use crate::common::{BitFlag, Deserializable, Framable, Protocol, Serializable};
 use crate::error::{Error, Result};
 use crate::mining::SetupConnectionFlags;
+use crate::types::{MessageTypes, STR0_255, U256};
 use std::borrow::Cow;
 use std::{io, str};
 
@@ -163,6 +163,9 @@ mod test {
             0x73, 0x6f, 0x6d, 0x65, 0x2d, 0x75, 0x75, 0x69, 0x64, // device_id
         ];
         assert_eq!(buffer, expected);
+
+        // Sanity check - deserializing the struct does not return errors.
+        assert!(SetupConnection::deserialize(&buffer).is_ok());
     }
 
     #[test]

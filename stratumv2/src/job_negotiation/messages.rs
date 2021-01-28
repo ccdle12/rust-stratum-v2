@@ -1,7 +1,7 @@
-use crate::common::types::{MessageTypes, STR0_255};
 use crate::common::{BitFlag, Deserializable, Framable, Protocol, Serializable};
 use crate::error::{Error, Result};
 use crate::job_negotiation::SetupConnectionFlags;
+use crate::types::{MessageTypes, STR0_255};
 use std::borrow::Cow;
 use std::{io, str};
 
