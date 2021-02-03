@@ -3,6 +3,7 @@ use std::io;
 
 /// Messages common to all Stratum V2 protocols.
 pub mod messages;
+pub use messages::SetupConnectionErrorCodes;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 /// Protocol is an enum representing each sub protocol of Stratum V2.
