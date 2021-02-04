@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 use std::io;
-use stratumv2::common::messages::SetupConnectionSuccess;
 use stratumv2::common::{Deserializable, Framable, Protocol};
 use stratumv2::mining;
+use stratumv2::mining::SetupConnectionSuccess;
 use stratumv2::types::MessageTypes;
 use tokio::net::{TcpListener, TcpStream};
 

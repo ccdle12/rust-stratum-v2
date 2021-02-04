@@ -1,12 +1,22 @@
+// TODO: NEED TO DECIDE ON THIS HUH....
+use crate::common::SetupConnectionErrorCodes;
+
 use crate::common::{BitFlag, Deserializable, Framable, Protocol, Serializable};
 use crate::error::{Error, Result};
 use crate::mining::SetupConnectionFlags;
+use crate::mining::SetupConnectionSuccessFlags;
 use crate::types::{MessageTypes, STR0_255, U256};
 use std::borrow::Cow;
 use std::{io, str};
 
 // Implementation of the SetupConenction message for the Mining Protocol.
 impl_setup_connection!(Protocol::Mining, SetupConnectionFlags);
+
+// TODO: DOC STRING
+impl_setup_connection_success!(SetupConnectionSuccessFlags);
+
+// TODO: DOC STRING
+impl_setup_connection_error!(SetupConnectionFlags);
 
 /// OpenStandardMiningChannel is a message sent by the client to the server
 /// after a [SetupConnection.Success](struct.SetupConnectionSuccess.html) is
@@ -37,7 +47,7 @@ impl OpenStandardMiningChannel {
 }
 
 #[cfg(test)]
-mod test {
+mod setup_connection_tests {
     use super::*;
 
     #[test]
@@ -363,6 +373,11 @@ mod test {
         ];
         assert_eq!(buffer, expected);
     }
+}
+
+#[cfg(test)]
+mod open_standard_mining_tests {
+    use super::*;
 
     #[test]
     fn new_open_standard_mining_channel_0() {
@@ -376,5 +391,190 @@ mod test {
         assert_eq!(message.user_identity, "braiinstest.worker1");
         assert_eq!(message.nominal_hash_rate, 12.3);
         assert_eq!(message.max_target.len(), 32);
+    }
+}
+
+#[cfg(test)]
+mod connection_success_tests {
+    use super::*;
+
+    #[test]
+    fn serialize_connection_success() {
+        let message = SetupConnectionSuccess::new(2, &[]);
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.serialize(&mut buffer).unwrap();
+
+        let expected = [
+            0x02, 0x00, // used_version
+            0x00, 0x00, 0x00, 0x00, // flags
+        ];
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn serialize_connection_sucess() {
+        let message =
+            SetupConnectionSuccess::new(2, &[SetupConnectionSuccessFlags::RequiresFixedVersion]);
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.serialize(&mut buffer).unwrap();
+
+        let expected = [
+            0x02, 0x00, // used_version
+            0x01, 0x00, 0x00, 0x00, // flags
+        ];
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn frame_connection_success() {
+        let message =
+            SetupConnectionSuccess::new(2, &[SetupConnectionSuccessFlags::RequiresFixedVersion]);
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.frame(&mut buffer).unwrap();
+
+        let expected = [
+            0x00, 0x00, // extension_type
+            0x01, // msg_type
+            0x06, 0x00, 0x00, // msg_length
+            0x02, 0x00, // used_version
+            0x01, 0x00, 0x00, 0x00, // flags
+        ];
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn serialize_connection_success_all_flags() {
+        let message = SetupConnectionSuccess::new(
+            2,
+            &[
+                SetupConnectionSuccessFlags::RequiresFixedVersion,
+                SetupConnectionSuccessFlags::RequiresExtendedChannels,
+            ],
+        );
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.serialize(&mut buffer).unwrap();
+
+        let expected = [
+            0x02, 0x00, // used_version
+            0x03, 0x00, 0x00, 0x00, // flags
+        ];
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn serialize_connection_success_no_flags() {
+        let message = SetupConnectionSuccess::new(2, &[]);
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.serialize(&mut buffer).unwrap();
+
+        let expected = [
+            0x02, 0x00, // used_version
+            0x00, 0x00, 0x00, 0x00, // flags
+        ];
+        assert_eq!(buffer, expected);
+    }
+}
+
+#[cfg(test)]
+mod connection_error_tests {
+    use super::*;
+
+    #[test]
+    fn serialize_connection_error() {
+        let message = SetupConnectionError::new(
+            Cow::Borrowed(&[SetupConnectionFlags::RequiresStandardJobs]),
+            SetupConnectionErrorCodes::UnsupportedFeatureFlags,
+        )
+        .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.serialize(&mut buffer).unwrap();
+
+        // Feature flag.
+        assert_eq!(buffer[0], 0x01);
+
+        // Length of error code string.
+        assert_eq!(buffer[4], 0x19);
+    }
+
+    #[test]
+    fn serialize_connection_error_empty_flags() {
+        let message = SetupConnectionError::new(
+            Cow::Borrowed(&[]),
+            SetupConnectionErrorCodes::UnsupportedFeatureFlags,
+        );
+
+        assert!(message.is_err())
+    }
+
+    #[test]
+    fn frame_connection_error() {
+        let message = SetupConnectionError::new(
+            Cow::Borrowed(&[SetupConnectionFlags::RequiresStandardJobs]),
+            SetupConnectionErrorCodes::UnsupportedFeatureFlags,
+        )
+        .unwrap();
+
+        let mut buffer: Vec<u8> = Vec::new();
+        message.frame(&mut buffer).unwrap();
+
+        let expected = [
+            0x00, 0x00, // extension_type
+            0x03, // msg_type
+            0x1e, 0x00, 0x00, // msg_length
+            0x01, 0x00, 0x00, 0x00, // flags
+            0x19, // length_error_code
+            0x75, 0x6e, 0x73, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x64, 0x2d, 0x66, 0x65,
+            0x61, 0x74, 0x75, 0x72, 0x65, 0x2d, 0x66, 0x6c, 0x61, 0x67, 0x73, // error_code
+        ];
+
+        assert_eq!(buffer, expected)
+    }
+
+    #[test]
+    fn deserialize_connection_error() {
+        let message = [
+            0x01, 0x00, 0x00, 0x00, // flags
+            0x19, // length_error_code
+            0x75, 0x6e, 0x73, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x64, 0x2d, 0x66, 0x65,
+            0x61, 0x74, 0x75, 0x72, 0x65, 0x2d, 0x66, 0x6c, 0x61, 0x67, 0x73, // error_code
+        ];
+
+        let conn_error = SetupConnectionError::deserialize(&message).unwrap();
+        assert_eq!(
+            conn_error.flags[0],
+            SetupConnectionFlags::RequiresStandardJobs
+        );
+        assert_eq!(
+            conn_error.error_code,
+            SetupConnectionErrorCodes::UnsupportedFeatureFlags
+        );
+    }
+
+    #[test]
+    fn deserialize_malformed_connection_error() {
+        // Empty message.
+        let input = [];
+        assert!(SetupConnection::deserialize(&input).is_err());
+
+        let input = [
+            0x01, 0x00, 0x00, 0x00, // flags
+            0x19, // length_error_code
+            0x75, 0x6e, 0x73, 0x75, 0x70, 0x70, 0x6f, 0x72, 0x74, 0x65, 0x64, 0x2d, 0x66, 0x65,
+            0x61, 0x74, 0x75, 0x72, 0x65, 0x2d, 0x66, 0x6c, 0x61, 0x67, 0x73, // error_code
+        ];
+
+        let mut output = vec![];
+        for i in input.iter() {
+            assert!(SetupConnectionError::deserialize(&output).is_err());
+            output.push(*i);
+        }
+
+        assert!(SetupConnectionError::deserialize(&output).is_ok());
     }
 }
