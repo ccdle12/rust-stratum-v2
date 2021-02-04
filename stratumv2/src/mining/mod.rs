@@ -21,4 +21,6 @@ mod flags;
 mod messages;
 
 pub use flags::{SetupConnectionFlags, SetupConnectionSuccessFlags};
-pub use messages::{OpenStandardMiningChannel, SetupConnection, SetupConnectionSuccess};
+pub use messages::{
+    OpenStandardMiningChannel, SetupConnection, SetupConnectionError, SetupConnectionSuccess,
+};

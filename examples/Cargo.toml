@@ -10,7 +10,6 @@ stratumv2 = { version = "0.1.0", path = "../stratumv2" }
 [dev-dependencies]
 tokio = { version = "1.0.0", features = ["full"] }
 
-
 [[example]]
 name = "setup_connection"
 path = "setup_connection.rs"
