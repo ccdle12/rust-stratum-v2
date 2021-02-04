@@ -11,8 +11,8 @@ const MINER_ADDR: &str = "127.0.0.1:8545";
 
 #[tokio::main]
 async fn main() {
-    // Mining Pool starts listening for connections.
     tokio::spawn(async move {
+        println!("Pool: mining pool now listening for connections");
         Pool::new(&POOL_ADDR).listen().await;
     });
 
@@ -93,7 +93,9 @@ impl<'a> Pool<'a> {
 
                         let conn_success = mining::SetupConnectionSuccess::new(
                             setup_conn.min_version,
-                            &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
+                            Cow::Borrowed(&[
+                                mining::SetupConnectionSuccessFlags::RequiresFixedVersion,
+                            ]),
                         );
 
                         println!("Pool: sending SetupConnectionSuccess message");
@@ -125,13 +127,50 @@ impl<'a> Miner<'a> {
 
     async fn listen(&self) {
         let listener = TcpListener::bind(&self.listening_addr).await.unwrap();
-        let (socket, addr) = listener.accept().await.unwrap();
-        println!("Miner: received message from Pool");
+        let mut buffer = [0u8; 1024];
+
+        match listener.accept().await {
+            Ok((socket, _)) => loop {
+                match socket.try_read(&mut buffer) {
+                    Ok(_) => {
+                        println!("Miner: received message from Pool");
+                        &self.handle_recv_bytes(&buffer).await;
+                        break;
+                    }
+                    Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
+                        continue;
+                    }
+                    _ => continue,
+                }
+            },
+            Err(e) => println!("failed to accept client {:?}", e),
+        }
     }
 
     async fn send_message<T: Framable>(&self, stream: &TcpStream, msg: T) {
         let mut buffer = vec![];
         msg.frame(&mut buffer).unwrap();
         stream.try_write(&buffer).unwrap();
+    }
+
+    async fn handle_recv_bytes(&self, buffer: &[u8]) {
+        match MessageTypes::from(buffer[2]) {
+            MessageTypes::SetupConnectionSuccess => {
+                let payload_length = *&buffer
+                    .get(3..6)
+                    .unwrap()
+                    .into_iter()
+                    .map(|x| *x as u32)
+                    .fold(0, |accumulator, byte| (accumulator | byte))
+                    as usize;
+
+                let payload = &buffer.get(6..6 + payload_length).unwrap();
+
+                let setup_conn_success =
+                    mining::SetupConnectionSuccess::deserialize(&payload).unwrap();
+                println!("Miner: Received a SetupConnectionSuccess message with feature flags supported by the Mining Pool: {:?}", setup_conn_success.flags)
+            }
+            _ => (),
+        }
     }
 }
