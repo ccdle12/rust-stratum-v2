@@ -4,5 +4,5 @@ members = [
     "stratumv2",
 
     # Internal
-    "examples"
+    "examples",
 ]
