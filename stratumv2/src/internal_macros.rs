@@ -383,12 +383,12 @@ macro_rules! impl_setup_connection_success {
             pub used_version: u16,
 
             /// Indicates the optional features the server supports.
-            pub flags: &'a [$flags],
+            pub flags: Cow<'a, [$flags]>,
         }
 
         impl<'a> SetupConnectionSuccess<'a> {
             /// Constructor for the SetupConnectionSuccess message.
-            pub fn new(used_version: u16, flags: &[$flags]) -> SetupConnectionSuccess {
+            pub fn new(used_version: u16, flags: Cow<'a, [$flags]>) -> SetupConnectionSuccess {
                 SetupConnectionSuccess {
                     used_version,
                     flags,
@@ -427,6 +427,43 @@ macro_rules! impl_setup_connection_success {
                 );
 
                 Ok(writer.write(&result)?)
+            }
+        }
+
+        impl<'a> Deserializable for SetupConnectionSuccess<'a> {
+            fn deserialize(bytes: &[u8]) -> Result<SetupConnectionSuccess<'a>> {
+                // Get the used version.
+                let start = 0;
+                let offset = start + 2;
+                let used_version_bytes = &bytes.get(start..offset);
+                if used_version_bytes.is_none() {
+                    return Err(Error::DeserializationError(
+                        "used version is missing from setup connection success message".into(),
+                    ));
+                }
+
+                let used_version = (used_version_bytes.unwrap()[1] as u16) << 8
+                    | used_version_bytes.unwrap()[0] as u16;
+
+                let start = offset;
+                let offset = start + 4;
+                let flags_bytes = &bytes.get(start..offset);
+                if flags_bytes.is_none() {
+                    return Err(Error::DeserializationError(
+                        "flags are missing from setup connection error message".into(),
+                    ));
+                }
+                let flags = flags_bytes
+                    .unwrap()
+                    .iter()
+                    .map(|x| *x as u32)
+                    .fold(0, |accumulator, byte| (accumulator | byte));
+                let flags = Cow::from($flags::deserialize_flags(flags));
+
+                Ok(SetupConnectionSuccess {
+                    used_version,
+                    flags,
+                })
             }
         }
     };

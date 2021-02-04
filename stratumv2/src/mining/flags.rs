@@ -26,6 +26,7 @@ impl_message_flag!(
 
 /// Feature flags for the SetupConnectionSuccess message from the server to
 /// the client for the mining protocol.
+#[derive(Debug, PartialEq, Clone)]
 pub enum SetupConnectionSuccessFlags {
     // TODO: Link everthing between ``
     /// Flag indicating the upstream node does not accept any changes to the
