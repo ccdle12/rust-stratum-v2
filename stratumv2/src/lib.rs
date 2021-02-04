@@ -33,21 +33,21 @@ pub mod job_negotiation;
 /// Protocol is an enum representing each sub protocol of Stratum V2.
 pub enum Protocol {
     /// Mining is the main and only required sub protocol in Stratum V2.
-    Mining = 0,
+    Mining,
 
     /// JobNegotiation is a protocol for intermediate nodes to broker
     /// the terms of a connection between downstream nodes and upstream nodes.
-    JobNegotiation = 1,
+    JobNegotiation,
 
     /// TemplateDistribution is a protocol for getting the next block from the
     /// Bitcoin RPC. This protocol is intented to replace getblocktemplate.
-    TemplateDistribution = 2,
+    TemplateDistribution,
 
     /// JobDistribution is a protocol for passing newly-negotiated work from the
     /// Job Negotiator to proxies or mining devices. If miners aren't choosing
     /// their transaction sets, then jobs will be distributed from pools directly
     /// to proxies/mining devices.
-    JobDistribution = 3,
+    JobDistribution,
 
     /// Unknown is catch-all variant. This should be used when attempting to
     /// convert another type into the Protocol enum but doesn't match any
