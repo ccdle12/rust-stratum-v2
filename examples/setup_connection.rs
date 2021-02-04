@@ -1,0 +1,138 @@
+use std::borrow::Cow;
+use std::io;
+use stratumv2::common::messages::SetupConnectionSuccess;
+use stratumv2::common::{Deserializable, Framable, Protocol};
+use stratumv2::mining;
+use stratumv2::types::MessageTypes;
+use tokio::net::{TcpListener, TcpStream};
+
+// Addreses and ports for the example.
+const POOL_ADDR: &str = "127.0.0.1:8080";
+const MINER_ADDR: &str = "127.0.0.1:8545";
+
+#[tokio::main]
+async fn main() {
+    // Mining Pool starts listening for connections.
+    tokio::spawn(async move {
+        Pool::new(&POOL_ADDR).listen().await;
+    });
+
+    println!("Miner: sending SetupConnection for new Mining Connection");
+    let miner = Miner::new(&MINER_ADDR);
+
+    let setup_connection_msg = mining::SetupConnection::new(
+        2,
+        2,
+        Cow::Borrowed(&[mining::SetupConnectionFlags::RequiresStandardJobs]),
+        "0.0.0.0",
+        8545,
+        "Bitmain",
+        "S9i 13.5",
+        "braiins-os-2018-09-22-1-hash",
+        "some-uuid",
+    )
+    .unwrap();
+
+    miner
+        .send_message(
+            &TcpStream::connect(&POOL_ADDR).await.unwrap(),
+            setup_connection_msg,
+        )
+        .await;
+
+    miner.listen().await;
+}
+
+/// Pool is a convenience struct to demonstrate simple behaviour of a Mining Pool.
+struct Pool<'a> {
+    listening_addr: &'a str,
+}
+
+impl<'a> Pool<'a> {
+    fn new(listening_addr: &'a str) -> Pool<'a> {
+        Pool { listening_addr }
+    }
+
+    /// Listen on the port and handle the messages.
+    async fn listen(&self) {
+        let listener = TcpListener::bind(&self.listening_addr).await.unwrap();
+        let mut buffer = [0u8; 1024];
+
+        match listener.accept().await {
+            Ok((socket, _)) => loop {
+                match socket.try_read(&mut buffer) {
+                    Ok(_) => {
+                        &self.handle_recv_bytes(&buffer).await;
+                        break;
+                    }
+                    Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
+                        continue;
+                    }
+                    _ => continue,
+                }
+            },
+            Err(e) => println!("failed to accept client {:?}", e),
+        }
+    }
+
+    async fn handle_recv_bytes(&self, buffer: &[u8]) {
+        match MessageTypes::from(buffer[2]) {
+            MessageTypes::SetupConnection => {
+                let payload_length = *&buffer
+                    .get(3..6)
+                    .unwrap()
+                    .into_iter()
+                    .map(|x| *x as u32)
+                    .fold(0, |accumulator, byte| (accumulator | byte))
+                    as usize;
+
+                let payload = &buffer.get(6..6 + payload_length).unwrap();
+
+                match Protocol::from(payload[0]) {
+                    Protocol::Mining => {
+                        let setup_conn = mining::SetupConnection::deserialize(&payload).unwrap();
+
+                        let conn_success = SetupConnectionSuccess::new(
+                            setup_conn.min_version,
+                            &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
+                        );
+
+                        println!("Pool: sending SetupConnectionSuccess message");
+                        let mut buffer = vec![];
+                        conn_success.frame(&mut buffer).unwrap();
+                        TcpStream::connect(&MINER_ADDR)
+                            .await
+                            .unwrap()
+                            .try_write(&buffer)
+                            .unwrap();
+                    }
+                    _ => (),
+                }
+            }
+            _ => (),
+        }
+    }
+}
+
+/// Miner is a convenience struct to demonstrate simple behaviour of a Miner.
+struct Miner<'a> {
+    listening_addr: &'a str,
+}
+
+impl<'a> Miner<'a> {
+    fn new(listening_addr: &'a str) -> Miner<'a> {
+        Miner { listening_addr }
+    }
+
+    async fn listen(&self) {
+        let listener = TcpListener::bind(&self.listening_addr).await.unwrap();
+        let (socket, addr) = listener.accept().await.unwrap();
+        println!("Miner: received message from Pool");
+    }
+
+    async fn send_message<T: Framable>(&self, stream: &TcpStream, msg: T) {
+        let mut buffer = vec![];
+        msg.frame(&mut buffer).unwrap();
+        stream.try_write(&buffer).unwrap();
+    }
+}

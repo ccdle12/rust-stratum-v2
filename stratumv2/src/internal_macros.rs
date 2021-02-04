@@ -259,6 +259,8 @@ macro_rules! impl_setup_connection {
                         "endpoint_host length is missing from setup connection message".into(),
                     ));
                 }
+
+                // Get the endpoint_host.
                 start += 1;
                 let offset = start + *endpoint_host_length.unwrap() as usize;
                 let endpoint_host = &bytes.get(start..offset);
@@ -316,7 +318,7 @@ macro_rules! impl_setup_connection {
                     ));
                 }
 
-                // Get the hardware version.
+                // Get the firmware length.
                 let mut start = offset;
                 let firmware_length = &bytes.get(start as usize);
                 if firmware_length.is_none() {
@@ -324,6 +326,8 @@ macro_rules! impl_setup_connection {
                         "firmware length is missing from setup connection message".into(),
                     ));
                 }
+
+                // Get the firmware.
                 start += 1;
                 let offset = start + firmware_length.unwrap();
                 let firmware = &bytes.get(start as usize..offset as usize);

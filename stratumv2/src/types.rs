@@ -64,18 +64,35 @@ impl From<STR0_255> for String {
 
 /// MessageTypes contain all the variations for the byte representation of a
 /// messages used in a message frame.
-pub(crate) enum MessageTypes {
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum MessageTypes {
     SetupConnection,
     SetupConnectionSuccess,
     SetupConnectionError,
+    Unknown,
 }
 
+// TODO: A macro that will do conversions both ways.
 impl From<MessageTypes> for u8 {
     fn from(m: MessageTypes) -> Self {
         match m {
             MessageTypes::SetupConnection => 0x00,
             MessageTypes::SetupConnectionSuccess => 0x01,
             MessageTypes::SetupConnectionError => 0x03,
+            // TODO: THIS IS NOT SPECIFIED IN THE PROTOCOL.
+            MessageTypes::Unknown => 0xFF,
+        }
+    }
+}
+
+impl From<u8> for MessageTypes {
+    fn from(byte: u8) -> Self {
+        match byte {
+            0x00 => MessageTypes::SetupConnection,
+            0x01 => MessageTypes::SetupConnectionSuccess,
+            0x03 => MessageTypes::SetupConnectionError,
+            // TODO: THIS IS NOT SPECIFIED IN THE PROTOCOL.
+            _ => MessageTypes::Unknown,
         }
     }
 }

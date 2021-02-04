@@ -1,9 +1,6 @@
 use crate::error::Result;
 use std::io;
 
-/// Types used in all Stratum V2 Protocols.
-pub mod types;
-
 /// Messages common to all Stratum V2 protocols.
 pub mod messages;
 
