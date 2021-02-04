@@ -44,12 +44,22 @@ async fn main() {
 
 /// Pool is a convenience struct to demonstrate simple behaviour of a Mining Pool.
 struct Pool<'a> {
+    /// Listening address of the Mining Pool to accept incoming connections.
     listening_addr: &'a str,
+
+    /// The required feature flags for the mining sub protocol. These flags
+    /// should be sent on a SetupConnectionSuccess.
+    required_mining_feature_flags: &'a [mining::SetupConnectionSuccessFlags],
 }
 
 impl<'a> Pool<'a> {
     fn new(listening_addr: &'a str) -> Pool<'a> {
-        Pool { listening_addr }
+        Pool {
+            listening_addr,
+            required_mining_feature_flags: &[
+                mining::SetupConnectionSuccessFlags::RequiresFixedVersion,
+            ],
+        }
     }
 
     /// Listen on the port and handle the messages.
@@ -93,9 +103,7 @@ impl<'a> Pool<'a> {
 
                         let conn_success = mining::SetupConnectionSuccess::new(
                             setup_conn.min_version,
-                            Cow::Borrowed(&[
-                                mining::SetupConnectionSuccessFlags::RequiresFixedVersion,
-                            ]),
+                            Cow::Borrowed(self.required_mining_feature_flags),
                         );
 
                         println!("Pool: sending SetupConnectionSuccess message");
@@ -117,6 +125,7 @@ impl<'a> Pool<'a> {
 
 /// Miner is a convenience struct to demonstrate simple behaviour of a Miner.
 struct Miner<'a> {
+    /// Listening address of the miner to accept incoming connections.
     listening_addr: &'a str,
 }
 
