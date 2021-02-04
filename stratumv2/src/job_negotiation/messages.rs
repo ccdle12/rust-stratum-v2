@@ -1,12 +1,11 @@
-use crate::common::{BitFlag, Deserializable, Framable, Protocol, Serializable};
 use crate::error::{Error, Result};
 use crate::job_negotiation::SetupConnectionFlags;
 use crate::types::{MessageTypes, STR0_255};
+use crate::{BitFlag, Deserializable, Framable, Protocol, Serializable};
 use std::borrow::Cow;
 use std::{io, str};
 
 // Implementation of the SetupConenction message for the Job Negotiation Protocol.
-// use std::borrow::Cow;
 impl_setup_connection!(Protocol::JobNegotiation, SetupConnectionFlags);
 
 mod tests {

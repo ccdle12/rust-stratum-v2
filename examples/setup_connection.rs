@@ -1,9 +1,8 @@
 use std::borrow::Cow;
 use std::io;
-use stratumv2::common::{Deserializable, Framable, Protocol};
 use stratumv2::mining;
-use stratumv2::mining::SetupConnectionSuccess;
 use stratumv2::types::MessageTypes;
+use stratumv2::{Deserializable, Framable, Protocol};
 use tokio::net::{TcpListener, TcpStream};
 
 // Addreses and ports for the example.
@@ -92,7 +91,7 @@ impl<'a> Pool<'a> {
                     Protocol::Mining => {
                         let setup_conn = mining::SetupConnection::deserialize(&payload).unwrap();
 
-                        let conn_success = SetupConnectionSuccess::new(
+                        let conn_success = mining::SetupConnectionSuccess::new(
                             setup_conn.min_version,
                             &[mining::SetupConnectionSuccessFlags::RequiresFixedVersion],
                         );
