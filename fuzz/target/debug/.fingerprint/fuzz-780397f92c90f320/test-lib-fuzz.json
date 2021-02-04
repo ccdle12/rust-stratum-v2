@@ -1,0 +1,1 @@
+{"rustc":12309006722413012507,"features":"[]","target":6073014001862955685,"profile":8341259748240011191,"path":10872709659218687626,"deps":[[3268948098023131652,"honggfuzz",false,1279509243956533081]],"local":[{"CheckDepInfo":{"dep_info":"debug/.fingerprint/fuzz-780397f92c90f320/dep-test-lib-fuzz"}}],"rustflags":[],"metadata":3114053913566411387,"config":0}
