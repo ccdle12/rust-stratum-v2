@@ -568,7 +568,7 @@ macro_rules! impl_message_flag {
             /// # Example
             ///
             /// ```rust
-            /// use stratumv2::common::BitFlag;
+            /// use stratumv2::BitFlag;
             /// use stratumv2::mining;
             ///
             /// let standard_job = mining::SetupConnectionFlags::RequiresStandardJobs.as_bit_flag();
@@ -585,7 +585,7 @@ macro_rules! impl_message_flag {
             /// # Example
             ///
             /// ```rust
-            /// use stratumv2::common::BitFlag;
+            /// use stratumv2::BitFlag;
             /// use stratumv2::mining;
             ///
             /// let flags = mining::SetupConnectionFlags::deserialize_flags(3);
