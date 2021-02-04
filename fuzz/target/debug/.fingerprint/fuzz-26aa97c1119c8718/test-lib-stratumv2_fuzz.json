@@ -1,1 +1,0 @@
-{"rustc":12309006722413012507,"features":"[]","target":18050989954293419332,"profile":8341259748240011191,"path":10872709659218687626,"deps":[[8121610516172761508,"stratumv2",false,16407744663183529025]],"local":[{"CheckDepInfo":{"dep_info":"debug/.fingerprint/fuzz-26aa97c1119c8718/dep-test-lib-stratumv2_fuzz"}}],"rustflags":[],"metadata":3114053913566411387,"config":0}
