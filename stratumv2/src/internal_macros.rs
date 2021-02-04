@@ -196,7 +196,6 @@ macro_rules! impl_setup_connection {
 
         impl<'a> Deserializable for SetupConnection<'a> {
             fn deserialize(bytes: &[u8]) -> Result<SetupConnection<'a>> {
-                // TODO: Fuzz test this
                 let offset = 0;
                 let protocol_byte = bytes.get(offset);
                 if protocol_byte.is_none() {
