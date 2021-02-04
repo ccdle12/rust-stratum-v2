@@ -1,7 +1,6 @@
 use crate::common::SetupConnectionErrorCodes;
 use crate::error::{Error, Result};
-use crate::mining::SetupConnectionFlags;
-use crate::mining::SetupConnectionSuccessFlags;
+use crate::mining::{SetupConnectionFlags, SetupConnectionSuccessFlags};
 use crate::types::{MessageTypes, STR0_255, U256};
 use crate::{BitFlag, Deserializable, Framable, Protocol, Serializable};
 use std::borrow::Cow;
@@ -398,7 +397,7 @@ mod connection_success_tests {
 
     #[test]
     fn serialize_connection_success() {
-        let message = SetupConnectionSuccess::new(2, &[]);
+        let message = SetupConnectionSuccess::new(2, Cow::Borrowed(&[]));
 
         let mut buffer: Vec<u8> = Vec::new();
         message.serialize(&mut buffer).unwrap();
@@ -412,8 +411,10 @@ mod connection_success_tests {
 
     #[test]
     fn serialize_connection_sucess() {
-        let message =
-            SetupConnectionSuccess::new(2, &[SetupConnectionSuccessFlags::RequiresFixedVersion]);
+        let message = SetupConnectionSuccess::new(
+            2,
+            Cow::Borrowed(&[SetupConnectionSuccessFlags::RequiresFixedVersion]),
+        );
 
         let mut buffer: Vec<u8> = Vec::new();
         message.serialize(&mut buffer).unwrap();
@@ -427,8 +428,10 @@ mod connection_success_tests {
 
     #[test]
     fn frame_connection_success() {
-        let message =
-            SetupConnectionSuccess::new(2, &[SetupConnectionSuccessFlags::RequiresFixedVersion]);
+        let message = SetupConnectionSuccess::new(
+            2,
+            Cow::Borrowed(&[SetupConnectionSuccessFlags::RequiresFixedVersion]),
+        );
 
         let mut buffer: Vec<u8> = Vec::new();
         message.frame(&mut buffer).unwrap();
@@ -447,10 +450,10 @@ mod connection_success_tests {
     fn serialize_connection_success_all_flags() {
         let message = SetupConnectionSuccess::new(
             2,
-            &[
+            Cow::Borrowed(&[
                 SetupConnectionSuccessFlags::RequiresFixedVersion,
                 SetupConnectionSuccessFlags::RequiresExtendedChannels,
-            ],
+            ]),
         );
 
         let mut buffer: Vec<u8> = Vec::new();
@@ -465,7 +468,7 @@ mod connection_success_tests {
 
     #[test]
     fn serialize_connection_success_no_flags() {
-        let message = SetupConnectionSuccess::new(2, &[]);
+        let message = SetupConnectionSuccess::new(2, Cow::Borrowed(&[]));
 
         let mut buffer: Vec<u8> = Vec::new();
         message.serialize(&mut buffer).unwrap();
