@@ -31,5 +31,5 @@ cargo hfuzz run <target-name>
 Run in debug environment to view the crash:
 
 ```
-cargo hfuzz run-debug setup_connection hfuzz_workspace/*/*.fuzz
+cargo hfuzz run-debug <target-name> hfuzz_workspace/*/*.fuzz
 ```
