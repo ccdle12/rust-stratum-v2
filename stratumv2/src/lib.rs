@@ -29,8 +29,8 @@ pub mod mining;
 /// Job Negotiation is a sub protocol of Stratum V2.
 pub mod job_negotiation;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
 /// Protocol is an enum representing each sub protocol of Stratum V2.
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Protocol {
     /// Mining is the main and only required sub protocol in Stratum V2.
     Mining,
@@ -80,8 +80,8 @@ pub trait Deserializable {
         Self: std::marker::Sized;
 }
 
-/// Trait for getting a types bit flag representation as a u32, according to the
-/// Stratum V2 specification.
+/// Trait for getting set bits of a flag as a u32 or enum representation
+/// according to the Stratum V2 protocol.
 pub trait BitFlag {
     fn as_bit_flag(&self) -> u32;
     fn deserialize_flags(flags: u32) -> Vec<Self>

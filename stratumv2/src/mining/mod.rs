@@ -9,7 +9,7 @@
 //! - `Standard Channels`: A communication channel with upstream nodes where the
 //!                        coinbase transaction and merkle path are not manipulated.
 //!
-//! - `Extended Channels`: A communicate channel allowing more advanced use cases
+//! - `Extended Channels`: A communication channel allowing more advanced use cases
 //!                        such as translation between v1 to v2, difficulty aggregation,
 //!                        and `custom search space splitting`
 //!
