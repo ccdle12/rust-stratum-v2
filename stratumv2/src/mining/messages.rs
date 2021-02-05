@@ -9,10 +9,10 @@ use std::{io, str};
 // Implementation of the SetupConenction message for the Mining Protocol.
 impl_setup_connection!(Protocol::Mining, SetupConnectionFlags);
 
-// TODO: DOC STRING
+// Implementation of the SetupConnectionSuccess message for the Mining Protocol.
 impl_setup_connection_success!(SetupConnectionSuccessFlags);
 
-// TODO: DOC STRING
+// Implementation of the SetupConnectionError message for the Mining Protocol.
 impl_setup_connection_error!(SetupConnectionFlags);
 
 /// OpenStandardMiningChannel is a message sent by the client to the server
