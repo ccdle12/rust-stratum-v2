@@ -62,8 +62,8 @@ impl From<STR0_255> for String {
     }
 }
 
-/// MessageTypes contain all the variations for the byte representation of a
-/// messages used in a message frame.
+/// MessageTypes contain all the variations for the byte representation of
+/// messages used in message frames.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum MessageTypes {
     SetupConnection,

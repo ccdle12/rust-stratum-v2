@@ -365,6 +365,24 @@ macro_rules! impl_setup_connection_success {
     ($flags:ident) => {
         /// SetupConnectionSuccess is one of the required responses from a
         /// Server to a Client when a connection is accepted.
+        ///
+        /// # Examples
+        ///
+        /// ```rust
+        /// use std::borrow::Cow;
+        /// use stratumv2::mining;
+        ///
+        /// let conn_success = mining::SetupConnectionSuccess::new(
+        ///    2,
+        ///    Cow::Borrowed(&[
+        ///        mining::SetupConnectionSuccessFlags::RequiresFixedVersion,
+        ///     ]),
+        /// );
+        /// assert_eq!(
+        ///     conn_success.flags[0],
+        ///     mining::SetupConnectionSuccessFlags::RequiresFixedVersion
+        /// );
+        /// ```
         pub struct SetupConnectionSuccess<'a> {
             /// Version proposed by the connecting node as one of the verions supported
             /// by the upstream node. The version will be used during the lifetime of
@@ -461,15 +479,36 @@ macro_rules! impl_setup_connection_success {
 /// Implementation of the SetupConnectionError message for each sub protocol.
 macro_rules! impl_setup_connection_error {
     ($flag_type:ident) => {
-        /// SetupConnectionError is one of the required responses from a server to client
-        /// when a new connection has failed. The server is required to send this message
-        /// with an error code before closing the connection.
+        /// SetupConnectionError is one of the required responses from a Server
+        /// to a Client when a new connection has failed. The server is required
+        /// to send this message with an error code before closing the connection.
         ///
         /// If the error is a variant of [UnsupportedFeatureFlags](enum.SetupConnectionErrorCodes.html),
         /// the server MUST respond with all the feature flags that it does NOT support.
         ///
         /// If the flag is 0, then the error is some condition aside from unsupported
         /// flags.
+        ///
+        /// # Examples
+        ///
+        /// ```rust
+        /// use std::borrow::Cow;
+        /// use stratumv2::mining;
+        /// use stratumv2::common::SetupConnectionErrorCodes;
+        ///
+        /// let conn_error = mining::SetupConnectionError::new(
+        ///    Cow::Borrowed(&[
+        ///        mining::SetupConnectionFlags::RequiresVersionRolling,
+        ///     ]),
+        ///        SetupConnectionErrorCodes::UnsupportedFeatureFlags
+        /// );
+        ///
+        /// assert!(conn_error.is_ok());
+        /// assert_eq!(
+        ///     conn_error.unwrap().error_code,
+        ///     SetupConnectionErrorCodes::UnsupportedFeatureFlags
+        /// );
+        /// ```
         pub struct SetupConnectionError<'a> {
             /// Indicates all the flags that the server does NOT support.
             pub flags: Cow<'a, [$flag_type]>,
