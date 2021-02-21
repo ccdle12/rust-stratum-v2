@@ -282,8 +282,8 @@ macro_rules! impl_setup_connection {
 
                 // Get the vendor bytes.
                 start += 1;
-                let offset = start as u8 + vendor_length.unwrap();
-                let vendor = &bytes.get(start..offset as usize);
+                let offset = start + *vendor_length.unwrap() as usize;
+                let vendor = &bytes.get(start..offset);
                 if vendor.is_none() {
                     return Err(Error::DeserializationError(
                         "vendor is missing from setup connection message".into(),
@@ -292,15 +292,15 @@ macro_rules! impl_setup_connection {
 
                 // Get the hardware version length.
                 let mut start = offset;
-                let hardware_version_length = bytes.get(start as usize);
+                let hardware_version_length = bytes.get(start);
                 if hardware_version_length.is_none() {
                     return Err(Error::DeserializationError(
                         "hardware version length is missing from setup connection message".into(),
                     ));
                 }
                 start += 1;
-                let offset = start + hardware_version_length.unwrap();
-                let hardware_version = &bytes.get(start as usize..offset as usize);
+                let offset = start + *hardware_version_length.unwrap() as usize;
+                let hardware_version = &bytes.get(start..offset);
                 if hardware_version.is_none() {
                     return Err(Error::DeserializationError(
                         "hardware version is missing from setup connection message".into(),
@@ -309,7 +309,7 @@ macro_rules! impl_setup_connection {
 
                 // Get the firmware length.
                 let mut start = offset;
-                let firmware_length = &bytes.get(start as usize);
+                let firmware_length = &bytes.get(start);
                 if firmware_length.is_none() {
                     return Err(Error::DeserializationError(
                         "firmware length is missing from setup connection message".into(),
@@ -318,8 +318,8 @@ macro_rules! impl_setup_connection {
 
                 // Get the firmware.
                 start += 1;
-                let offset = start + firmware_length.unwrap();
-                let firmware = &bytes.get(start as usize..offset as usize);
+                let offset = start + *firmware_length.unwrap() as usize;
+                let firmware = &bytes.get(start..offset);
                 if firmware.is_none() {
                     return Err(Error::DeserializationError(
                         "firmware is missing from setup connection message".into(),
@@ -328,17 +328,17 @@ macro_rules! impl_setup_connection {
 
                 // Get device id length.
                 let mut start = offset;
-                let device_id_length = &bytes.get(start as usize);
+                let device_id_length = &bytes.get(start);
                 if device_id_length.is_none() {
                     return Err(Error::DeserializationError(
                         "device id length is missing from setup connection message".into(),
                     ));
                 }
                 start += 1;
-                let offset = start + device_id_length.unwrap();
+                let offset = start + *device_id_length.unwrap() as usize;
 
                 // Get device id.
-                let device_id = &bytes.get(start as usize..offset as usize);
+                let device_id = &bytes.get(start..offset);
                 if device_id.is_none() {
                     return Err(Error::DeserializationError(
                         "device id is missing from setup connection message".into(),
