@@ -8,3 +8,7 @@ edition = "2018"
 
 [dependencies]
 rand = "0.7.3"
+snow = "0.7.2"
+
+[dependencies.ed25519-dalek]
+version = "1"
