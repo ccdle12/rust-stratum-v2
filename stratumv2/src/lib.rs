@@ -20,7 +20,7 @@ pub mod types;
 /// Utility functions for all sub protocols.
 pub mod util;
 
-/// Common messages for all sub protocol.
+/// Common messages and flags for all sub protocols.
 pub mod common;
 
 /// Mining is the main sub protocol of Stratum V2.
@@ -28,6 +28,12 @@ pub mod mining;
 
 /// Job Negotiation is a sub protocol of Stratum V2.
 pub mod job_negotiation;
+
+/// Noise contains all the required messages and functions to perform the Noise
+/// Handshake, creating a symmetric key to perform secure communication.
+/// This module contains functions to verify and generate signatures
+/// for both Client and Server to attest to the authenticty of an Upstream Node.
+pub mod noise;
 
 /// Protocol is an enum representing each sub protocol of Stratum V2.
 #[derive(Debug, PartialEq, Clone, Copy)]
