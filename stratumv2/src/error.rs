@@ -10,6 +10,8 @@ pub enum Error {
     ProtocolMismatchError(String),
     RequirementError(String),
     DeserializationError(String),
+    AuthorityKeyError(ed25519_dalek::ed25519::Error),
+    SystemTimeError(std::time::SystemTimeError),
 }
 
 impl fmt::Display for Error {
@@ -21,13 +23,17 @@ impl fmt::Display for Error {
             Error::ProtocolMismatchError(ref message) => write!(f, "{}", message),
             Error::RequirementError(ref message) => write!(f, "{}", message),
             Error::DeserializationError(ref message) => write!(f, "{}", message),
+            Error::AuthorityKeyError(ref message) => write!(f, "{}", message),
+            Error::SystemTimeError(ref message) => write!(f, "{}", message),
         }
     }
 }
 
 impl_error_conversions!(
     std::str::Utf8Error => Error::Utf8Error,
-    io::Error => Error::IOError
+    io::Error => Error::IOError,
+    ed25519_dalek::ed25519::Error => Error::AuthorityKeyError,
+    std::time::SystemTimeError => Error::SystemTimeError
 );
 
 /// Alias Result type for the library.
