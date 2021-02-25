@@ -3,12 +3,10 @@ use crate::util::{le_bytes_to_u16, le_bytes_to_u32, system_unix_time_to_u32};
 use crate::Result;
 use crate::{Deserializable, Serializable};
 use ed25519_dalek::{Signature, Signer, Verifier};
+use noiseexplorer_nx::types::Keypair;
 use std::convert::TryInto;
 use std::time::SystemTime;
 use std::{io, str};
-
-/// Defines the noise protocol used for secure communication.
-pub const NOISE_PROTOCOL: &'static str = "Noise_NX_25519_ChaChaPoly_SHA256";
 
 /// AuthorityKeyPair is an ed25519_dalek::Keypair used as the Authentication Authority
 /// Keypair for the Mining Pool.
@@ -23,7 +21,15 @@ pub type AuthorityPublicKey = ed25519_dalek::PublicKey;
 /// StaticPublicKey is used as the Noise DH static public. The key that will be
 /// signed by the AuthorityKeyPair, to attest to the authenticity of the Mining Pool
 /// Server.
-pub type StaticPublicKey = Vec<u8>;
+pub type StaticPublicKey = noiseexplorer_nx::types::PublicKey;
+
+/// NoiseSession is a struct that contains all the state required to handle a
+/// key exchange and subsequent encrypted communication.
+pub type NoiseSession = noiseexplorer_nx::noisesession::NoiseSession;
+
+/// StaticKeyPair is a Keypair used by the responder (Server) to use a pre-determined
+/// static key that will be signed by the AuthorityKeyPair.
+pub type StaticKeyPair = noiseexplorer_nx::types::Keypair;
 
 /// Signs a [SignedCertificate](struct.SignatureNoiseMessage.html) using the Mining Pools
 /// [AuthorityKeyPair](struct.AuthorityKeyPair.html), authorizing the Upstream Node
@@ -36,6 +42,22 @@ pub fn authority_sign_cert(
     cert.serialize(&mut signed_cert)?;
 
     Ok(keypair.sign(&signed_cert))
+}
+
+/// Creates a NoiseSession for a responder, this will usually be the Upstream
+/// Node (Server) with the option of using a pre-determined StaticKeyPair.
+pub fn new_noise_responder(static_keypair: Option<StaticKeyPair>) -> NoiseSession {
+    let key = match static_keypair {
+        Some(k) => k,
+        None => Keypair::default(),
+    };
+
+    NoiseSession::init_session(false, &[], key)
+}
+
+/// Creates a NoiseSession for an initiator, this will usually be the Client.
+pub fn new_noise_initiator() -> NoiseSession {
+    NoiseSession::init_session(true, &[], Keypair::default())
 }
 
 /// A SignedCertificate represents the signed part of a SignatureNoiseMessage.
@@ -63,13 +85,6 @@ impl<'a> SignedCertificate<'a> {
             ));
         }
 
-        if public_key.len() != 32 {
-            return Err(Error::RequirementError(
-                "the static public key passed is invalid since it's length is greater than 32 bytes"
-                    .into(),
-            ));
-        }
-
         Ok(SignedCertificate {
             version,
             valid_from,
@@ -85,7 +100,7 @@ impl Serializable for SignedCertificate<'_> {
             &self.version.to_le_bytes(),
             &self.valid_from.to_le_bytes(),
             &self.not_valid_after.to_le_bytes(),
-            &self.public_key
+            &self.public_key.as_bytes()
         );
 
         Ok(writer.write(&buffer)?)
@@ -144,7 +159,7 @@ impl Serializable for CertificateFormat<'_> {
             &self.signature_noise_message.version.to_le_bytes(),
             &self.signature_noise_message.valid_from.to_le_bytes(),
             &self.signature_noise_message.not_valid_after.to_le_bytes(),
-            &self.static_public_key
+            &self.static_public_key.as_bytes()
         );
 
         Ok(writer.write(&buffer)?)
@@ -157,24 +172,34 @@ impl Serializable for CertificateFormat<'_> {
 /// been signed by the AuthorityKeyPair of the Mining Pool.
 #[derive(Debug, PartialEq)]
 pub struct SignatureNoiseMessage {
-    version: u16,
-    valid_from: u32,
-    not_valid_after: u32,
-    signature: Signature,
+    pub version: u16,
+    pub valid_from: u32,
+    pub not_valid_after: u32,
+    pub signature: Signature,
 }
 
 impl SignatureNoiseMessage {
-    pub fn new(
-        version: u16,
-        signed_certificate: &SignedCertificate,
-        signature: Signature,
-    ) -> SignatureNoiseMessage {
+    pub fn new(cert: &SignedCertificate, signature: Signature) -> SignatureNoiseMessage {
         SignatureNoiseMessage {
-            version,
-            valid_from: signed_certificate.valid_from,
-            not_valid_after: signed_certificate.not_valid_after,
+            version: cert.version,
+            valid_from: cert.valid_from,
+            not_valid_after: cert.not_valid_after,
             signature,
         }
+    }
+
+    /// from_auth_key generates a signature from an AuthorityKeyPair over the
+    /// SignedCertificate and returns a SignatureNoiseMessage.
+    pub fn from_auth_key(
+        authority_keypair: &AuthorityKeyPair,
+        cert: &SignedCertificate,
+    ) -> Result<SignatureNoiseMessage> {
+        Ok(SignatureNoiseMessage {
+            version: cert.version,
+            valid_from: cert.valid_from,
+            not_valid_after: cert.not_valid_after,
+            signature: authority_sign_cert(&authority_keypair, &cert)?,
+        })
     }
 }
 
@@ -256,12 +281,12 @@ impl Deserializable for SignatureNoiseMessage {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use noiseexplorer_nx::types::Keypair;
     use rand::rngs::OsRng;
-    use snow::Builder;
     use std::thread::sleep;
     use std::time::Duration;
 
-    /// Helper function to generate timestamps for SignedCertificates.
+    // /// Helper function to generate timestamps for SignedCertificates.
     fn setup_timestamps(valid_until: u32) -> (u32, u32) {
         (
             unix_u32_now!().unwrap(),
@@ -274,7 +299,7 @@ mod tests {
     fn init_signed_certificate() {
         let (valid_from, not_valid_after) = setup_timestamps(5);
 
-        let pubkey = [0u8; 32].to_vec();
+        let pubkey = Keypair::default().get_public_key();
         let cert = SignedCertificate::new(0, valid_from, not_valid_after, &pubkey);
         assert!(cert.is_ok());
     }
@@ -284,17 +309,8 @@ mod tests {
         let (valid_from, not_valid_after) = setup_timestamps(5);
 
         // Should return an error since valid_from time is greater than not_valid_after time.
-        let pubkey = [0u8; 32].to_vec();
+        let pubkey = Keypair::default().get_public_key();
         let cert = SignedCertificate::new(0, not_valid_after, valid_from, &pubkey);
-        assert!(cert.is_err());
-    }
-
-    #[test]
-    fn invalid_pubkey_length_signed_certificate() {
-        let (valid_from, not_valid_after) = setup_timestamps(5);
-
-        let pubkey = [0u8; 5].to_vec();
-        let cert = SignedCertificate::new(0, valid_from, not_valid_after, &pubkey);
         assert!(cert.is_err());
     }
 
@@ -303,16 +319,14 @@ mod tests {
     fn setup_keys_and_signature() -> (AuthorityKeyPair, StaticPublicKey, SignatureNoiseMessage) {
         let authority_keypair = AuthorityKeyPair::generate(&mut OsRng {});
 
-        let static_pub_key = snow::Builder::new(NOISE_PROTOCOL.parse().unwrap())
-            .generate_keypair()
-            .unwrap()
-            .public;
+        let static_keypair = StaticKeyPair::default();
+        let static_pub_key = static_keypair.get_public_key();
 
         let (valid_from, not_valid_after) = setup_timestamps(1);
         let cert = SignedCertificate::new(0, valid_from, not_valid_after, &static_pub_key).unwrap();
 
         let signature = authority_sign_cert(&authority_keypair, &cert).unwrap();
-        let signature_noise_message = SignatureNoiseMessage::new(0, &cert, signature);
+        let signature_noise_message = SignatureNoiseMessage::new(&cert, signature);
 
         (authority_keypair, static_pub_key, signature_noise_message)
     }
@@ -334,101 +348,69 @@ mod tests {
     }
 
     #[test]
-    fn noise_messaging_and_signing() {
-        // Build the Mining Pool Server and Keys.
-        let authority_keypair = AuthorityKeyPair::generate(&mut OsRng {});
+    fn noise_nx() {
+        let server_static_keypair = StaticKeyPair::default();
 
-        let mut server_msg = [0u8; 1024];
-        let server = snow::Builder::new(NOISE_PROTOCOL.parse().unwrap());
+        let mut server = new_noise_responder(Some(server_static_keypair.clone()));
+        let mut client = new_noise_initiator();
 
-        let static_keypair = server.generate_keypair().unwrap();
+        let mut read_buf = [0u8; 1024];
 
-        let mut server = server
-            .local_private_key(&static_keypair.private)
-            .build_responder()
-            .unwrap();
+        // -> e
+        client.send_message(&mut read_buf).unwrap();
+        server.recv_message(&mut read_buf).unwrap();
 
-        // Build the Client.
-        let mut client_msg = [0u8; 1024];
-        let mut client = snow::Builder::new(NOISE_PROTOCOL.parse().unwrap())
-            .build_initiator()
-            .unwrap();
+        // <- e...
+        server.send_message(&mut read_buf).unwrap();
+        client.recv_message(&mut read_buf).unwrap();
 
-        // Send the first message from the client, sending an ephemeral key.
-        // The client mixes the ephemeral pubkey to the local symmetric state
-        // hash.
-        //
-        // Noise Act: -> e
-        let len = client.write_message(&[], &mut client_msg).unwrap();
-
-        // Server receives the first message `e` and mixes the `e` pubkey to
-        // the symmetric state hash.
-        server.read_message(&client_msg[..len], &mut []).unwrap();
-
-        // Server responds with their own ephemeral pubkey and performs DH exchange
-        // on the ephemeral pubkey exchanged and the servers static key.
-        let len = server.write_message(&[], &mut server_msg).unwrap();
-
-        // Client reads the final message from the Server, mixes the keys exchanged
-        // to their symmetric state hash and completes the Noise handshake.
-        client.read_message(&server_msg[..len], &mut []).unwrap();
-
-        // Assert the handshake is complete for both parties.
-        assert!(client.is_handshake_finished() && server.is_handshake_finished());
-
-        // Assert the handshake symmetric state hash is the same on the Server
-        // and Client.
-        assert_eq!(client.get_handshake_hash(), server.get_handshake_hash());
-
-        // Transition both parties into Transport Mode and send the
-        // SignatureNoiseMessage over the secure channel.
-        let mut client = client.into_transport_mode().unwrap();
-        let mut server = server.into_transport_mode().unwrap();
-
-        // Simulate the Client downloading the Mining Pools AuthorityPublicKey
-        // to verify the received SignatureNoiseMessage.
-        let authority_pub_key =
-            AuthorityPublicKey::from_bytes(authority_keypair.public.as_bytes()).unwrap();
+        assert!(server.is_transport() && client.is_transport());
+        assert_eq!(server.get_handshake_hash(), client.get_handshake_hash());
 
         // Server generates the SignatureNoiseMessage with a signature over the
-        // Static Public Key.
+        // StaticPublicKey.
         let (valid_from, not_valid_after) = setup_timestamps(100);
-        let cert =
-            SignedCertificate::new(0, valid_from, not_valid_after, &static_keypair.public).unwrap();
+        let public_key = &server_static_keypair.get_public_key();
+        let cert = SignedCertificate::new(0, valid_from, not_valid_after, public_key).unwrap();
 
-        let signature = authority_sign_cert(&authority_keypair, &cert).unwrap();
-        let signature_noise_msg = SignatureNoiseMessage::new(0, &cert, signature);
+        let authority_keypair = AuthorityKeyPair::generate(&mut OsRng {});
+        let signature_noise_msg =
+            SignatureNoiseMessage::from_auth_key(&authority_keypair, &cert).unwrap();
 
         let mut serialized_signature_msg = Vec::new();
         signature_noise_msg
             .serialize(&mut serialized_signature_msg)
             .unwrap();
 
-        let mut encrypted_signature_msg = [0u8; 1024];
-        let len = server
-            .write_message(&serialized_signature_msg, &mut encrypted_signature_msg)
-            .unwrap();
+        // Copy the serialized signature message into the buffer to simulate
+        // sending over the wire.
+        let mut buf = [0u8; 1024];
+        buf[..serialized_signature_msg.len()].copy_from_slice(&serialized_signature_msg);
 
-        // Client reads and decrypts the SignatureNoiseMessage.
-        let mut decrypted_signature_msg = [0u8; 1024];
-        client
-            .read_message(
-                &encrypted_signature_msg[..len],
-                &mut decrypted_signature_msg,
-            )
-            .unwrap();
+        let plain_text = buf.clone();
+        server.send_message(&mut buf).unwrap();
 
-        // Assert the decrypted message is different from the encrypted message.
-        assert!(decrypted_signature_msg != encrypted_signature_msg);
+        let cipher_text = buf.clone();
+        assert!(
+            plain_text[..serialized_signature_msg.len()]
+                != cipher_text[..serialized_signature_msg.len()]
+        );
+
+        // Client reads and decrypts the SignatureNoiseMessage into buf.
+        client.recv_message(&mut buf).unwrap();
+
+        assert_eq!(
+            buf[..serialized_signature_msg.len()],
+            plain_text[..serialized_signature_msg.len()]
+        );
 
         // Client deseializes the SignatureNoiseMessage, builds a CertificateFormat
         // and verifies the signature is from the Mining Pools Authority Keypair.
-        let signature_noise_message =
-            SignatureNoiseMessage::deserialize(&decrypted_signature_msg).unwrap();
+        let signature_noise_message = SignatureNoiseMessage::deserialize(&buf).unwrap();
+        let remote_static_key = client.get_remote_static_public_key().unwrap();
 
-        let remote_static_key = client.get_remote_static().unwrap().to_vec();
         let cert = CertificateFormat::new(
-            &authority_pub_key,
+            &authority_keypair.public,
             &remote_static_key,
             &signature_noise_message,
         );
