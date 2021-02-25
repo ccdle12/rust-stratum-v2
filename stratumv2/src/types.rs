@@ -29,7 +29,7 @@ impl STR0_255 {
     /// it returns the byte representation for serializing according to the
     /// protocol specification which is <1 byte length prefix + variable length STR0_255>.
     pub fn as_bytes(&self) -> Vec<u8> {
-        serialize!(&[self.0.len() as u8], self.0.as_bytes())
+        serialize_slices!(&[self.0.len() as u8], self.0.as_bytes())
     }
 }
 

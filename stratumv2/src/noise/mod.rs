@@ -96,7 +96,7 @@ impl<'a> SignedCertificate<'a> {
 impl Serializable for SignedCertificate<'_> {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         // This should NOT serialize the authority_public_key and signature.
-        let buffer = serialize!(
+        let buffer = serialize_slices!(
             &self.version.to_le_bytes(),
             &self.valid_from.to_le_bytes(),
             &self.not_valid_after.to_le_bytes(),
@@ -155,7 +155,7 @@ impl<'a> CertificateFormat<'a> {
 impl Serializable for CertificateFormat<'_> {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         // This should NOT serialize the authority_public_key and signature.
-        let buffer = serialize!(
+        let buffer = serialize_slices!(
             &self.signature_noise_message.version.to_le_bytes(),
             &self.signature_noise_message.valid_from.to_le_bytes(),
             &self.signature_noise_message.not_valid_after.to_le_bytes(),
@@ -205,7 +205,7 @@ impl SignatureNoiseMessage {
 
 impl Serializable for SignatureNoiseMessage {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let buffer = serialize!(
+        let buffer = serialize_slices!(
             &self.version.to_le_bytes(),
             &self.valid_from.to_le_bytes(),
             &self.not_valid_after.to_le_bytes(),

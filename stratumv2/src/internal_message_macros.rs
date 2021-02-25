@@ -148,7 +148,7 @@ macro_rules! impl_setup_connection {
                     .fold(0, |accumulator, byte| (accumulator | byte))
                     .to_le_bytes();
 
-                let buffer = serialize!(
+                let buffer = serialize_slices!(
                     &[self.protocol as u8],
                     &self.min_version.to_le_bytes(),
                     &self.max_version.to_le_bytes(),
@@ -176,7 +176,7 @@ macro_rules! impl_setup_connection {
                 let mut payload_length = (size as u16).to_le_bytes().to_vec();
                 payload_length.push(0x00);
 
-                let buffer = serialize!(
+                let buffer = serialize_slices!(
                     &[0x00, 0x00],                           // empty extension type
                     &[MessageTypes::SetupConnection.into()], // msg_type
                     &payload_length,
@@ -413,7 +413,7 @@ macro_rules! impl_setup_connection_success {
                     .fold(0, |accumulator, byte| (accumulator | byte))
                     .to_le_bytes();
 
-                let buffer = serialize!(&self.used_version.to_le_bytes(), &byte_flags);
+                let buffer = serialize_slices!(&self.used_version.to_le_bytes(), &byte_flags);
                 Ok(writer.write(&buffer)?)
             }
         }
@@ -427,7 +427,7 @@ macro_rules! impl_setup_connection_success {
                 let mut payload_length = (size as u16).to_le_bytes().to_vec();
                 payload_length.push(0x00);
 
-                let result = serialize!(
+                let result = serialize_slices!(
                     &[0x00, 0x00],                                  // extention_type
                     &[MessageTypes::SetupConnectionSuccess.into()], // msg_type
                     &payload_length,
@@ -545,7 +545,7 @@ macro_rules! impl_setup_connection_error {
                     .fold(0, |accumulator, byte| (accumulator | byte))
                     .to_le_bytes();
 
-                let result = serialize!(
+                let result = serialize_slices!(
                     &byte_flags,
                     &STR0_255::new(&self.error_code.to_string())?.as_bytes()
                 );
@@ -563,7 +563,7 @@ macro_rules! impl_setup_connection_error {
                 let mut payload_length = (size as u16).to_le_bytes().to_vec();
                 payload_length.push(0x00);
 
-                let result = serialize!(
+                let result = serialize_slices!(
                     &[0x00, 0x00], // extension_type
                     &[MessageTypes::SetupConnectionError.into()],
                     &payload_length,
