@@ -95,6 +95,8 @@ impl<'a> Pool<'a> {
                     .fold(0, |accumulator, byte| (accumulator | byte))
                     as usize;
 
+                // TODO:
+                // let payload = deframe_payload(&buffer);
                 let payload = &buffer.get(6..6 + payload_length).unwrap();
 
                 match Protocol::from(payload[0]) {
@@ -163,8 +165,10 @@ impl<'a> Miner<'a> {
     }
 
     async fn handle_recv_bytes(&self, buffer: &[u8]) {
+        // TODO: Deserialize into Frame?
         match MessageTypes::from(buffer[2]) {
             MessageTypes::SetupConnectionSuccess => {
+                // TODO: This should be abstracted.
                 let payload_length = *&buffer
                     .get(3..6)
                     .unwrap()
@@ -173,6 +177,8 @@ impl<'a> Miner<'a> {
                     .fold(0, |accumulator, byte| (accumulator | byte))
                     as usize;
 
+                // TODO:
+                // let payload = deframe_payload(&buffer);
                 let payload = &buffer.get(6..6 + payload_length).unwrap();
 
                 let setup_conn_success =
