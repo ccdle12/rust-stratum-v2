@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::Result;
+use crate::{Framable, Serializable};
 use std::time::SystemTime;
 
 mod channel_id;
@@ -39,4 +40,22 @@ pub fn deframe_payload(bytes: &[u8]) -> Result<Vec<u8>> {
         .get(6..6 + payload_length)
         .ok_or_else(|| Error::DeserializationError("failed to parse payload".into()))
         .map(|x| x.to_vec())
+}
+
+/// Helper utility function to frame a type that implements the Frameable trait
+/// and returns the serialized result.
+pub fn frame<T: Framable>(val: T) -> Result<Vec<u8>> {
+    let mut buffer = vec![];
+    val.frame(&mut buffer)?;
+
+    Ok(buffer)
+}
+
+/// Helper utility function to serialize a type that implements the Serializable
+/// trait and returns the serialized result.
+pub fn serialize<T: Serializable>(val: T) -> Result<Vec<u8>> {
+    let mut buffer = vec![];
+    val.serialize(&mut buffer)?;
+
+    Ok(buffer)
 }

@@ -8,6 +8,7 @@ use std::io;
 
 #[macro_use]
 mod internal_macros;
+
 #[macro_use]
 mod internal_message_macros;
 

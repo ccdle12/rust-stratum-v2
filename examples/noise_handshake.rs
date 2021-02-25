@@ -5,7 +5,7 @@ use stratumv2::noise::{
     new_noise_initiator, new_noise_responder, AuthorityKeyPair, AuthorityPublicKey,
     CertificateFormat, NoiseSession, SignatureNoiseMessage, SignedCertificate, StaticKeyPair,
 };
-use stratumv2::util::system_unix_time_to_u32;
+use stratumv2::util::{serialize, system_unix_time_to_u32};
 use stratumv2::{Deserializable, Serializable};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::time::{sleep, Duration};
@@ -97,13 +97,10 @@ impl<'a> Pool<'a> {
         let signature_noise_msg =
             SignatureNoiseMessage::from_auth_key(&self.authority_keypair, &cert).unwrap();
 
-        let mut serialized_signature_msg = Vec::new();
-        signature_noise_msg
-            .serialize(&mut serialized_signature_msg)
-            .unwrap();
+        let serialized_msg = serialize(signature_noise_msg).unwrap();
 
         let mut buf = [0u8; 1024];
-        buf[..serialized_signature_msg.len()].copy_from_slice(&serialized_signature_msg);
+        buf[..serialized_msg.len()].copy_from_slice(&serialized_msg);
 
         self.send_message(&TcpStream::connect(&MINER_ADDR).await.unwrap(), &mut buf)
             .await;

@@ -3,6 +3,7 @@ use std::io;
 use stratumv2::mining;
 use stratumv2::types::MessageTypes;
 use stratumv2::util::deframe_payload;
+use stratumv2::util::frame;
 use stratumv2::{Deserializable, Framable, Protocol};
 use tokio::net::{TcpListener, TcpStream};
 
@@ -100,10 +101,7 @@ impl<'a> Pool<'a> {
                         );
 
                         println!("Pool: sending SetupConnectionSuccess message");
-                        // TODO: Macro
-                        // frame!(<Framable>)
-                        let mut buffer = vec![];
-                        conn_success.frame(&mut buffer).unwrap();
+                        let buffer = frame(conn_success).unwrap();
 
                         TcpStream::connect(&MINER_ADDR)
                             .await
@@ -153,10 +151,7 @@ impl<'a> Miner<'a> {
     }
 
     async fn send_message<T: Framable>(&self, stream: &TcpStream, msg: T) {
-        // TODO:
-        // frame!(<Framable>)
-        let mut buffer = vec![];
-        msg.frame(&mut buffer).unwrap();
+        let buffer = frame(msg).unwrap();
         stream.try_write(&buffer).unwrap();
     }
 
