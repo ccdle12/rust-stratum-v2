@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::io;
 use stratumv2::mining;
 use stratumv2::types::MessageTypes;
+use stratumv2::util::deframe_payload;
 use stratumv2::{Deserializable, Framable, Protocol};
 use tokio::net::{TcpListener, TcpStream};
 
@@ -87,17 +88,7 @@ impl<'a> Pool<'a> {
     async fn handle_recv_bytes(&self, buffer: &[u8]) {
         match MessageTypes::from(buffer[2]) {
             MessageTypes::SetupConnection => {
-                let payload_length = *&buffer
-                    .get(3..6)
-                    .unwrap()
-                    .into_iter()
-                    .map(|x| *x as u32)
-                    .fold(0, |accumulator, byte| (accumulator | byte))
-                    as usize;
-
-                // TODO:
-                // let payload = deframe_payload(&buffer);
-                let payload = &buffer.get(6..6 + payload_length).unwrap();
+                let payload = deframe_payload(&buffer).unwrap();
 
                 match Protocol::from(payload[0]) {
                     Protocol::Mining => {
@@ -109,8 +100,11 @@ impl<'a> Pool<'a> {
                         );
 
                         println!("Pool: sending SetupConnectionSuccess message");
+                        // TODO: Macro
+                        // frame!(<Framable>)
                         let mut buffer = vec![];
                         conn_success.frame(&mut buffer).unwrap();
+
                         TcpStream::connect(&MINER_ADDR)
                             .await
                             .unwrap()
@@ -159,6 +153,8 @@ impl<'a> Miner<'a> {
     }
 
     async fn send_message<T: Framable>(&self, stream: &TcpStream, msg: T) {
+        // TODO:
+        // frame!(<Framable>)
         let mut buffer = vec![];
         msg.frame(&mut buffer).unwrap();
         stream.try_write(&buffer).unwrap();
@@ -168,21 +164,11 @@ impl<'a> Miner<'a> {
         // TODO: Deserialize into Frame?
         match MessageTypes::from(buffer[2]) {
             MessageTypes::SetupConnectionSuccess => {
-                // TODO: This should be abstracted.
-                let payload_length = *&buffer
-                    .get(3..6)
-                    .unwrap()
-                    .into_iter()
-                    .map(|x| *x as u32)
-                    .fold(0, |accumulator, byte| (accumulator | byte))
-                    as usize;
-
-                // TODO:
-                // let payload = deframe_payload(&buffer);
-                let payload = &buffer.get(6..6 + payload_length).unwrap();
+                let payload = deframe_payload(&buffer).unwrap();
 
                 let setup_conn_success =
                     mining::SetupConnectionSuccess::deserialize(&payload).unwrap();
+
                 println!("Miner: Received a SetupConnectionSuccess message with feature flags supported by the Mining Pool: {:?}", setup_conn_success.flags)
             }
             _ => (),
