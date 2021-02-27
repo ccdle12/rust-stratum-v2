@@ -5,8 +5,8 @@ use crate::{Deserializable, Serializable};
 use ed25519_dalek::{Signature, Signer, Verifier};
 use noiseexplorer_nx::types::Keypair;
 use std::convert::TryInto;
+use std::io;
 use std::time::SystemTime;
-use std::{io, str};
 
 /// AuthorityKeyPair is an ed25519_dalek::Keypair used as the Authentication Authority
 /// Keypair for the Mining Pool.
@@ -190,6 +190,7 @@ impl SignatureNoiseMessage {
 
     /// from_auth_key generates a signature from an AuthorityKeyPair over the
     /// SignedCertificate and returns a SignatureNoiseMessage.
+    // TODO: EXAMPLE
     pub fn from_auth_key(
         authority_keypair: &AuthorityKeyPair,
         cert: &SignedCertificate,
@@ -286,7 +287,7 @@ mod tests {
     use std::thread::sleep;
     use std::time::Duration;
 
-    // /// Helper function to generate timestamps for SignedCertificates.
+    // Helper function to generate timestamps for SignedCertificates.
     fn setup_timestamps(valid_until: u32) -> (u32, u32) {
         (
             unix_u32_now!().unwrap(),
@@ -314,8 +315,8 @@ mod tests {
         assert!(cert.is_err());
     }
 
-    /// Helper function to setup the keys and a signature noise message for certificate
-    /// verification.
+    // Helper function to setup the keys and a signature noise message for certificate
+    // verification.
     fn setup_keys_and_signature() -> (AuthorityKeyPair, StaticPublicKey, SignatureNoiseMessage) {
         let authority_keypair = AuthorityKeyPair::generate(&mut OsRng {});
 
