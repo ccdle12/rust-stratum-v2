@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 use std::io;
+use stratumv2::common::NetworkFrame;
 use stratumv2::mining;
 use stratumv2::types::MessageTypes;
-use stratumv2::util::deframe_payload;
 use stratumv2::util::frame;
 use stratumv2::{Deserializable, Framable, Protocol};
 use tokio::net::{TcpListener, TcpStream};
@@ -87,13 +87,16 @@ impl<'a> Pool<'a> {
     }
 
     async fn handle_recv_bytes(&self, buffer: &[u8]) {
-        match MessageTypes::from(buffer[2]) {
-            MessageTypes::SetupConnection => {
-                let payload = deframe_payload(&buffer).unwrap();
+        let network_frame = NetworkFrame::deserialize(&buffer).unwrap();
 
-                match Protocol::from(payload[0]) {
+        match network_frame.msg_type {
+            MessageTypes::SetupConnection => {
+                // The first byte in a SetupConnection message defines the
+                // protocol.
+                match Protocol::from(network_frame.payload[0]) {
                     Protocol::Mining => {
-                        let setup_conn = mining::SetupConnection::deserialize(&payload).unwrap();
+                        let setup_conn =
+                            mining::SetupConnection::deserialize(&network_frame.payload).unwrap();
 
                         let conn_success = mining::SetupConnectionSuccess::new(
                             setup_conn.min_version,
@@ -156,13 +159,12 @@ impl<'a> Miner<'a> {
     }
 
     async fn handle_recv_bytes(&self, buffer: &[u8]) {
-        // TODO: Deserialize into Frame?
-        match MessageTypes::from(buffer[2]) {
-            MessageTypes::SetupConnectionSuccess => {
-                let payload = deframe_payload(&buffer).unwrap();
+        let network_frame = NetworkFrame::deserialize(&buffer).unwrap();
 
+        match network_frame.msg_type {
+            MessageTypes::SetupConnectionSuccess => {
                 let setup_conn_success =
-                    mining::SetupConnectionSuccess::deserialize(&payload).unwrap();
+                    mining::SetupConnectionSuccess::deserialize(&network_frame.payload).unwrap();
 
                 println!("Miner: Received a SetupConnectionSuccess message with feature flags supported by the Mining Pool: {:?}", setup_conn_success.flags)
             }
