@@ -165,9 +165,9 @@ macro_rules! impl_setup_connection {
             }
         }
 
-        /// Implementation of the Framable trait to build a network frame for the
+        /// Implementation of the Frameable trait to build a network frame for the
         /// SetupConnection message.
-        impl<'a> Framable for SetupConnection<'a> {
+        impl<'a> Frameable for SetupConnection<'a> {
             fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
                 let mut payload = Vec::new();
                 let size = *&self.serialize(&mut payload)?;
@@ -418,7 +418,7 @@ macro_rules! impl_setup_connection_success {
             }
         }
 
-        impl Framable for SetupConnectionSuccess<'_> {
+        impl Frameable for SetupConnectionSuccess<'_> {
             fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
                 let mut payload = Vec::new();
                 let size = *&self.serialize(&mut payload)?;
@@ -554,7 +554,7 @@ macro_rules! impl_setup_connection_error {
             }
         }
 
-        impl Framable for SetupConnectionError<'_> {
+        impl Frameable for SetupConnectionError<'_> {
             fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
                 let mut payload = Vec::new();
                 let size = *&self.serialize(&mut payload)?;

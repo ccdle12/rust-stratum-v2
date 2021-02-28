@@ -106,7 +106,7 @@ impl<'a> Pool<'a> {
             .await;
     }
 
-    // TODO: Update this to use Framable trait.
+    // TODO: Update this to use Frameable trait.
     async fn send_message(&mut self, stream: &TcpStream, msg: &mut [u8]) {
         self.noise_session.send_message(msg).unwrap();
         stream.try_write(&msg).unwrap();
@@ -176,7 +176,7 @@ impl<'a> Miner<'a> {
         }
     }
 
-    // TODO: Update this to use Framable trait.
+    // TODO: Update this to use Frameable trait.
     async fn send_message(&mut self, stream: &TcpStream, msg: &mut [u8]) {
         self.noise_session.send_message(msg).unwrap();
         stream.try_write(&msg).unwrap();

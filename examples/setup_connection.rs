@@ -4,7 +4,7 @@ use stratumv2::common::NetworkFrame;
 use stratumv2::mining;
 use stratumv2::types::MessageTypes;
 use stratumv2::util::frame;
-use stratumv2::{Deserializable, Framable, Protocol};
+use stratumv2::{Deserializable, Frameable, Protocol};
 use tokio::net::{TcpListener, TcpStream};
 
 // Addreses and ports for the example.
@@ -153,7 +153,7 @@ impl<'a> Miner<'a> {
         }
     }
 
-    async fn send_message<T: Framable>(&self, stream: &TcpStream, msg: T) {
+    async fn send_message<T: Frameable>(&self, stream: &TcpStream, msg: T) {
         let buffer = frame(msg).unwrap();
         stream.try_write(&buffer).unwrap();
     }

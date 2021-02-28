@@ -99,6 +99,6 @@ pub trait BitFlag {
 /// Trait for creating a serialized frame for networked messages. This trait
 /// will build the correct frame for a specific message as well as serialize
 /// the payload.
-pub trait Framable {
+pub trait Frameable {
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize>;
 }

@@ -2,7 +2,7 @@ use crate::common::SetupConnectionErrorCodes;
 use crate::error::{Error, Result};
 use crate::mining::{SetupConnectionFlags, SetupConnectionSuccessFlags};
 use crate::types::{MessageTypes, STR0_255, U256};
-use crate::{BitFlag, Deserializable, Framable, Protocol, Serializable};
+use crate::{BitFlag, Deserializable, Frameable, Protocol, Serializable};
 use std::borrow::Cow;
 use std::{io, str};
 

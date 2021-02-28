@@ -1,6 +1,5 @@
-use crate::error::Error;
 use crate::Result;
-use crate::{Framable, Serializable};
+use crate::{Frameable, Serializable};
 use std::time::SystemTime;
 
 mod channel_id;
@@ -25,7 +24,7 @@ pub(crate) fn le_bytes_to_u16(bytes: [u8; 2]) -> u16 {
 
 /// Helper utility function to frame a type that implements the Frameable trait
 /// and returns the serialized result.
-pub fn frame<T: Framable>(val: T) -> Result<Vec<u8>> {
+pub fn frame<T: Frameable>(val: T) -> Result<Vec<u8>> {
     let mut buffer = vec![];
     val.frame(&mut buffer)?;
 
