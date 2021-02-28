@@ -2,7 +2,7 @@ use crate::common::SetupConnectionErrorCodes;
 use crate::error::{Error, Result};
 use crate::mining::{SetupConnectionFlags, SetupConnectionSuccessFlags};
 use crate::types::{MessageTypes, STR0_255, U256};
-use crate::{BitFlag, Deserializable, Framable, Protocol, Serializable};
+use crate::{BitFlag, Deserializable, Frameable, Protocol, Serializable};
 use std::borrow::Cow;
 use std::{io, str};
 
@@ -46,6 +46,7 @@ impl OpenStandardMiningChannel {
 #[cfg(test)]
 mod setup_connection_tests {
     use super::*;
+    use crate::util::{frame, serialize};
 
     #[test]
     fn init_setup_connection() {
@@ -146,9 +147,8 @@ mod setup_connection_tests {
         )
         .unwrap();
 
-        let mut buffer: Vec<u8> = Vec::new();
-        let size = message.serialize(&mut buffer).unwrap();
-        assert_eq!(size, 75);
+        let buffer = serialize(message).unwrap();
+        assert_eq!(buffer.len(), 75);
 
         let expected = [
             0x00, // protocol
@@ -190,9 +190,8 @@ mod setup_connection_tests {
         )
         .unwrap();
 
-        let mut buffer: Vec<u8> = Vec::new();
-        let size = message.serialize(&mut buffer).unwrap();
-        assert_eq!(size, 75);
+        let buffer = serialize(message).unwrap();
+        assert_eq!(buffer.len(), 75);
 
         // Expect the feature flag to have no set flags (0x00).
         assert_eq!(buffer[5], 0x00);
@@ -216,10 +215,9 @@ mod setup_connection_tests {
         )
         .unwrap();
 
-        let mut buffer: Vec<u8> = Vec::new();
-        let size = message.serialize(&mut buffer).unwrap();
+        let buffer = serialize(message).unwrap();
 
-        assert_eq!(size, 75);
+        assert_eq!(buffer.len(), 75);
         assert_eq!(buffer[5], 0x05);
     }
 
@@ -242,10 +240,9 @@ mod setup_connection_tests {
         )
         .unwrap();
 
-        let mut buffer: Vec<u8> = Vec::new();
-        let size = message.serialize(&mut buffer).unwrap();
+        let buffer = serialize(message).unwrap();
 
-        assert_eq!(size, 75);
+        assert_eq!(buffer.len(), 75);
         assert_eq!(buffer[5], 0x07);
     }
 
@@ -342,9 +339,8 @@ mod setup_connection_tests {
         )
         .unwrap();
 
-        let mut buffer: Vec<u8> = Vec::new();
-        let size = message.frame(&mut buffer).unwrap();
-        assert_eq!(size, 81);
+        let buffer = frame(message).unwrap();
+        assert_eq!(buffer.len(), 81);
 
         let expected = [
             0x00, 0x00, // extension_type
@@ -394,13 +390,13 @@ mod open_standard_mining_tests {
 #[cfg(test)]
 mod connection_success_tests {
     use super::*;
+    use crate::util::{frame, serialize};
 
     #[test]
     fn serialize_connection_success() {
         let message = SetupConnectionSuccess::new(2, Cow::Borrowed(&[]));
 
-        let mut buffer: Vec<u8> = Vec::new();
-        message.serialize(&mut buffer).unwrap();
+        let buffer = serialize(message).unwrap();
 
         let expected = [
             0x02, 0x00, // used_version
@@ -416,8 +412,7 @@ mod connection_success_tests {
             Cow::Borrowed(&[SetupConnectionSuccessFlags::RequiresFixedVersion]),
         );
 
-        let mut buffer: Vec<u8> = Vec::new();
-        message.serialize(&mut buffer).unwrap();
+        let buffer = serialize(message).unwrap();
 
         let expected = [
             0x02, 0x00, // used_version
@@ -433,8 +428,7 @@ mod connection_success_tests {
             Cow::Borrowed(&[SetupConnectionSuccessFlags::RequiresFixedVersion]),
         );
 
-        let mut buffer: Vec<u8> = Vec::new();
-        message.frame(&mut buffer).unwrap();
+        let buffer = frame(message).unwrap();
 
         let expected = [
             0x00, 0x00, // extension_type
@@ -456,8 +450,7 @@ mod connection_success_tests {
             ]),
         );
 
-        let mut buffer: Vec<u8> = Vec::new();
-        message.serialize(&mut buffer).unwrap();
+        let buffer = serialize(message).unwrap();
 
         let expected = [
             0x02, 0x00, // used_version
@@ -470,8 +463,7 @@ mod connection_success_tests {
     fn serialize_connection_success_no_flags() {
         let message = SetupConnectionSuccess::new(2, Cow::Borrowed(&[]));
 
-        let mut buffer: Vec<u8> = Vec::new();
-        message.serialize(&mut buffer).unwrap();
+        let buffer = serialize(message).unwrap();
 
         let expected = [
             0x02, 0x00, // used_version
@@ -484,6 +476,7 @@ mod connection_success_tests {
 #[cfg(test)]
 mod connection_error_tests {
     use super::*;
+    use crate::util::{frame, serialize};
 
     #[test]
     fn serialize_connection_error() {
@@ -493,8 +486,7 @@ mod connection_error_tests {
         )
         .unwrap();
 
-        let mut buffer: Vec<u8> = Vec::new();
-        message.serialize(&mut buffer).unwrap();
+        let buffer = serialize(message).unwrap();
 
         // Feature flag.
         assert_eq!(buffer[0], 0x01);
@@ -521,8 +513,7 @@ mod connection_error_tests {
         )
         .unwrap();
 
-        let mut buffer: Vec<u8> = Vec::new();
-        message.frame(&mut buffer).unwrap();
+        let buffer = frame(message).unwrap();
 
         let expected = [
             0x00, 0x00, // extension_type

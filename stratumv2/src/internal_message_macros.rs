@@ -2,6 +2,9 @@
 /// sub protocol.
 macro_rules! impl_setup_connection {
     ($protocol:expr, $flags:ident) => {
+        use crate::util::le_bytes_to_u16;
+        use std::convert::TryInto;
+
         /// SetupConnection is the first message sent by a client on a new connection.
         ///
         /// The SetupConnection struct contains all the common fields for the
@@ -145,7 +148,7 @@ macro_rules! impl_setup_connection {
                     .fold(0, |accumulator, byte| (accumulator | byte))
                     .to_le_bytes();
 
-                let buffer = serialize!(
+                let buffer = serialize_slices!(
                     &[self.protocol as u8],
                     &self.min_version.to_le_bytes(),
                     &self.max_version.to_le_bytes(),
@@ -162,9 +165,9 @@ macro_rules! impl_setup_connection {
             }
         }
 
-        /// Implementation of the Framable trait to build a network frame for the
+        /// Implementation of the Frameable trait to build a network frame for the
         /// SetupConnection message.
-        impl<'a> Framable for SetupConnection<'a> {
+        impl<'a> Frameable for SetupConnection<'a> {
             fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
                 let mut payload = Vec::new();
                 let size = *&self.serialize(&mut payload)?;
@@ -173,7 +176,7 @@ macro_rules! impl_setup_connection {
                 let mut payload_length = (size as u16).to_le_bytes().to_vec();
                 payload_length.push(0x00);
 
-                let buffer = serialize!(
+                let buffer = serialize_slices!(
                     &[0x00, 0x00],                           // empty extension type
                     &[MessageTypes::SetupConnection.into()], // msg_type
                     &payload_length,
@@ -209,8 +212,7 @@ macro_rules! impl_setup_connection {
                         "min_version is missing from setup connection message".into(),
                     ));
                 }
-                let min_version = (min_version_bytes.unwrap()[1] as u16) << 8
-                    | min_version_bytes.unwrap()[0] as u16;
+                let min_version = le_bytes_to_u16(min_version_bytes.unwrap().try_into().unwrap());
 
                 // Get the max_version bytes.
                 let start = offset;
@@ -221,8 +223,7 @@ macro_rules! impl_setup_connection {
                         "max_version is missing from setup connection message".into(),
                     ));
                 }
-                let max_version = (max_version_bytes.unwrap()[1] as u16) << 8
-                    | max_version_bytes.unwrap()[0] as u16;
+                let max_version = le_bytes_to_u16(max_version_bytes.unwrap().try_into().unwrap());
 
                 // Get the flag bytes.
                 let start = offset;
@@ -268,8 +269,8 @@ macro_rules! impl_setup_connection {
                         "endpoint_port is missing from setup connection message".into(),
                     ));
                 }
-                let endpoint_port = (endpoint_port_bytes.unwrap()[1] as u16) << 8
-                    | endpoint_port_bytes.unwrap()[0] as u16;
+                let endpoint_port =
+                    le_bytes_to_u16(endpoint_port_bytes.unwrap().try_into().unwrap());
 
                 // Get the vendor bytes length.
                 let mut start = offset;
@@ -412,12 +413,12 @@ macro_rules! impl_setup_connection_success {
                     .fold(0, |accumulator, byte| (accumulator | byte))
                     .to_le_bytes();
 
-                let buffer = serialize!(&self.used_version.to_le_bytes(), &byte_flags);
+                let buffer = serialize_slices!(&self.used_version.to_le_bytes(), &byte_flags);
                 Ok(writer.write(&buffer)?)
             }
         }
 
-        impl Framable for SetupConnectionSuccess<'_> {
+        impl Frameable for SetupConnectionSuccess<'_> {
             fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
                 let mut payload = Vec::new();
                 let size = *&self.serialize(&mut payload)?;
@@ -426,7 +427,7 @@ macro_rules! impl_setup_connection_success {
                 let mut payload_length = (size as u16).to_le_bytes().to_vec();
                 payload_length.push(0x00);
 
-                let result = serialize!(
+                let result = serialize_slices!(
                     &[0x00, 0x00],                                  // extention_type
                     &[MessageTypes::SetupConnectionSuccess.into()], // msg_type
                     &payload_length,
@@ -544,7 +545,7 @@ macro_rules! impl_setup_connection_error {
                     .fold(0, |accumulator, byte| (accumulator | byte))
                     .to_le_bytes();
 
-                let result = serialize!(
+                let result = serialize_slices!(
                     &byte_flags,
                     &STR0_255::new(&self.error_code.to_string())?.as_bytes()
                 );
@@ -553,7 +554,7 @@ macro_rules! impl_setup_connection_error {
             }
         }
 
-        impl Framable for SetupConnectionError<'_> {
+        impl Frameable for SetupConnectionError<'_> {
             fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
                 let mut payload = Vec::new();
                 let size = *&self.serialize(&mut payload)?;
@@ -562,7 +563,7 @@ macro_rules! impl_setup_connection_error {
                 let mut payload_length = (size as u16).to_le_bytes().to_vec();
                 payload_length.push(0x00);
 
-                let result = serialize!(
+                let result = serialize_slices!(
                     &[0x00, 0x00], // extension_type
                     &[MessageTypes::SetupConnectionError.into()],
                     &payload_length,
