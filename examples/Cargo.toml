@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 stratumv2 = { version = "0.1.0", path = "../stratumv2" }
+rand = "0.7.3"
 
 [dev-dependencies]
 tokio = { version = "1.0.0", features = ["full"] }
@@ -13,3 +14,7 @@ tokio = { version = "1.0.0", features = ["full"] }
 [[example]]
 name = "setup_connection"
 path = "setup_connection.rs"
+
+[[example]]
+name = "noise_handshake"
+path = "noise_handshake.rs"

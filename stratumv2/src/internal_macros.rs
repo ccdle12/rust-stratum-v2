@@ -19,3 +19,10 @@ macro_rules! impl_error_conversions {
         })*
     };
 }
+
+/// An internal helper macro for getting the unix time now as a u32.
+macro_rules! unix_u32_now {
+    () => {
+        system_unix_time_to_u32(&SystemTime::now())
+    };
+}

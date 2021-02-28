@@ -8,6 +8,7 @@ use std::{io, str};
 // Implementation of the SetupConenction message for the Job Negotiation Protocol.
 impl_setup_connection!(Protocol::JobNegotiation, SetupConnectionFlags);
 
+#[cfg(test)]
 mod tests {
     use super::*;
 

@@ -14,6 +14,8 @@ cd rust-stratum-v2
 cargo build
 ```
 
+## Tests
+
 You can run tests with:
 
 ```
@@ -22,6 +24,7 @@ cargo test
 
 Please refer to the [`cargo` documentation](https://doc.rust-lang.org/stable/cargo/) for more detailed instructions.
 
+See [fuzz tests](/fuzz/README.md) for instructions on how to run fuzzing.
 
 ## Documentation
 
@@ -34,4 +37,4 @@ cargo doc --no-deps --open
 ## Examples
 
 Examples can be found [here](/examples) and the [README](/examples/README.md)
-contains instructions on how to run the example.
+contains instructions on how to run the examples.
