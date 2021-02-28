@@ -81,23 +81,20 @@ impl Deserializable for NetworkFrame {
 
         // Get the message type.
         let offset = 2;
-        let msg_type_bytes = bytes.get(start..offset);
+        let msg_type_bytes = bytes.get(offset);
 
         if msg_type_bytes.is_none() {
             return Err(Error::DeserializationError(
                 "missing msg_type in network frame".into(),
             ));
         }
+        let msg_type = MessageTypes::from(*msg_type_bytes.unwrap());
 
-        let msg_type = MessageTypes::from(bytes[offset] as u8);
-
+        // Get the length of the payload.
         let start = offset;
         let offset = start + 3;
 
-        // Get the length of the payload.
         // TODO: Create a function that changes U24 to u16.
-        // let mut payload_length = (size as u16).to_le_bytes().to_vec();
-        // payload_length.push(0x00);
         let msg_length_bytes = bytes.get(start..offset);
         if msg_length_bytes.is_none() {
             return Err(Error::DeserializationError(
