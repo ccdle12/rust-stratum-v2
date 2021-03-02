@@ -2,7 +2,6 @@
 /// sub protocol.
 macro_rules! impl_setup_connection {
     ($protocol:expr, $flags:ident) => {
-        use crate::util::le_bytes_to_u16;
         use std::convert::TryInto;
 
         /// SetupConnection is the first message sent by a client on a new connection.
@@ -212,7 +211,8 @@ macro_rules! impl_setup_connection {
                         "min_version is missing from setup connection message".into(),
                     ));
                 }
-                let min_version = le_bytes_to_u16(min_version_bytes.unwrap().try_into().unwrap());
+                let min_version =
+                    u16::from_le_bytes(min_version_bytes.unwrap().try_into().unwrap());
 
                 // Get the max_version bytes.
                 let start = offset;
@@ -223,7 +223,8 @@ macro_rules! impl_setup_connection {
                         "max_version is missing from setup connection message".into(),
                     ));
                 }
-                let max_version = le_bytes_to_u16(max_version_bytes.unwrap().try_into().unwrap());
+                let max_version =
+                    u16::from_le_bytes(max_version_bytes.unwrap().try_into().unwrap());
 
                 // Get the flag bytes.
                 let start = offset;
@@ -270,7 +271,7 @@ macro_rules! impl_setup_connection {
                     ));
                 }
                 let endpoint_port =
-                    le_bytes_to_u16(endpoint_port_bytes.unwrap().try_into().unwrap());
+                    u16::from_le_bytes(endpoint_port_bytes.unwrap().try_into().unwrap());
 
                 // Get the vendor bytes length.
                 let mut start = offset;

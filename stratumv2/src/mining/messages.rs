@@ -2,7 +2,6 @@ use crate::common::SetupConnectionErrorCodes;
 use crate::error::{Error, Result};
 use crate::mining::{SetupConnectionFlags, SetupConnectionSuccessFlags};
 use crate::types::{MessageTypes, STR0_255, U256};
-use crate::util::le_bytes_to_u32;
 use crate::{BitFlag, Deserializable, Frameable, Protocol, Serializable};
 use std::borrow::Cow;
 use std::{io, str};
@@ -84,7 +83,7 @@ impl Deserializable for OpenStandardMiningChannel {
             ));
         }
 
-        let request_id = le_bytes_to_u32(request_id_bytes.unwrap().try_into().unwrap());
+        let request_id = u32::from_le_bytes(request_id_bytes.unwrap().try_into().unwrap());
 
         // Get the user_identity_length.
         let user_identity_length_bytes = bytes.get(offset);
