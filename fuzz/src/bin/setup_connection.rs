@@ -14,4 +14,8 @@ fn main() {
     fuzz!(|data: &[u8]| {
         mining::SetupConnection::deserialize(&data);
     });
+
+    fuzz!(|data: &[u8]| {
+        mining::OpenStandardMiningChannel::deserialize(&data);
+    });
 }
