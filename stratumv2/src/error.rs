@@ -12,6 +12,7 @@ pub enum Error {
     DeserializationError(String),
     AuthorityKeyError(ed25519_dalek::ed25519::Error),
     SystemTimeError(std::time::SystemTimeError),
+    TryFromSliceError(std::array::TryFromSliceError),
 }
 
 impl fmt::Display for Error {
@@ -25,6 +26,7 @@ impl fmt::Display for Error {
             Error::DeserializationError(ref message) => write!(f, "{}", message),
             Error::AuthorityKeyError(ref message) => write!(f, "{}", message),
             Error::SystemTimeError(ref message) => write!(f, "{}", message),
+            Error::TryFromSliceError(ref message) => write!(f, "{}", message),
         }
     }
 }
@@ -33,7 +35,8 @@ impl_error_conversions!(
     std::str::Utf8Error => Error::Utf8Error,
     io::Error => Error::IOError,
     ed25519_dalek::ed25519::Error => Error::AuthorityKeyError,
-    std::time::SystemTimeError => Error::SystemTimeError
+    std::time::SystemTimeError => Error::SystemTimeError,
+    std::array::TryFromSliceError => Error::TryFromSliceError
 );
 
 /// Alias Result type for the library.

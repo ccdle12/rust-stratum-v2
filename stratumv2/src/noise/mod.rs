@@ -229,7 +229,7 @@ impl Deserializable for SignatureNoiseMessage {
                 "missing version_bytes in signature noise message".into(),
             ));
         }
-        let version = u16::from_le_bytes(version_bytes.unwrap().try_into().unwrap());
+        let version = u16::from_le_bytes(version_bytes.unwrap().try_into()?);
 
         // Get valid from.
         let start = offset;
@@ -241,7 +241,7 @@ impl Deserializable for SignatureNoiseMessage {
                 "missing valid_from in signature noise message".into(),
             ));
         }
-        let valid_from = u32::from_le_bytes(valid_from_bytes.unwrap().try_into().unwrap());
+        let valid_from = u32::from_le_bytes(valid_from_bytes.unwrap().try_into()?);
 
         // Get not_valid_after.
         let start = offset;
@@ -253,8 +253,7 @@ impl Deserializable for SignatureNoiseMessage {
                 "missing not_valid_after in signature noise message".into(),
             ));
         }
-        let not_valid_after =
-            u32::from_le_bytes(not_valid_after_bytes.unwrap().try_into().unwrap());
+        let not_valid_after = u32::from_le_bytes(not_valid_after_bytes.unwrap().try_into()?);
 
         // Get the Signature.
         let start = offset;
@@ -266,7 +265,7 @@ impl Deserializable for SignatureNoiseMessage {
                 "missing signature in signature noise message".into(),
             ));
         }
-        let sig_array: [u8; 64] = signature_bytes.unwrap().try_into().unwrap();
+        let sig_array: [u8; 64] = signature_bytes.unwrap().try_into()?;
         let signature = Signature::new(sig_array);
 
         Ok({
