@@ -1,6 +1,5 @@
 use crate::error::{Error, Result};
 use crate::types::MessageTypes;
-use crate::util::le_bytes_to_u16;
 use crate::Deserializable;
 use std::convert::TryInto;
 use std::fmt;
@@ -77,7 +76,7 @@ impl Deserializable for NetworkFrame {
             ));
         }
 
-        let extension_type = le_bytes_to_u16(extension_type_bytes.unwrap().try_into().unwrap());
+        let extension_type = u16::from_le_bytes(extension_type_bytes.unwrap().try_into().unwrap());
 
         // Get the message type.
         let offset = 2;

@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::util::{le_bytes_to_u16, le_bytes_to_u32, system_unix_time_to_u32};
+use crate::util::system_unix_time_to_u32;
 use crate::Result;
 use crate::{Deserializable, Serializable};
 use ed25519_dalek::{Signature, Signer, Verifier};
@@ -229,7 +229,7 @@ impl Deserializable for SignatureNoiseMessage {
                 "missing version_bytes in signature noise message".into(),
             ));
         }
-        let version = le_bytes_to_u16(version_bytes.unwrap().try_into().unwrap());
+        let version = u16::from_le_bytes(version_bytes.unwrap().try_into().unwrap());
 
         // Get valid from.
         let start = offset;
@@ -241,7 +241,7 @@ impl Deserializable for SignatureNoiseMessage {
                 "missing valid_from in signature noise message".into(),
             ));
         }
-        let valid_from = le_bytes_to_u32(valid_from_bytes.unwrap().try_into().unwrap());
+        let valid_from = u32::from_le_bytes(valid_from_bytes.unwrap().try_into().unwrap());
 
         // Get not_valid_after.
         let start = offset;
@@ -253,7 +253,8 @@ impl Deserializable for SignatureNoiseMessage {
                 "missing not_valid_after in signature noise message".into(),
             ));
         }
-        let not_valid_after = le_bytes_to_u32(not_valid_after_bytes.unwrap().try_into().unwrap());
+        let not_valid_after =
+            u32::from_le_bytes(not_valid_after_bytes.unwrap().try_into().unwrap());
 
         // Get the Signature.
         let start = offset;
