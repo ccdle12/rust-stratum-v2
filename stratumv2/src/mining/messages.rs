@@ -83,7 +83,7 @@ impl Deserializable for OpenStandardMiningChannel {
             ));
         }
 
-        let request_id = u32::from_le_bytes(request_id_bytes.unwrap().try_into().unwrap());
+        let request_id = u32::from_le_bytes(request_id_bytes.unwrap().try_into()?);
 
         // Get the user_identity_length.
         let user_identity_length_bytes = bytes.get(offset);
@@ -113,8 +113,7 @@ impl Deserializable for OpenStandardMiningChannel {
             ));
         }
 
-        let nominal_hash_rate =
-            f32::from_le_bytes(nominal_hash_rate_bytes.unwrap().try_into().unwrap());
+        let nominal_hash_rate = f32::from_le_bytes(nominal_hash_rate_bytes.unwrap().try_into()?);
 
         // Get the max_target.
         let start = offset;
@@ -130,7 +129,7 @@ impl Deserializable for OpenStandardMiningChannel {
             request_id,
             str::from_utf8(user_identity_bytes.unwrap())?,
             nominal_hash_rate,
-            max_target_bytes.unwrap().try_into().unwrap(),
+            max_target_bytes.unwrap().try_into()?,
         )
     }
 }

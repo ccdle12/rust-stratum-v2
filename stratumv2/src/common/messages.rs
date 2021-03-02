@@ -76,7 +76,7 @@ impl Deserializable for NetworkFrame {
             ));
         }
 
-        let extension_type = u16::from_le_bytes(extension_type_bytes.unwrap().try_into().unwrap());
+        let extension_type = u16::from_le_bytes(extension_type_bytes.unwrap().try_into()?);
 
         // Get the message type.
         let offset = 2;

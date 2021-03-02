@@ -211,8 +211,7 @@ macro_rules! impl_setup_connection {
                         "min_version is missing from setup connection message".into(),
                     ));
                 }
-                let min_version =
-                    u16::from_le_bytes(min_version_bytes.unwrap().try_into().unwrap());
+                let min_version = u16::from_le_bytes(min_version_bytes.unwrap().try_into()?);
 
                 // Get the max_version bytes.
                 let start = offset;
@@ -223,8 +222,7 @@ macro_rules! impl_setup_connection {
                         "max_version is missing from setup connection message".into(),
                     ));
                 }
-                let max_version =
-                    u16::from_le_bytes(max_version_bytes.unwrap().try_into().unwrap());
+                let max_version = u16::from_le_bytes(max_version_bytes.unwrap().try_into()?);
 
                 // Get the flag bytes.
                 let start = offset;
@@ -270,8 +268,7 @@ macro_rules! impl_setup_connection {
                         "endpoint_port is missing from setup connection message".into(),
                     ));
                 }
-                let endpoint_port =
-                    u16::from_le_bytes(endpoint_port_bytes.unwrap().try_into().unwrap());
+                let endpoint_port = u16::from_le_bytes(endpoint_port_bytes.unwrap().try_into()?);
 
                 // Get the vendor bytes length.
                 let mut start = offset;
