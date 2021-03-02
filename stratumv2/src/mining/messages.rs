@@ -388,7 +388,7 @@ mod open_standard_mining_tests {
     use super::*;
 
     #[test]
-    fn new_open_standard_mining_channel_0() {
+    fn open_standard_mining_channel() {
         // TODO: Substitute the nominal hash rate with something more accurate.
         let target = [0u8; 32];
 
