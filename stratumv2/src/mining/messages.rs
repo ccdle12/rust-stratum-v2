@@ -1,9 +1,11 @@
 use crate::common::SetupConnectionErrorCodes;
 use crate::error::{Error, Result};
 use crate::mining::{SetupConnectionFlags, SetupConnectionSuccessFlags};
-use crate::types::{MessageTypes, STR0_255, U256};
+use crate::types::{MessageTypes, B0_32, STR0_255, U256};
+use crate::util::ByteParser;
 use crate::{BitFlag, Deserializable, Frameable, Protocol, Serializable};
 use std::borrow::Cow;
+use std::convert::TryFrom;
 use std::{io, str};
 
 // Implementation of the SetupConenction message for the Mining Protocol.
@@ -73,63 +75,94 @@ impl Serializable for OpenStandardMiningChannel {
 
 impl Deserializable for OpenStandardMiningChannel {
     fn deserialize(bytes: &[u8]) -> Result<OpenStandardMiningChannel> {
-        // Get request_id.
-        let start = 0;
-        let offset = start + 4;
-        let request_id_bytes = bytes.get(start..offset);
-        if request_id_bytes.is_none() {
-            return Err(Error::DeserializationError(
-                "request_id not in OpenStandardMiningChannel message".into(),
-            ));
-        }
+        let mut parser = ByteParser::new(bytes, 0);
 
-        let request_id = u32::from_le_bytes(request_id_bytes.unwrap().try_into()?);
-
-        // Get the user_identity_length.
-        let user_identity_length_bytes = bytes.get(offset);
-        if user_identity_length_bytes.is_none() {
-            return Err(Error::DeserializationError(
-                "user_identity_length not in OpenStandardMiningChannel message".into(),
-            ));
-        }
-
-        // Get the user_identity.
-        let start = offset + 1;
-        let offset = start + *user_identity_length_bytes.unwrap() as usize;
-        let user_identity_bytes = &bytes.get(start..offset);
-        if user_identity_bytes.is_none() {
-            return Err(Error::DeserializationError(
-                "user_identity is missing from OpenStandardMiningChannel message".into(),
-            ));
-        }
-
-        // Get nominal hash rate.
-        let start = offset;
-        let offset = start + 4;
-        let nominal_hash_rate_bytes = &bytes.get(start..offset);
-        if nominal_hash_rate_bytes.is_none() {
-            return Err(Error::DeserializationError(
-                "nominal_hash_rate is missing from OpenStandardMiningChannel message".into(),
-            ));
-        }
-
-        let nominal_hash_rate = f32::from_le_bytes(nominal_hash_rate_bytes.unwrap().try_into()?);
-
-        // Get the max_target.
-        let start = offset;
-        let offset = start + 32;
-        let max_target_bytes = &bytes.get(start..offset);
-        if max_target_bytes.is_none() {
-            return Err(Error::DeserializationError(
-                "max_target is missing from OpenStandardMiningChannel message".into(),
-            ));
-        }
+        let request_id = parser.next_by(4)?;
+        let user_identity_length = parser.next_by(1)?[0] as usize;
+        let user_identity = parser.next_by(user_identity_length)?;
+        let nominal_hash_rate = parser.next_by(4)?;
+        let max_target = parser.next_by(32)?;
 
         OpenStandardMiningChannel::new(
+            u32::from_le_bytes(request_id.try_into()?),
+            str::from_utf8(user_identity)?,
+            f32::from_le_bytes(nominal_hash_rate.try_into()?),
+            max_target.try_into()?,
+        )
+    }
+}
+
+/// OpenStandardMiningChannelSuccess is a message sent by the Server to the Client
+/// in response to opening a standard mining channel if succesful.
+pub struct OpenStandardMiningChannelSuccess {
+    /// The request_id received in the OpenStandardMiningChannel message. This
+    /// is returned to the Client so that they can pair the responses with the
+    /// initial request.
+    request_id: u32,
+
+    /// Assigned by the Server to uniquely identify the channel, the id is stable
+    /// for the whole lifetime of the connection.
+    channel_id: u32,
+
+    /// The initial target difficulty target for the mining channel.
+    target: U256,
+
+    // TODO: I don't understand the purpose of the extranonce_prefix.
+    extranonce_prefix: B0_32,
+
+    /// Group channel that the channel belongs to.
+    group_channel_id: u32,
+}
+
+impl OpenStandardMiningChannelSuccess {
+    pub fn new<T: Into<Vec<u8>>>(
+        request_id: u32,
+        channel_id: u32,
+        target: U256,
+        extranonce_prefix: T,
+        group_channel_id: u32,
+    ) -> Result<OpenStandardMiningChannelSuccess> {
+        Ok(OpenStandardMiningChannelSuccess {
             request_id,
-            str::from_utf8(user_identity_bytes.unwrap())?,
-            nominal_hash_rate,
-            max_target_bytes.unwrap().try_into()?,
+            channel_id,
+            target,
+            extranonce_prefix: B0_32::new(extranonce_prefix.into())?,
+            group_channel_id,
+        })
+    }
+}
+
+impl Serializable for OpenStandardMiningChannelSuccess {
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        let buffer = serialize_slices!(
+            &self.request_id.to_le_bytes(),
+            &self.channel_id.to_le_bytes(),
+            &self.target,
+            &self.extranonce_prefix.as_bytes(),
+            &self.group_channel_id.to_le_bytes()
+        );
+
+        Ok(writer.write(&buffer)?)
+    }
+}
+
+impl Deserializable for OpenStandardMiningChannelSuccess {
+    fn deserialize(bytes: &[u8]) -> Result<OpenStandardMiningChannelSuccess> {
+        let mut parser = ByteParser::new(bytes, 0);
+
+        let request_id = parser.next_by(4)?;
+        let channel_id = parser.next_by(4)?;
+        let target = parser.next_by(32)?;
+        let extranonce_length = parser.next_by(1)?[0] as usize;
+        let extranonce_bytes = parser.next_by(extranonce_length)?;
+        let group_channel_id = parser.next_by(4)?;
+
+        OpenStandardMiningChannelSuccess::new(
+            u32::from_le_bytes(request_id.try_into()?),
+            u32::from_le_bytes(channel_id.try_into()?),
+            target.try_into()?,
+            extranonce_bytes.to_vec(),
+            u32::from_le_bytes(group_channel_id.try_into()?),
         )
     }
 }
@@ -462,7 +495,7 @@ mod setup_connection_tests {
 #[cfg(test)]
 mod open_standard_mining_tests {
     use super::*;
-    use crate::util::serialize;
+    use crate::util::{new_channel_id, serialize};
 
     #[test]
     fn open_standard_mining_channel() {
@@ -517,6 +550,63 @@ mod open_standard_mining_tests {
         assert_eq!(message.user_identity, "braiinstest.worker1".to_string());
         assert_eq!(message.nominal_hash_rate, 12.3);
         assert_eq!(message.max_target, [0u8; 32]);
+    }
+
+    #[test]
+    fn open_standard_mining_sucess() {
+        let extranonce_prefix = [0x00, 0x00];
+        let channel_id = new_channel_id();
+        let message =
+            OpenStandardMiningChannelSuccess::new(1, channel_id, [0u8; 32], extranonce_prefix, 1)
+                .unwrap();
+
+        assert_eq!(message.request_id, 1);
+        assert_eq!(message.channel_id, channel_id);
+        assert_eq!(message.target, [0u8; 32]);
+        assert_eq!(message.extranonce_prefix, extranonce_prefix.to_vec());
+        assert_eq!(message.group_channel_id, 1);
+    }
+
+    #[test]
+    fn serialize_open_standard_mining_success() {
+        let expected = [
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x01, 0x00, 0x00, 0x00, // channel_id
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // target
+            0x02, // length extranonce_prefix
+            0x00, 0x00, // extranonce_prefix
+            0x01, 0x00, 0x00, 0x00, // request_id
+        ];
+
+        let message =
+            OpenStandardMiningChannelSuccess::new(1, 1, [0u8; 32], vec![0x00, 0x00], 1).unwrap();
+
+        let buffer = serialize(message).unwrap();
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn deserialize_open_standard_mining_success() {
+        let input = [
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x01, 0x00, 0x00, 0x00, // channel_id
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // target
+            0x02, // length extranonce_prefix
+            0x00, 0x00, // extranonce_prefix
+            0x01, 0x00, 0x00, 0x00, // request_id
+        ];
+
+        let message = OpenStandardMiningChannelSuccess::deserialize(&input).unwrap();
+        assert_eq!(message.request_id, 1);
+        assert_eq!(message.channel_id, 1);
+        assert_eq!(message.target, [0u8; 32]);
+        assert_eq!(message.extranonce_prefix, vec![0x00, 0x00]);
+        assert_eq!(message.group_channel_id, 1);
     }
 }
 
