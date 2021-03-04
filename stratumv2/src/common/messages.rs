@@ -1,5 +1,6 @@
 use crate::error::{Error, Result};
 use crate::types::MessageTypes;
+use crate::util::ByteParser;
 use crate::Deserializable;
 use std::convert::TryInto;
 use std::fmt;
@@ -66,62 +67,23 @@ pub struct NetworkFrame {
 
 impl Deserializable for NetworkFrame {
     fn deserialize(bytes: &[u8]) -> Result<NetworkFrame> {
-        // Get the extension type.
-        let start = 0;
-        let offset = start + 2;
-        let extension_type_bytes = bytes.get(start..offset);
-        if extension_type_bytes.is_none() {
-            return Err(Error::DeserializationError(
-                "received empty bytes in network frame".into(),
-            ));
-        }
+        let mut parser = ByteParser::new(bytes, 0);
 
-        let extension_type = u16::from_le_bytes(extension_type_bytes.unwrap().try_into()?);
+        let extension_type = parser.next_by(2)?;
+        let msg_type = parser.next_by(1)?[0];
 
-        // Get the message type.
-        let offset = 2;
-        let msg_type_bytes = bytes.get(offset);
+        let msg_length_bytes = parser.next_by(3)?;
+        let msg_length = (msg_length_bytes[2] as u32)
+            | (msg_length_bytes[1] as u32)
+            | (msg_length_bytes[0] as u32);
 
-        if msg_type_bytes.is_none() {
-            return Err(Error::DeserializationError(
-                "missing msg_type in network frame".into(),
-            ));
-        }
-        let msg_type = MessageTypes::from(*msg_type_bytes.unwrap());
-
-        // Get the length of the payload.
-        let start = offset;
-        let offset = start + 3;
-
-        // TODO: Create a function that changes U24 to u16.
-        let msg_length_bytes = bytes.get(start..offset);
-        if msg_length_bytes.is_none() {
-            return Err(Error::DeserializationError(
-                "missing message length in network frame".into(),
-            ));
-        }
-
-        // TODO: Need to review this
-        let msg_length = (msg_length_bytes.unwrap()[2] as u32)
-            | (msg_length_bytes.unwrap()[1] as u32)
-            | (msg_length_bytes.unwrap()[0] as u32);
-
-        // Get the variable length payload.
-        let start = offset + 1;
-        let offset = start + msg_length as usize;
-
-        let payload = bytes.get(start..offset);
-        if payload.is_none() {
-            return Err(Error::DeserializationError(
-                "missing payload in network frame".into(),
-            ));
-        }
+        let payload = parser.next_by(msg_length as usize)?;
 
         Ok(NetworkFrame {
-            extension_type,
-            msg_type,
+            extension_type: u16::from_le_bytes(extension_type.try_into()?),
+            msg_type: MessageTypes::from(msg_type),
             msg_length,
-            payload: payload.unwrap().to_vec(),
+            payload: payload.to_vec(),
         })
     }
 }
