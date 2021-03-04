@@ -1,4 +1,4 @@
-use crate::Result;
+use crate::error::{Error, Result};
 use crate::{Frameable, Serializable};
 use std::time::SystemTime;
 
@@ -28,4 +28,30 @@ pub fn serialize<T: Serializable>(val: T) -> Result<Vec<u8>> {
     val.serialize(&mut buffer)?;
 
     Ok(buffer)
+}
+
+/// ByteParser is a custom iterator-like struct. It's used to extract segments
+/// from a slice using by providing an offset to return the bytes from start
+/// to step.
+pub(crate) struct ByteParser<'a> {
+    bytes: &'a [u8],
+    start: usize,
+}
+
+impl<'a> ByteParser<'a> {
+    pub(crate) fn new(bytes: &'a [u8], start: usize) -> ByteParser {
+        ByteParser { bytes, start }
+    }
+
+    pub(crate) fn next_by(&mut self, step: usize) -> Result<&'a [u8]> {
+        let offset = self.start + step;
+
+        let b = self.bytes.get(self.start..offset);
+        if b.is_none() {
+            return Err(Error::DeserializationError("out of bounds error".into()));
+        }
+
+        self.start = offset;
+        Ok(b.unwrap())
+    }
 }
