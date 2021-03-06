@@ -73,6 +73,7 @@ impl Deserializable for NetworkFrame {
         let msg_type = parser.next_by(1)?[0];
 
         let msg_length_bytes = parser.next_by(3)?;
+        // TODO: Review U24 and U32 conversion.
         let msg_length = (msg_length_bytes[2] as u32)
             | (msg_length_bytes[1] as u32)
             | (msg_length_bytes[0] as u32);
