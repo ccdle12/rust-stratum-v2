@@ -48,7 +48,7 @@ impl<'a> ByteParser<'a> {
 
         let b = self.bytes.get(self.start..offset);
         if b.is_none() {
-            return Err(Error::DeserializationError("out of bounds error".into()));
+            return Err(Error::ParseError("out of bounds error".into()));
         }
 
         self.start = offset;

@@ -188,172 +188,51 @@ macro_rules! impl_setup_connection {
 
         impl<'a> Deserializable for SetupConnection<'a> {
             fn deserialize(bytes: &[u8]) -> Result<SetupConnection<'a>> {
-                let offset = 0;
-                let protocol_byte = bytes.get(offset);
-                if protocol_byte.is_none() {
-                    return Err(Error::DeserializationError(
-                        "received empty bytes in setup connection message".into(),
-                    ));
-                }
+                let mut parser = ByteParser::new(bytes, 0);
 
-                if Protocol::from(*protocol_byte.unwrap()) == Protocol::Unknown {
+                let protocol = parser.next_by(1)?[0];
+                if Protocol::from(protocol) == Protocol::Unknown {
                     return Err(Error::DeserializationError(
                         "received unknown protocol byte in setup connection message".into(),
                     ));
                 }
 
-                // Get the min_version bytes.
-                let start = 1;
-                let offset = 3;
-                let min_version_bytes = &bytes.get(start..offset);
-                if min_version_bytes.is_none() {
-                    return Err(Error::DeserializationError(
-                        "min_version is missing from setup connection message".into(),
-                    ));
-                }
-                let min_version = u16::from_le_bytes(min_version_bytes.unwrap().try_into()?);
+                let min_version = parser.next_by(2)?;
+                let max_version = parser.next_by(2)?;
 
-                // Get the max_version bytes.
-                let start = offset;
-                let offset = 5;
-                let max_version_bytes = &bytes.get(start..offset);
-                if max_version_bytes.is_none() {
-                    return Err(Error::DeserializationError(
-                        "max_version is missing from setup connection message".into(),
-                    ));
-                }
-                let max_version = u16::from_le_bytes(max_version_bytes.unwrap().try_into()?);
-
-                // Get the flag bytes.
-                let start = offset;
-                let offset = start + 4;
-                let flags_bytes = &bytes.get(start..offset);
-                if flags_bytes.is_none() {
-                    return Err(Error::DeserializationError(
-                        "setup connection flags are missing from setup connection message".into(),
-                    ));
-                }
-                let set_flags = flags_bytes
-                    .unwrap()
+                let set_flags = parser
+                    .next_by(4)?
                     .iter()
                     .map(|x| *x as u32)
                     .fold(0, |accumulator, byte| (accumulator | byte));
-                let flags = Cow::from($flags::deserialize_flags(set_flags));
 
-                // Get the endpoint_host_length.
-                let mut start = offset;
-                let endpoint_host_length = &bytes.get(start);
-                if endpoint_host_length.is_none() {
-                    return Err(Error::DeserializationError(
-                        "endpoint_host length is missing from setup connection message".into(),
-                    ));
-                }
+                let endpoint_host_length = parser.next_by(1)?[0] as usize;
+                let endpoint_host = parser.next_by(endpoint_host_length)?;
 
-                // Get the endpoint_host.
-                start += 1;
-                let offset = start + *endpoint_host_length.unwrap() as usize;
-                let endpoint_host = &bytes.get(start..offset);
-                if endpoint_host.is_none() {
-                    return Err(Error::DeserializationError(
-                        "endpoint_host is missing from setup connection message".into(),
-                    ));
-                }
+                let endpoint_port = parser.next_by(2)?;
 
-                // Get the variable length bytes for the endpoint host.
-                let start = offset;
-                let offset = start + 2;
-                let endpoint_port_bytes = &bytes.get(start..offset);
-                if endpoint_port_bytes.is_none() {
-                    return Err(Error::DeserializationError(
-                        "endpoint_port is missing from setup connection message".into(),
-                    ));
-                }
-                let endpoint_port = u16::from_le_bytes(endpoint_port_bytes.unwrap().try_into()?);
+                let vendor_length = parser.next_by(1)?[0] as usize;
+                let vendor = parser.next_by(vendor_length)?;
 
-                // Get the vendor bytes length.
-                let mut start = offset;
-                let vendor_length = &bytes.get(start);
-                if vendor_length.is_none() {
-                    return Err(Error::DeserializationError(
-                        "vendor is missing from setup connection message".into(),
-                    ));
-                }
+                let hardware_version_length = parser.next_by(1)?[0] as usize;
+                let hardware_version = parser.next_by(hardware_version_length)?;
 
-                // Get the vendor bytes.
-                start += 1;
-                let offset = start + *vendor_length.unwrap() as usize;
-                let vendor = &bytes.get(start..offset);
-                if vendor.is_none() {
-                    return Err(Error::DeserializationError(
-                        "vendor is missing from setup connection message".into(),
-                    ));
-                }
+                let firmware_length = parser.next_by(1)?[0] as usize;
+                let firmware = parser.next_by(firmware_length)?;
 
-                // Get the hardware version length.
-                let mut start = offset;
-                let hardware_version_length = bytes.get(start);
-                if hardware_version_length.is_none() {
-                    return Err(Error::DeserializationError(
-                        "hardware version length is missing from setup connection message".into(),
-                    ));
-                }
-                start += 1;
-                let offset = start + *hardware_version_length.unwrap() as usize;
-                let hardware_version = &bytes.get(start..offset);
-                if hardware_version.is_none() {
-                    return Err(Error::DeserializationError(
-                        "hardware version is missing from setup connection message".into(),
-                    ));
-                }
-
-                // Get the firmware length.
-                let mut start = offset;
-                let firmware_length = &bytes.get(start);
-                if firmware_length.is_none() {
-                    return Err(Error::DeserializationError(
-                        "firmware length is missing from setup connection message".into(),
-                    ));
-                }
-
-                // Get the firmware.
-                start += 1;
-                let offset = start + *firmware_length.unwrap() as usize;
-                let firmware = &bytes.get(start..offset);
-                if firmware.is_none() {
-                    return Err(Error::DeserializationError(
-                        "firmware is missing from setup connection message".into(),
-                    ));
-                }
-
-                // Get device id length.
-                let mut start = offset;
-                let device_id_length = &bytes.get(start);
-                if device_id_length.is_none() {
-                    return Err(Error::DeserializationError(
-                        "device id length is missing from setup connection message".into(),
-                    ));
-                }
-                start += 1;
-                let offset = start + *device_id_length.unwrap() as usize;
-
-                // Get device id.
-                let device_id = &bytes.get(start..offset);
-                if device_id.is_none() {
-                    return Err(Error::DeserializationError(
-                        "device id is missing from setup connection message".into(),
-                    ));
-                }
+                let device_id_length = parser.next_by(1)?[0] as usize;
+                let device_id = parser.next_by(device_id_length)?;
 
                 SetupConnection::new(
-                    min_version,
-                    max_version,
-                    flags,
-                    str::from_utf8(endpoint_host.unwrap())?,
-                    endpoint_port,
-                    str::from_utf8(vendor.unwrap())?,
-                    str::from_utf8(hardware_version.unwrap())?,
-                    str::from_utf8(firmware.unwrap())?,
-                    str::from_utf8(device_id.unwrap())?,
+                    u16::from_le_bytes(min_version.try_into()?),
+                    u16::from_le_bytes(max_version.try_into()?),
+                    Cow::from($flags::deserialize_flags(set_flags)),
+                    str::from_utf8(endpoint_host)?,
+                    u16::from_le_bytes(endpoint_port.try_into()?),
+                    str::from_utf8(vendor)?,
+                    str::from_utf8(hardware_version)?,
+                    str::from_utf8(firmware)?,
+                    str::from_utf8(device_id)?,
                 )
             }
         }
@@ -438,37 +317,18 @@ macro_rules! impl_setup_connection_success {
 
         impl<'a> Deserializable for SetupConnectionSuccess<'a> {
             fn deserialize(bytes: &[u8]) -> Result<SetupConnectionSuccess<'a>> {
-                // Get the used version.
-                let start = 0;
-                let offset = start + 2;
-                let used_version_bytes = &bytes.get(start..offset);
-                if used_version_bytes.is_none() {
-                    return Err(Error::DeserializationError(
-                        "used version is missing from setup connection success message".into(),
-                    ));
-                }
+                let mut parser = ByteParser::new(bytes, 0);
 
-                let used_version = (used_version_bytes.unwrap()[1] as u16) << 8
-                    | used_version_bytes.unwrap()[0] as u16;
-
-                let start = offset;
-                let offset = start + 4;
-                let flags_bytes = &bytes.get(start..offset);
-                if flags_bytes.is_none() {
-                    return Err(Error::DeserializationError(
-                        "flags are missing from setup connection error message".into(),
-                    ));
-                }
-                let flags = flags_bytes
-                    .unwrap()
+                let used_version_bytes = parser.next_by(2)?;
+                let set_flags = parser
+                    .next_by(4)?
                     .iter()
                     .map(|x| *x as u32)
                     .fold(0, |accumulator, byte| (accumulator | byte));
-                let flags = Cow::from($flags::deserialize_flags(flags));
 
                 Ok(SetupConnectionSuccess {
-                    used_version,
-                    flags,
+                    used_version: u16::from_le_bytes(used_version_bytes.try_into()?),
+                    flags: Cow::from($flags::deserialize_flags(set_flags)),
                 })
             }
         }
@@ -574,47 +434,20 @@ macro_rules! impl_setup_connection_error {
 
         impl<'a> Deserializable for SetupConnectionError<'a> {
             fn deserialize(bytes: &[u8]) -> Result<SetupConnectionError<'a>> {
-                // Get the flags.
-                let start = 0;
-                let offset = start + 4;
-                let flags_bytes = &bytes.get(start..offset);
-                if flags_bytes.is_none() {
-                    return Err(Error::DeserializationError(
-                        "flags are missing from setup connection error message".into(),
-                    ));
-                }
-                let set_flags = flags_bytes
-                    .unwrap()
+                let mut parser = ByteParser::new(bytes, 0);
+
+                let set_flags = parser
+                    .next_by(4)?
                     .iter()
                     .map(|x| *x as u32)
                     .fold(0, |accumulator, byte| (accumulator | byte));
-                let flags = Cow::from($flag_type::deserialize_flags(set_flags));
 
-                // Get the length of the error code.
-                let mut start = offset;
-                let error_code_length = &bytes.get(start as usize);
-                if error_code_length.is_none() {
-                    return Err(Error::DeserializationError(
-                        "length of error code is missing from setup connection error message"
-                            .into(),
-                    ));
-                }
-
-                // Get the error code message.
-                start += 1;
-                let offset = start + *error_code_length.unwrap() as usize;
-                let error_code = &bytes.get(start as usize..offset as usize);
-                if error_code.is_none() {
-                    return Err(Error::DeserializationError(
-                        "error code is missing from setup connection message".into(),
-                    ));
-                }
+                let error_code_length = parser.next_by(1)?[0] as usize;
+                let error_code = parser.next_by(error_code_length)?;
 
                 Ok(SetupConnectionError {
-                    flags,
-                    error_code: SetupConnectionErrorCodes::from(str::from_utf8(
-                        error_code.unwrap(),
-                    )?),
+                    flags: Cow::from($flag_type::deserialize_flags(set_flags)),
+                    error_code: SetupConnectionErrorCodes::from(str::from_utf8(error_code)?),
                 })
             }
         }

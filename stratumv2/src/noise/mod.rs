@@ -1,5 +1,6 @@
 use crate::error::Error;
 use crate::util::system_unix_time_to_u32;
+use crate::util::ByteParser;
 use crate::Result;
 use crate::{Deserializable, Serializable};
 use ed25519_dalek::{Signature, Signer, Verifier};
@@ -219,61 +220,19 @@ impl Serializable for SignatureNoiseMessage {
 
 impl Deserializable for SignatureNoiseMessage {
     fn deserialize(bytes: &[u8]) -> Result<SignatureNoiseMessage> {
-        // Get the version.
-        let start = 0;
-        let offset = start + 2;
+        let mut parser = ByteParser::new(bytes, 0);
 
-        let version_bytes = bytes.get(start..offset);
-        if version_bytes.is_none() {
-            return Err(Error::DeserializationError(
-                "missing version_bytes in signature noise message".into(),
-            ));
-        }
-        let version = u16::from_le_bytes(version_bytes.unwrap().try_into()?);
-
-        // Get valid from.
-        let start = offset;
-        let offset = start + 4;
-
-        let valid_from_bytes = bytes.get(start..offset);
-        if valid_from_bytes.is_none() {
-            return Err(Error::DeserializationError(
-                "missing valid_from in signature noise message".into(),
-            ));
-        }
-        let valid_from = u32::from_le_bytes(valid_from_bytes.unwrap().try_into()?);
-
-        // Get not_valid_after.
-        let start = offset;
-        let offset = start + 4;
-
-        let not_valid_after_bytes = bytes.get(start..offset);
-        if not_valid_after_bytes.is_none() {
-            return Err(Error::DeserializationError(
-                "missing not_valid_after in signature noise message".into(),
-            ));
-        }
-        let not_valid_after = u32::from_le_bytes(not_valid_after_bytes.unwrap().try_into()?);
-
-        // Get the Signature.
-        let start = offset;
-        let offset = start + 64;
-
-        let signature_bytes = bytes.get(start..offset);
-        if signature_bytes.is_none() {
-            return Err(Error::DeserializationError(
-                "missing signature in signature noise message".into(),
-            ));
-        }
-        let sig_array: [u8; 64] = signature_bytes.unwrap().try_into()?;
-        let signature = Signature::new(sig_array);
+        let version = parser.next_by(2)?;
+        let valid_from = parser.next_by(4)?;
+        let not_valid_after = parser.next_by(4)?;
+        let signature_bytes = parser.next_by(64)?;
 
         Ok({
             SignatureNoiseMessage {
-                version,
-                valid_from,
-                not_valid_after,
-                signature,
+                version: u16::from_le_bytes(version.try_into()?),
+                valid_from: u32::from_le_bytes(valid_from.try_into()?),
+                not_valid_after: u32::from_le_bytes(not_valid_after.try_into()?),
+                signature: Signature::new(signature_bytes.try_into()?),
             }
         })
     }

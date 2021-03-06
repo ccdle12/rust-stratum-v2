@@ -5,7 +5,6 @@ use crate::types::{MessageTypes, B0_32, STR0_255, U256};
 use crate::util::ByteParser;
 use crate::{BitFlag, Deserializable, Frameable, Protocol, Serializable};
 use std::borrow::Cow;
-use std::convert::TryFrom;
 use std::{io, str};
 
 // Implementation of the SetupConenction message for the Mining Protocol.
