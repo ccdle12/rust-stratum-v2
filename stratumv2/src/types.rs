@@ -1,5 +1,6 @@
 use crate::error::Error::RequirementError;
 use crate::error::Result;
+use std::convert::TryFrom;
 
 /// U256 is an unsigned integer type of 256-bits in little endian. This will
 /// usually be used to represent a raw SHA256 byte output.
@@ -59,6 +60,44 @@ impl PartialEq<STR0_255> for STR0_255 {
 impl From<STR0_255> for String {
     fn from(s: STR0_255) -> Self {
         s.0
+    }
+}
+
+// TODO: TEMP Create a macro to create B0_32, B0_16M?
+// TODO AND NOTE: The specification does contain an official implemenation for
+// B0_32. I'm making an assumption that the serialized form will be:
+// <1-byte length L (u8) + variable length bytes>
+//
+// This should be reviewed.
+/// B0_32 is a type representing a vector of bytes with a maximum size of 32 bytes.
+/// Serialization is assumed with the following structure:
+/// <1-byte length L (u8) + variable length bytes>
+#[derive(Debug, Clone)]
+pub struct B0_32(Vec<u8>);
+
+impl B0_32 {
+    const MAX_SIZE: usize = 32;
+
+    pub fn new<T: Into<Vec<u8>>>(value: T) -> Result<B0_32> {
+        let input = value.into();
+        if input.len() > Self::MAX_SIZE {
+            return Err(RequirementError(
+                "length of bytes cannot be greater than 32".into(),
+            ));
+        }
+
+        Ok(B0_32(input))
+    }
+
+    pub fn as_bytes(&self) -> Vec<u8> {
+        serialize_slices!(&[self.0.len() as u8], &self.0)
+    }
+}
+
+/// PartialEq implementation allowing direct comparison between B0_32 and Vec<u8>.
+impl PartialEq<Vec<u8>> for B0_32 {
+    fn eq(&self, other: &Vec<u8>) -> bool {
+        self.0 == *other
     }
 }
 

@@ -18,4 +18,8 @@ fn main() {
     fuzz!(|data: &[u8]| {
         mining::OpenStandardMiningChannel::deserialize(&data);
     });
+
+    fuzz!(|data: &[u8]| {
+        mining::OpenStandardMiningChannelSuccess::deserialize(&data);
+    });
 }
