@@ -16,9 +16,9 @@ impl_setup_connection_success!(SetupConnectionSuccessFlags);
 // Implementation of the SetupConnectionError message for the Mining Protocol.
 impl_setup_connection_error!(SetupConnectionFlags);
 
-/// OpenStandardMiningChannel is a message sent by the client to the server
+/// OpenStandardMiningChannel is a message sent by the Client to the Server
 /// after a [SetupConnection.Success](struct.SetupConnectionSuccess.html) is
-/// sent by the server. This message is used to request opening a standard
+/// sent from the Server. This message is used to request opening a standard
 /// channel to the upstream server. A standard mining channel indicates `header-only`
 /// mining.
 pub struct OpenStandardMiningChannel {
