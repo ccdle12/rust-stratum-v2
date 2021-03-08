@@ -215,7 +215,13 @@ macro_rules! impl_setup_connection {
             }
         }
 
-        impl_frameable_trait_with_liftime!(SetupConnection, MessageTypes::SetupConnection, false);
+        impl From<&SetupConnection<'_>> for MessageTypes {
+            fn from(_s: &SetupConnection) -> Self {
+                MessageTypes::SetupConnection
+            }
+        }
+
+        impl_frameable_trait_with_liftime!(SetupConnection, false);
     };
 }
 
@@ -293,11 +299,13 @@ macro_rules! impl_setup_connection_success {
             }
         }
 
-        impl_frameable_trait_with_liftime!(
-            SetupConnectionSuccess,
-            MessageTypes::SetupConnectionSuccess,
-            false
-        );
+        impl From<&SetupConnectionSuccess<'_>> for MessageTypes {
+            fn from(_s: &SetupConnectionSuccess) -> Self {
+                MessageTypes::SetupConnectionSuccess
+            }
+        }
+
+        impl_frameable_trait_with_liftime!(SetupConnectionSuccess, false);
     };
 }
 
@@ -398,11 +406,13 @@ macro_rules! impl_setup_connection_error {
             }
         }
 
-        impl_frameable_trait_with_liftime!(
-            SetupConnectionError,
-            MessageTypes::SetupConnectionError,
-            false
-        );
+        impl From<&SetupConnectionError<'_>> for MessageTypes {
+            fn from(_s: &SetupConnectionError) -> Self {
+                MessageTypes::SetupConnectionError
+            }
+        }
+
+        impl_frameable_trait_with_liftime!(SetupConnectionError, false);
     };
 }
 

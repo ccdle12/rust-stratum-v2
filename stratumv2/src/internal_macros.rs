@@ -32,24 +32,24 @@ macro_rules! unix_u32_now {
 /// is intended for a specific channel_id. The channel_id will always be found
 /// in the deserialized object as a field.
 macro_rules! impl_frameable_trait {
-    ($msg:ident, $type:path, $has_channel_msg_bit:expr) => {
+    ($msg:ident, $has_channel_msg_bit:expr) => {
         impl Frameable for $msg {
-            internal_frameable_trait!($type, $has_channel_msg_bit);
+            internal_frameable_trait!($has_channel_msg_bit);
         }
     };
 }
 
 macro_rules! impl_frameable_trait_with_liftime {
-    ($msg:ident, $type:path, $has_channel_msg_bit:expr) => {
+    ($msg:ident, $has_channel_msg_bit:expr) => {
         impl<'a> Frameable for $msg<'a> {
-            internal_frameable_trait!($type, $has_channel_msg_bit);
+            internal_frameable_trait!($has_channel_msg_bit);
         }
     };
 }
 
 // TODO: Implement channel_msg branch.
 macro_rules! internal_frameable_trait {
-    ($type:path, $has_channel_msg_bit:expr) => {
+    ($has_channel_msg_bit:expr) => {
         fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
             let mut payload = Vec::new();
             let size = *&self.serialize(&mut payload)?;
@@ -57,9 +57,12 @@ macro_rules! internal_frameable_trait {
             // A size_u24 of the message payload.
             let payload_length = (size as u32).to_le_bytes()[0..=2].to_vec();
 
+            // Get the enum variant and byte representation of the message.
+            let msg_type: MessageTypes = self.into();
+
             let buffer = serialize_slices!(
-                &[0x00, 0x00],   // empty extension type
-                &[$type.into()], // msg_type
+                &[0x00, 0x00],      // empty extension type
+                &[msg_type.into()], // msg_type
                 &payload_length,
                 &payload
             );

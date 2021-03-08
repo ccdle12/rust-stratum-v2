@@ -91,11 +91,13 @@ impl Deserializable for OpenStandardMiningChannel {
     }
 }
 
-impl_frameable_trait!(
-    OpenStandardMiningChannel,
-    MessageTypes::OpenStandardMiningChannel,
-    false
-);
+impl From<&OpenStandardMiningChannel> for MessageTypes {
+    fn from(_s: &OpenStandardMiningChannel) -> Self {
+        MessageTypes::OpenStandardMiningChannel
+    }
+}
+
+impl_frameable_trait!(OpenStandardMiningChannel, false);
 
 /// OpenStandardMiningChannelSuccess is a message sent by the Server to the Client
 /// in response to opening a standard mining channel if succesful.
@@ -172,11 +174,13 @@ impl Deserializable for OpenStandardMiningChannelSuccess {
     }
 }
 
-impl_frameable_trait!(
-    OpenStandardMiningChannelSuccess,
-    MessageTypes::OpenStandardMiningChannelSuccess,
-    false
-);
+impl From<&OpenStandardMiningChannelSuccess> for MessageTypes {
+    fn from(_s: &OpenStandardMiningChannelSuccess) -> Self {
+        MessageTypes::OpenStandardMiningChannelSuccess
+    }
+}
+
+impl_frameable_trait!(OpenStandardMiningChannelSuccess, false);
 
 #[cfg(test)]
 mod setup_connection_tests {
