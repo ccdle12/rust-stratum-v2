@@ -1,6 +1,5 @@
 use crate::error::Error::RequirementError;
 use crate::error::Result;
-use std::convert::TryFrom;
 
 /// U256 is an unsigned integer type of 256-bits in little endian. This will
 /// usually be used to represent a raw SHA256 byte output.
@@ -103,11 +102,14 @@ impl PartialEq<Vec<u8>> for B0_32 {
 
 /// MessageTypes contain all the variations for the byte representation of
 /// messages used in message frames.
+// TODO: Create a macro maybe for just conversions to keep ti more readable.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum MessageTypes {
     SetupConnection,
     SetupConnectionSuccess,
     SetupConnectionError,
+    OpenStandardMiningChannel,
+    OpenStandardMiningChannelSuccess,
     Unknown,
 }
 
@@ -118,6 +120,8 @@ impl From<MessageTypes> for u8 {
             MessageTypes::SetupConnection => 0x00,
             MessageTypes::SetupConnectionSuccess => 0x01,
             MessageTypes::SetupConnectionError => 0x03,
+            MessageTypes::OpenStandardMiningChannel => 0x10,
+            MessageTypes::OpenStandardMiningChannelSuccess => 0x11,
             // TODO: THIS IS NOT SPECIFIED IN THE PROTOCOL.
             MessageTypes::Unknown => 0xFF,
         }
@@ -130,6 +134,8 @@ impl From<u8> for MessageTypes {
             0x00 => MessageTypes::SetupConnection,
             0x01 => MessageTypes::SetupConnectionSuccess,
             0x03 => MessageTypes::SetupConnectionError,
+            0x10 => MessageTypes::OpenStandardMiningChannel,
+            0x11 => MessageTypes::OpenStandardMiningChannelSuccess,
             // TODO: THIS IS NOT SPECIFIED IN THE PROTOCOL.
             _ => MessageTypes::Unknown,
         }
