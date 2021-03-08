@@ -91,6 +91,12 @@ impl Deserializable for OpenStandardMiningChannel {
     }
 }
 
+impl_frameable_trait!(
+    OpenStandardMiningChannel,
+    MessageTypes::OpenStandardMiningChannel,
+    false
+);
+
 /// OpenStandardMiningChannelSuccess is a message sent by the Server to the Client
 /// in response to opening a standard mining channel if succesful.
 pub struct OpenStandardMiningChannelSuccess {
@@ -165,6 +171,12 @@ impl Deserializable for OpenStandardMiningChannelSuccess {
         )
     }
 }
+
+impl_frameable_trait!(
+    OpenStandardMiningChannelSuccess,
+    MessageTypes::OpenStandardMiningChannelSuccess,
+    false
+);
 
 #[cfg(test)]
 mod setup_connection_tests {
@@ -494,7 +506,7 @@ mod setup_connection_tests {
 #[cfg(test)]
 mod open_standard_mining_tests {
     use super::*;
-    use crate::util::{new_channel_id, serialize};
+    use crate::util::{frame, new_channel_id, serialize};
 
     #[test]
     fn open_standard_mining_channel() {
@@ -606,6 +618,55 @@ mod open_standard_mining_tests {
         assert_eq!(message.target, [0u8; 32]);
         assert_eq!(message.extranonce_prefix, vec![0x00, 0x00]);
         assert_eq!(message.group_channel_id, 1);
+    }
+
+    #[test]
+    fn frame_open_standard_mining() {
+        let target = [0u8; 32];
+
+        let message =
+            OpenStandardMiningChannel::new(1, "braiinstest.worker1".to_string(), 12.3, target)
+                .unwrap();
+
+        let buffer = frame(message).unwrap();
+
+        let expected = [
+            0x00, 0x00, // extension_type
+            0x10, // msg_type
+            0x3c, 0x00, 0x00, // msg_length
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x13, // length_user_identity
+            0x62, 0x72, 0x61, 0x69, 0x69, 0x6e, 0x73, 0x74, 0x65, 0x73, 0x74, 0x2e, 0x77, 0x6f,
+            0x72, 0x6b, 0x65, 0x72, 0x31, // user_identity
+            0xcd, 0xcc, 0x44, 0x41, // nominal_hash_rate
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // max_target
+        ];
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn frame_open_standard_mining_success() {
+        let message =
+            OpenStandardMiningChannelSuccess::new(1, 1, [0u8; 32], vec![0x00, 0x00], 1).unwrap();
+
+        let expected = [
+            0x00, 0x00, // extension_type
+            0x11, // msg_type
+            0x2f, 0x00, 0x00, // msg_length
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x01, 0x00, 0x00, 0x00, // channel_id
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // target
+            0x02, // length extranonce_prefix
+            0x00, 0x00, // extranonce_prefix
+            0x01, 0x00, 0x00, 0x00, // request_id
+        ];
+
+        let buffer = frame(message).unwrap();
+        assert_eq!(buffer, expected);
     }
 }
 

@@ -164,28 +164,6 @@ macro_rules! impl_setup_connection {
             }
         }
 
-        /// Implementation of the Frameable trait to build a network frame for the
-        /// SetupConnection message.
-        impl<'a> Frameable for SetupConnection<'a> {
-            fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-                let mut payload = Vec::new();
-                let size = *&self.serialize(&mut payload)?;
-
-                // A size_u24 of the message payload.
-                let mut payload_length = (size as u16).to_le_bytes().to_vec();
-                payload_length.push(0x00);
-
-                let buffer = serialize_slices!(
-                    &[0x00, 0x00],                           // empty extension type
-                    &[MessageTypes::SetupConnection.into()], // msg_type
-                    &payload_length,
-                    &payload
-                );
-
-                Ok(writer.write(&buffer)?)
-            }
-        }
-
         impl<'a> Deserializable for SetupConnection<'a> {
             fn deserialize(bytes: &[u8]) -> Result<SetupConnection<'a>> {
                 let mut parser = ByteParser::new(bytes, 0);
@@ -236,6 +214,8 @@ macro_rules! impl_setup_connection {
                 )
             }
         }
+
+        impl_frameable_trait_with_liftime!(SetupConnection, MessageTypes::SetupConnection, false);
     };
 }
 
@@ -295,26 +275,6 @@ macro_rules! impl_setup_connection_success {
             }
         }
 
-        impl Frameable for SetupConnectionSuccess<'_> {
-            fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-                let mut payload = Vec::new();
-                let size = *&self.serialize(&mut payload)?;
-
-                // A size_u24 of the message payload.
-                let mut payload_length = (size as u16).to_le_bytes().to_vec();
-                payload_length.push(0x00);
-
-                let result = serialize_slices!(
-                    &[0x00, 0x00],                                  // extention_type
-                    &[MessageTypes::SetupConnectionSuccess.into()], // msg_type
-                    &payload_length,
-                    &payload
-                );
-
-                Ok(writer.write(&result)?)
-            }
-        }
-
         impl<'a> Deserializable for SetupConnectionSuccess<'a> {
             fn deserialize(bytes: &[u8]) -> Result<SetupConnectionSuccess<'a>> {
                 let mut parser = ByteParser::new(bytes, 0);
@@ -332,6 +292,12 @@ macro_rules! impl_setup_connection_success {
                 })
             }
         }
+
+        impl_frameable_trait_with_liftime!(
+            SetupConnectionSuccess,
+            MessageTypes::SetupConnectionSuccess,
+            false
+        );
     };
 }
 
@@ -412,26 +378,6 @@ macro_rules! impl_setup_connection_error {
             }
         }
 
-        impl Frameable for SetupConnectionError<'_> {
-            fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-                let mut payload = Vec::new();
-                let size = *&self.serialize(&mut payload)?;
-
-                // A size_u24 of the message payload.
-                let mut payload_length = (size as u16).to_le_bytes().to_vec();
-                payload_length.push(0x00);
-
-                let result = serialize_slices!(
-                    &[0x00, 0x00], // extension_type
-                    &[MessageTypes::SetupConnectionError.into()],
-                    &payload_length,
-                    &payload
-                );
-
-                Ok(writer.write(&result)?)
-            }
-        }
-
         impl<'a> Deserializable for SetupConnectionError<'a> {
             fn deserialize(bytes: &[u8]) -> Result<SetupConnectionError<'a>> {
                 let mut parser = ByteParser::new(bytes, 0);
@@ -451,6 +397,12 @@ macro_rules! impl_setup_connection_error {
                 })
             }
         }
+
+        impl_frameable_trait_with_liftime!(
+            SetupConnectionError,
+            MessageTypes::SetupConnectionError,
+            false
+        );
     };
 }
 
