@@ -6,7 +6,7 @@ use stratumv2::noise::{
     CertificateFormat, NoiseSession, SignatureNoiseMessage, SignedCertificate, StaticKeyPair,
 };
 use stratumv2::util::{serialize, system_unix_time_to_u32};
-use stratumv2::{Deserializable, Serializable};
+use stratumv2::Deserializable;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::time::{sleep, Duration};
 

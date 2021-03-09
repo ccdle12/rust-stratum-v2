@@ -1,4 +1,4 @@
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::types::MessageTypes;
 use crate::util::ByteParser;
 use crate::Deserializable;
@@ -55,12 +55,11 @@ impl From<&str> for SetupConnectionErrorCodes {
     }
 }
 
-// TODO: Docstring
-// Example:
+/// Used to deserialize a received network frame. The payload would be further
+/// deserialized according to the received MessageTypes.
 pub struct NetworkFrame {
     pub extension_type: u16,
     pub msg_type: MessageTypes,
-    // TODO: decode the le U24 to u32.
     pub msg_length: u32,
     pub payload: Vec<u8>,
 }
@@ -73,10 +72,7 @@ impl Deserializable for NetworkFrame {
         let msg_type = parser.next_by(1)?[0];
 
         let msg_length_bytes = parser.next_by(3)?;
-        // TODO: Review U24 and U32 conversion.
-        let msg_length = (msg_length_bytes[2] as u32)
-            | (msg_length_bytes[1] as u32)
-            | (msg_length_bytes[0] as u32);
+        let msg_length = (msg_length_bytes[1] | msg_length_bytes[0]) as u32;
 
         let payload = parser.next_by(msg_length as usize)?;
 
