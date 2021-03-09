@@ -221,7 +221,7 @@ macro_rules! impl_setup_connection {
             }
         }
 
-        impl_frameable_trait_with_liftime!(SetupConnection, false);
+        impl_frameable_trait_with_liftime!(SetupConnection, false, 'a);
     };
 }
 
@@ -305,7 +305,7 @@ macro_rules! impl_setup_connection_success {
             }
         }
 
-        impl_frameable_trait_with_liftime!(SetupConnectionSuccess, false);
+        impl_frameable_trait_with_liftime!(SetupConnectionSuccess, false, 'a);
     };
 }
 
@@ -412,7 +412,7 @@ macro_rules! impl_setup_connection_error {
             }
         }
 
-        impl_frameable_trait_with_liftime!(SetupConnectionError, false);
+        impl_frameable_trait_with_liftime!(SetupConnectionError, false, 'a);
     };
 }
 

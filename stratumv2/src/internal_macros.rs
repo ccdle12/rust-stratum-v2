@@ -40,8 +40,8 @@ macro_rules! impl_frameable_trait {
 }
 
 macro_rules! impl_frameable_trait_with_liftime {
-    ($msg:ident, $has_channel_msg_bit:expr) => {
-        impl<'a> Frameable for $msg<'a> {
+    ($msg:ident, $has_channel_msg_bit:expr, $lt:lifetime) => {
+        impl<$lt> Frameable for $msg<$lt> {
             internal_frameable_trait!($has_channel_msg_bit);
         }
     };
