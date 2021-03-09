@@ -102,7 +102,7 @@ impl PartialEq<Vec<u8>> for B0_32 {
 
 /// MessageTypes contain all the variations for the byte representation of
 /// messages used in message frames.
-// TODO: Create a macro maybe for just conversions to keep ti more readable.
+// TODO: Create a macro maybe for just conversions to keep it more readable.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum MessageTypes {
     SetupConnection,
