@@ -1,4 +1,4 @@
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::types::MessageTypes;
 use crate::util::ByteParser;
 use crate::Deserializable;
