@@ -1,6 +1,5 @@
 use crate::error::Error;
-use crate::util::system_unix_time_to_u32;
-use crate::util::ByteParser;
+use crate::util::{system_unix_time_to_u32, ByteParser};
 use crate::Result;
 use crate::{Deserializable, Serializable};
 use ed25519_dalek::{Signature, Signer, Verifier};
@@ -19,20 +18,21 @@ pub type AuthorityKeyPair = ed25519_dalek::Keypair;
 /// Node is authorised by the Mining Pool.
 pub type AuthorityPublicKey = ed25519_dalek::PublicKey;
 
-/// StaticPublicKey is used as the Noise DH static public. The key that will be
-/// signed by the AuthorityKeyPair, to attest to the authenticity of the Mining Pool
-/// Server.
+/// StaticPublicKey is used as the Noise Diffie-Hellman static public. The key
+/// will be signed by the AuthorityKeyPair, to attest to the authenticity of
+/// the Mining Pool Server.
 pub type StaticPublicKey = noiseexplorer_nx::types::PublicKey;
 
 /// NoiseSession is a struct that contains all the state required to handle a
 /// key exchange and subsequent encrypted communication.
 pub type NoiseSession = noiseexplorer_nx::noisesession::NoiseSession;
 
-/// StaticKeyPair is a Keypair used by the responder (Server) to use a pre-determined
-/// static key that will be signed by the AuthorityKeyPair.
+/// StaticKeyPair is a Keypair used by the responder (Server) as a pre-determined
+/// static key that will be signed by the AuthorityKeyPair and used in the
+/// [NoiseSession](struct.NoiseSession.html).
 pub type StaticKeyPair = noiseexplorer_nx::types::Keypair;
 
-/// Signs a [SignedCertificate](struct.SignatureNoiseMessage.html) using the Mining Pools
+/// Signs a [SignedCertificate](struct.SignedCertificate.html) using the Mining Pools
 /// [AuthorityKeyPair](struct.AuthorityKeyPair.html), authorizing the Upstream Node
 /// to operate on behalf of the Mining Pool.
 pub fn authority_sign_cert(
@@ -45,8 +45,8 @@ pub fn authority_sign_cert(
     Ok(keypair.sign(&signed_cert))
 }
 
-/// Creates a NoiseSession for a responder, this will usually be the Upstream
-/// Node (Server) with the option of using a pre-determined StaticKeyPair.
+/// Creates a NoiseSession for a responder, this will be the Upstream Node (Server)
+/// with the option of using a pre-determined StaticKeyPair.
 pub fn new_noise_responder(static_keypair: Option<StaticKeyPair>) -> NoiseSession {
     let key = match static_keypair {
         Some(k) => k,
@@ -56,7 +56,7 @@ pub fn new_noise_responder(static_keypair: Option<StaticKeyPair>) -> NoiseSessio
     NoiseSession::init_session(false, &[], key)
 }
 
-/// Creates a NoiseSession for an initiator, this will usually be the Client.
+/// Creates a NoiseSession for an initiator, this will be the Downstream Node (Client).
 pub fn new_noise_initiator() -> NoiseSession {
     NoiseSession::init_session(true, &[], Keypair::default())
 }
