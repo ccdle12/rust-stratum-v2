@@ -92,13 +92,11 @@ impl Deserializable for OpenStandardMiningChannel {
     }
 }
 
-impl From<&OpenStandardMiningChannel> for MessageTypes {
-    fn from(_s: &OpenStandardMiningChannel) -> Self {
-        MessageTypes::OpenStandardMiningChannel
-    }
-}
-
-impl_frameable_trait!(OpenStandardMiningChannel, false);
+impl_frameable_trait!(
+    OpenStandardMiningChannel,
+    MessageTypes::OpenStandardMiningChannel,
+    false
+);
 
 /// OpenStandardMiningChannelSuccess is a message sent by the Server to the Client
 /// in response to opening a standard mining channel if succesful.
@@ -175,13 +173,11 @@ impl Deserializable for OpenStandardMiningChannelSuccess {
     }
 }
 
-impl From<&OpenStandardMiningChannelSuccess> for MessageTypes {
-    fn from(_s: &OpenStandardMiningChannelSuccess) -> Self {
-        MessageTypes::OpenStandardMiningChannelSuccess
-    }
-}
-
-impl_frameable_trait!(OpenStandardMiningChannelSuccess, false);
+impl_frameable_trait!(
+    OpenStandardMiningChannelSuccess,
+    MessageTypes::OpenStandardMiningChannelSuccess,
+    false
+);
 
 /// OpenMiningChannelError is a message sent by the Server to the Client in response
 /// to a failed attempt to open a mining channel.
