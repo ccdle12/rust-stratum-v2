@@ -210,6 +210,21 @@ impl Serializable for OpenMiningChannelError {
     }
 }
 
+impl Deserializable for OpenMiningChannelError {
+    fn deserialize(bytes: &[u8]) -> Result<OpenMiningChannelError> {
+        let mut parser = ByteParser::new(bytes, 0);
+
+        let request_id = parser.next_by(4)?;
+        let error_code_length = parser.next_by(1)?[0] as usize;
+        let error_code = str::from_utf8(parser.next_by(error_code_length)?)?;
+
+        Ok(OpenMiningChannelError::new(
+            u32::from_le_bytes(request_id.try_into()?),
+            OpenMiningChannelErrorCodes::from(error_code),
+        ))
+    }
+}
+
 /// Contains the error codes for the [OpenMiningChannelError](struct.OpenMiningChannelError.html)
 /// message. Each error code is serialized according to constraints of a STR0_32.
 #[derive(Debug, PartialEq)]
@@ -235,7 +250,7 @@ impl fmt::Display for OpenMiningChannelErrorCodes {
 impl From<&str> for OpenMiningChannelErrorCodes {
     fn from(error_code: &str) -> Self {
         match error_code {
-            "uknown-user" => OpenMiningChannelErrorCodes::UnknownUser,
+            "unknown-user" => OpenMiningChannelErrorCodes::UnknownUser,
             "max-target-out-of-range" => OpenMiningChannelErrorCodes::MaxTargetOutOfRange,
 
             // TODO: Review this, I don't like it
@@ -756,6 +771,21 @@ mod open_standard_mining_tests {
         ];
 
         assert_eq!(bytes, expected);
+    }
+
+    #[test]
+    fn open_mining_channel_error_deserialize() {
+        let input = [
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x0c, // error_code_length
+            0x75, 0x6e, 0x6b, 0x6e, 0x6f, 0x77, 0x6e, 0x2d, 0x75, 0x73, 0x65,
+            0x72, // error_code
+        ];
+
+        let message = OpenMiningChannelError::deserialize(&input).unwrap();
+
+        assert_eq!(message.request_id, 1);
+        assert_eq!(message.error_code, OpenMiningChannelErrorCodes::UnknownUser);
     }
 }
 
