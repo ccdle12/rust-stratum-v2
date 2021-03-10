@@ -1,5 +1,6 @@
 use crate::error::Error::RequirementError;
 use crate::error::Result;
+use crate::mining::OpenMiningChannelErrorCodes;
 
 /// U256 is an unsigned integer type of 256-bits in little endian. This will
 /// usually be used to represent a raw SHA256 byte output.
@@ -58,6 +59,56 @@ impl PartialEq<STR0_255> for STR0_255 {
 /// String.
 impl From<STR0_255> for String {
     fn from(s: STR0_255) -> Self {
+        s.0
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct STR0_32(pub(crate) String);
+
+impl STR0_32 {
+    /// Constructor for the STR0_255 struct. The constructor enforces the String
+    /// input size as 255 bytes. A RequirementError will be returned if
+    /// the input byte size is greater than 255.
+    pub fn new<T: Into<String>>(value: T) -> Result<STR0_32> {
+        let value = value.into();
+        if value.len() > 32 {
+            return Err(RequirementError(
+                "string size cannot be greater than 255".into(),
+            ));
+        }
+
+        Ok(STR0_32(value))
+    }
+
+    /// Returns the byte representation of the STR0_255. Specifically
+    /// it returns the byte representation for serializing according to the
+    /// protocol specification which is <1 byte length prefix + variable length STR0_255>.
+    pub fn as_bytes(&self) -> Vec<u8> {
+        serialize_slices!(&[self.0.len() as u8], self.0.as_bytes())
+    }
+}
+
+impl PartialEq<String> for STR0_32 {
+    fn eq(&self, other: &String) -> bool {
+        self.0 == *other
+    }
+}
+
+impl PartialEq<STR0_32> for String {
+    fn eq(&self, other: &STR0_32) -> bool {
+        *self == other.0
+    }
+}
+
+impl PartialEq<STR0_32> for STR0_32 {
+    fn eq(&self, other: &STR0_32) -> bool {
+        *self.0 == other.0
+    }
+}
+
+impl From<STR0_32> for String {
+    fn from(s: STR0_32) -> Self {
         s.0
     }
 }
