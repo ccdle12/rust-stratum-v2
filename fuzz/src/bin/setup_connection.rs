@@ -24,6 +24,6 @@ fn main() {
     });
 
     fuzz!(|data: &[u8]| {
-        mining::OpenMiningChannelError::deserialize(&data);
+        mining::OpenStandardMiningChannelError::deserialize(&data);
     });
 }

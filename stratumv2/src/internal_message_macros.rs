@@ -398,6 +398,54 @@ macro_rules! impl_setup_connection_error {
     };
 }
 
+/// Implementation of the OpenMiningChannelError. This message applies to both
+/// Standard Mining Channels and Extended Mining Channels.
+macro_rules! impl_open_mining_channel_error {
+    ($name:ident, $msg_type:path) => {
+        pub struct $name {
+            request_id: u32,
+            error_code: OpenMiningChannelErrorCodes,
+        }
+
+        impl $name {
+            pub fn new(request_id: u32, error_code: OpenMiningChannelErrorCodes) -> $name {
+                $name {
+                    request_id,
+                    error_code,
+                }
+            }
+        }
+
+        impl Serializable for $name {
+            fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+                let buffer = serialize_slices!(
+                    &self.request_id.to_le_bytes(),
+                    &STR0_32::new(self.error_code.to_string())?.as_bytes()
+                );
+
+                Ok(writer.write(&buffer)?)
+            }
+        }
+
+        impl Deserializable for $name {
+            fn deserialize(bytes: &[u8]) -> Result<$name> {
+                let mut parser = ByteParser::new(bytes, 0);
+
+                let request_id = parser.next_by(4)?;
+                let error_code_length = parser.next_by(1)?[0] as usize;
+                let error_code = str::from_utf8(parser.next_by(error_code_length)?)?;
+
+                Ok($name::new(
+                    u32::from_le_bytes(request_id.try_into()?),
+                    OpenMiningChannelErrorCodes::from(error_code),
+                ))
+            }
+        }
+
+        impl_frameable_trait!($name, $msg_type, false);
+    };
+}
+
 /// Implementation of the requirements for the flags in the SetupConnection
 /// messages for each sub protocol.
 macro_rules! impl_message_flag {

@@ -179,47 +179,17 @@ impl_frameable_trait!(
     false
 );
 
-/// OpenMiningChannelError is a message sent by the Server to the Client in response
-/// to a failed attempt to open a mining channel.
-pub struct OpenMiningChannelError {
-    request_id: u32,
-    error_code: OpenMiningChannelErrorCodes,
-}
+// Implementation of the OpenMiningChannelError messages for Standard and Extended
+// mining.
+impl_open_mining_channel_error!(
+    OpenStandardMiningChannelError,
+    MessageTypes::OpenStandardMiningChannelError
+);
 
-impl OpenMiningChannelError {
-    pub fn new(request_id: u32, error_code: OpenMiningChannelErrorCodes) -> OpenMiningChannelError {
-        OpenMiningChannelError {
-            request_id,
-            error_code,
-        }
-    }
-}
-
-impl Serializable for OpenMiningChannelError {
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let buffer = serialize_slices!(
-            &self.request_id.to_le_bytes(),
-            &STR0_32::new(self.error_code.to_string())?.as_bytes()
-        );
-
-        Ok(writer.write(&buffer)?)
-    }
-}
-
-impl Deserializable for OpenMiningChannelError {
-    fn deserialize(bytes: &[u8]) -> Result<OpenMiningChannelError> {
-        let mut parser = ByteParser::new(bytes, 0);
-
-        let request_id = parser.next_by(4)?;
-        let error_code_length = parser.next_by(1)?[0] as usize;
-        let error_code = str::from_utf8(parser.next_by(error_code_length)?)?;
-
-        Ok(OpenMiningChannelError::new(
-            u32::from_le_bytes(request_id.try_into()?),
-            OpenMiningChannelErrorCodes::from(error_code),
-        ))
-    }
-}
+impl_open_mining_channel_error!(
+    OpenExtendedMiningChannelError,
+    MessageTypes::OpenExtendedMiningChannelError
+);
 
 /// Contains the error codes for the [OpenMiningChannelError](struct.OpenMiningChannelError.html)
 /// message. Each error code is serialized according to constraints of a STR0_32.
@@ -747,16 +717,18 @@ mod open_standard_mining_tests {
     }
 
     #[test]
-    fn open_mining_channel_error() {
-        let message = OpenMiningChannelError::new(1, OpenMiningChannelErrorCodes::UnknownUser);
+    fn open_standard_mining_channel_error() {
+        let message =
+            OpenStandardMiningChannelError::new(1, OpenMiningChannelErrorCodes::UnknownUser);
 
         assert_eq!(message.request_id, 1);
         assert_eq!(message.error_code, OpenMiningChannelErrorCodes::UnknownUser);
     }
 
     #[test]
-    fn open_mining_channel_error_serialize() {
-        let message = OpenMiningChannelError::new(1, OpenMiningChannelErrorCodes::UnknownUser);
+    fn open_standard_mining_channel_error_serialize() {
+        let message =
+            OpenStandardMiningChannelError::new(1, OpenMiningChannelErrorCodes::UnknownUser);
 
         let bytes = serialize(message).unwrap();
         let expected = [
@@ -770,7 +742,7 @@ mod open_standard_mining_tests {
     }
 
     #[test]
-    fn open_mining_channel_error_deserialize() {
+    fn open_standard_mining_channel_error_deserialize() {
         let input = [
             0x01, 0x00, 0x00, 0x00, // request_id
             0x0c, // error_code_length
@@ -778,10 +750,38 @@ mod open_standard_mining_tests {
             0x72, // error_code
         ];
 
-        let message = OpenMiningChannelError::deserialize(&input).unwrap();
+        let message = OpenStandardMiningChannelError::deserialize(&input).unwrap();
 
         assert_eq!(message.request_id, 1);
         assert_eq!(message.error_code, OpenMiningChannelErrorCodes::UnknownUser);
+    }
+
+    #[test]
+    fn frame_open_standard_mining_channel_error() {
+        let message =
+            OpenStandardMiningChannelError::new(1, OpenMiningChannelErrorCodes::UnknownUser);
+
+        let expected = [
+            0x00, 0x00, // extension_type
+            0x12, // msg_type
+            0x11, 0x00, 0x00, // msg_length
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x0c, // error_code_length
+            0x75, 0x6e, 0x6b, 0x6e, 0x6f, 0x77, 0x6e, 0x2d, 0x75, 0x73, 0x65,
+            0x72, // error_code
+        ];
+
+        let buffer = frame(message).unwrap();
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn frame_open_extended_mining_channel_error() {
+        let message =
+            OpenExtendedMiningChannelError::new(1, OpenMiningChannelErrorCodes::UnknownUser);
+
+        let buffer = frame(message).unwrap();
+        assert_eq!(buffer[2], 0x15);
     }
 }
 
