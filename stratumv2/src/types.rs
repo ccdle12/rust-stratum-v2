@@ -1,123 +1,18 @@
 use crate::error::Error::RequirementError;
 use crate::error::Result;
-use crate::mining::OpenMiningChannelErrorCodes;
 
 /// U256 is an unsigned integer type of 256-bits in little endian. This will
 /// usually be used to represent a raw SHA256 byte output.
 pub(crate) type U256 = [u8; 32];
 
-/// STR0_255 is a struct that contains a String limited to a maximum of 255 bytes.
-/// The byte representation will contain a <1 byte length prefix + variable length STR0_255>.
-#[derive(Debug, Clone)]
-pub struct STR0_255(pub(crate) String);
-
-impl STR0_255 {
-    /// Constructor for the STR0_255 struct. The constructor enforces the String
-    /// input size as 255 bytes. A RequirementError will be returned if
-    /// the input byte size is greater than 255.
-    pub fn new<T: Into<String>>(value: T) -> Result<STR0_255> {
-        let value = value.into();
-        if value.len() > 255 {
-            return Err(RequirementError(
-                "string size cannot be greater than 255".into(),
-            ));
-        }
-
-        Ok(STR0_255(value))
-    }
-
-    /// Returns the byte representation of the STR0_255. Specifically
-    /// it returns the byte representation for serializing according to the
-    /// protocol specification which is <1 byte length prefix + variable length STR0_255>.
-    pub fn as_bytes(&self) -> Vec<u8> {
-        serialize_slices!(&[self.0.len() as u8], self.0.as_bytes())
-    }
-}
-
-/// PartialEq implementation allowing direct comparison between STR0_255 and
-/// String.
-impl PartialEq<String> for STR0_255 {
-    fn eq(&self, other: &String) -> bool {
-        self.0 == *other
-    }
-}
-
-impl PartialEq<STR0_255> for String {
-    fn eq(&self, other: &STR0_255) -> bool {
-        *self == other.0
-    }
-}
-
-/// PartialEq implementation allowing direct comparison between STR0_255 types.
-impl PartialEq<STR0_255> for STR0_255 {
-    fn eq(&self, other: &STR0_255) -> bool {
-        *self.0 == other.0
-    }
-}
-
-/// From trait implementation that allows a STR0_255 to be converted into a
-/// String.
-impl From<STR0_255> for String {
-    fn from(s: STR0_255) -> Self {
-        s.0
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct STR0_32(pub(crate) String);
-
-impl STR0_32 {
-    /// Constructor for the STR0_255 struct. The constructor enforces the String
-    /// input size as 255 bytes. A RequirementError will be returned if
-    /// the input byte size is greater than 255.
-    pub fn new<T: Into<String>>(value: T) -> Result<STR0_32> {
-        let value = value.into();
-        if value.len() > 32 {
-            return Err(RequirementError(
-                "string size cannot be greater than 255".into(),
-            ));
-        }
-
-        Ok(STR0_32(value))
-    }
-
-    /// Returns the byte representation of the STR0_255. Specifically
-    /// it returns the byte representation for serializing according to the
-    /// protocol specification which is <1 byte length prefix + variable length STR0_255>.
-    pub fn as_bytes(&self) -> Vec<u8> {
-        serialize_slices!(&[self.0.len() as u8], self.0.as_bytes())
-    }
-}
-
-impl PartialEq<String> for STR0_32 {
-    fn eq(&self, other: &String) -> bool {
-        self.0 == *other
-    }
-}
-
-impl PartialEq<STR0_32> for String {
-    fn eq(&self, other: &STR0_32) -> bool {
-        *self == other.0
-    }
-}
-
-impl PartialEq<STR0_32> for STR0_32 {
-    fn eq(&self, other: &STR0_32) -> bool {
-        *self.0 == other.0
-    }
-}
-
-impl From<STR0_32> for String {
-    fn from(s: STR0_32) -> Self {
-        s.0
-    }
-}
+// Implement STR0 types.
+impl_sized_STR0!(STR0_255, 255);
+impl_sized_STR0!(STR0_32, 32);
 
 // TODO: TEMP Create a macro to create B0_32, B0_16M?
 // TODO AND NOTE: The specification does contain an official implemenation for
 // B0_32. I'm making an assumption that the serialized form will be:
 // <1-byte length L (u8) + variable length bytes>
-//
 // This should be reviewed.
 /// B0_32 is a type representing a vector of bytes with a maximum size of 32 bytes.
 /// Serialization is assumed with the following structure:
