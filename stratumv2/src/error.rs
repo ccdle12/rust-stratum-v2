@@ -14,6 +14,7 @@ pub enum Error {
     AuthorityKeyError(ed25519_dalek::ed25519::Error),
     SystemTimeError(std::time::SystemTimeError),
     TryFromSliceError(std::array::TryFromSliceError),
+    UnknownErrorCode(),
 }
 
 impl fmt::Display for Error {
@@ -29,6 +30,7 @@ impl fmt::Display for Error {
             Error::AuthorityKeyError(ref message) => write!(f, "{}", message),
             Error::SystemTimeError(ref message) => write!(f, "{}", message),
             Error::TryFromSliceError(ref message) => write!(f, "{}", message),
+            Error::UnknownErrorCode() => write!(f, "the error code is invalid "),
         }
     }
 }

@@ -1,4 +1,4 @@
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::types::MessageTypes;
 use crate::util::ByteParser;
 use crate::Deserializable;
@@ -20,40 +20,14 @@ pub enum SetupConnectionErrorCodes {
     // TODO: What is the difference between protocol version mismatch
     // and unsupported protocol?
     ProtocolVersionMismatch,
-
-    // TODO: Review this, I don't like it
-    UnknownFlag,
 }
 
-impl fmt::Display for SetupConnectionErrorCodes {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            SetupConnectionErrorCodes::UnsupportedFeatureFlags => {
-                write!(f, "unsupported-feature-flags")
-            }
-            SetupConnectionErrorCodes::UnsupportedProtocol => write!(f, "unsupported-protocol"),
-            SetupConnectionErrorCodes::ProtocolVersionMismatch => {
-                write!(f, "protocol-version-mismatch")
-            }
-
-            // TODO: Review this, I don't like it
-            SetupConnectionErrorCodes::UnknownFlag => write!(f, "unknown flag"),
-        }
-    }
-}
-
-impl From<&str> for SetupConnectionErrorCodes {
-    fn from(error_code: &str) -> Self {
-        match error_code {
-            "unsupported-feature-flags" => SetupConnectionErrorCodes::UnsupportedFeatureFlags,
-            "unsupported-protocol" => SetupConnectionErrorCodes::UnsupportedProtocol,
-            "protocol-version-mismatch" => SetupConnectionErrorCodes::ProtocolVersionMismatch,
-
-            // TODO: Review this, I don't like it
-            _ => SetupConnectionErrorCodes::UnknownFlag,
-        }
-    }
-}
+impl_error_codes_enum!(
+    SetupConnectionErrorCodes,
+    SetupConnectionErrorCodes::UnsupportedFeatureFlags => "unsupported-feature-flags",
+    SetupConnectionErrorCodes::UnsupportedProtocol => "unsupported-protocol",
+    SetupConnectionErrorCodes::ProtocolVersionMismatch => "protocol-version-mismatch"
+);
 
 /// Used to deserialize a received network frame. The payload would be further
 /// deserialized according to the received MessageTypes.

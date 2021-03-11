@@ -56,6 +56,8 @@ pub enum MessageTypes {
     SetupConnectionError,
     OpenStandardMiningChannel,
     OpenStandardMiningChannelSuccess,
+    OpenStandardMiningChannelError,
+    OpenExtendedMiningChannelError,
     Unknown,
 }
 
@@ -68,6 +70,8 @@ impl From<MessageTypes> for u8 {
             MessageTypes::SetupConnectionError => 0x03,
             MessageTypes::OpenStandardMiningChannel => 0x10,
             MessageTypes::OpenStandardMiningChannelSuccess => 0x11,
+            MessageTypes::OpenStandardMiningChannelError => 0x12,
+            MessageTypes::OpenExtendedMiningChannelError => 0x15,
             // TODO: THIS IS NOT SPECIFIED IN THE PROTOCOL.
             MessageTypes::Unknown => 0xFF,
         }
@@ -82,6 +86,7 @@ impl From<u8> for MessageTypes {
             0x03 => MessageTypes::SetupConnectionError,
             0x10 => MessageTypes::OpenStandardMiningChannel,
             0x11 => MessageTypes::OpenStandardMiningChannelSuccess,
+            0x15 => MessageTypes::OpenExtendedMiningChannelError,
             // TODO: THIS IS NOT SPECIFIED IN THE PROTOCOL.
             _ => MessageTypes::Unknown,
         }

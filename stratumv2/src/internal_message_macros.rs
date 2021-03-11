@@ -385,16 +385,64 @@ macro_rules! impl_setup_connection_error {
                     .fold(0, |accumulator, byte| (accumulator | byte));
 
                 let error_code_length = parser.next_by(1)?[0] as usize;
-                let error_code = parser.next_by(error_code_length)?;
+                let error_code = str::from_utf8(parser.next_by(error_code_length)?)?;
 
                 Ok(SetupConnectionError {
                     flags: Cow::from($flag_type::deserialize_flags(set_flags)),
-                    error_code: SetupConnectionErrorCodes::from(str::from_utf8(error_code)?),
+                    error_code: SetupConnectionErrorCodes::from_str(error_code)?,
                 })
             }
         }
 
         impl_frameable_trait_with_liftime!(SetupConnectionError, MessageTypes::SetupConnectionError, false, 'a);
+    };
+}
+
+/// Implementation of the OpenMiningChannelError. This message applies to both
+/// Standard Mining Channels and Extended Mining Channels.
+macro_rules! impl_open_mining_channel_error {
+    ($name:ident, $msg_type:path) => {
+        pub struct $name {
+            request_id: u32,
+            error_code: OpenMiningChannelErrorCodes,
+        }
+
+        impl $name {
+            pub fn new(request_id: u32, error_code: OpenMiningChannelErrorCodes) -> $name {
+                $name {
+                    request_id,
+                    error_code,
+                }
+            }
+        }
+
+        impl Serializable for $name {
+            fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+                let buffer = serialize_slices!(
+                    &self.request_id.to_le_bytes(),
+                    &STR0_32::new(self.error_code.to_string())?.as_bytes()
+                );
+
+                Ok(writer.write(&buffer)?)
+            }
+        }
+
+        impl Deserializable for $name {
+            fn deserialize(bytes: &[u8]) -> Result<$name> {
+                let mut parser = ByteParser::new(bytes, 0);
+
+                let request_id = parser.next_by(4)?;
+                let error_code_length = parser.next_by(1)?[0] as usize;
+                let error_code = str::from_utf8(parser.next_by(error_code_length)?)?;
+
+                Ok($name::new(
+                    u32::from_le_bytes(request_id.try_into()?),
+                    OpenMiningChannelErrorCodes::from_str(error_code)?,
+                ))
+            }
+        }
+
+        impl_frameable_trait!($name, $msg_type, false);
     };
 }
 
@@ -441,6 +489,33 @@ macro_rules! impl_message_flag {
                 })*
 
                 result
+            }
+        }
+    };
+}
+
+/// Implemenation of all the common traits for ErrorCode enums.
+macro_rules! impl_error_codes_enum {
+    ($name:ident, $($variant:path => $str:expr),*) => {
+        use std::str::FromStr;
+
+        impl fmt::Display for $name {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                match *self {
+                    $($variant => write!(f, $str)),*
+                }
+            }
+        }
+
+
+        impl FromStr for $name {
+            type Err = Error;
+
+            fn from_str(s: &str) -> Result<Self> {
+                match s {
+                    $($str => Ok($variant)),*,
+                    _ => Err(Error::UnknownErrorCode()),
+                }
             }
         }
     };
