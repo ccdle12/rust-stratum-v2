@@ -85,7 +85,7 @@ macro_rules! impl_sized_STR0 {
             pub fn new<T: Into<String>>(value: T) -> Result<$type> {
                 let value = value.into();
                 if value.len() > Self::MAX_SIZE {
-                    return Err(RequirementError(
+                    return Err(Error::RequirementError(
                         "string size cannot be greater than MAX_SIZE".into(),
                     ));
                 }
