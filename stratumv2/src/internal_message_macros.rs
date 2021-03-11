@@ -385,11 +385,11 @@ macro_rules! impl_setup_connection_error {
                     .fold(0, |accumulator, byte| (accumulator | byte));
 
                 let error_code_length = parser.next_by(1)?[0] as usize;
-                let error_code = parser.next_by(error_code_length)?;
+                let error_code = str::from_utf8(parser.next_by(error_code_length)?)?;
 
                 Ok(SetupConnectionError {
                     flags: Cow::from($flag_type::deserialize_flags(set_flags)),
-                    error_code: SetupConnectionErrorCodes::from(str::from_utf8(error_code)?),
+                    error_code: SetupConnectionErrorCodes::from_str(error_code)?,
                 })
             }
         }
@@ -437,7 +437,7 @@ macro_rules! impl_open_mining_channel_error {
 
                 Ok($name::new(
                     u32::from_le_bytes(request_id.try_into()?),
-                    OpenMiningChannelErrorCodes::from(error_code),
+                    OpenMiningChannelErrorCodes::from_str(error_code)?,
                 ))
             }
         }
@@ -489,6 +489,33 @@ macro_rules! impl_message_flag {
                 })*
 
                 result
+            }
+        }
+    };
+}
+
+/// Implemenation of all the common traits for ErrorCode enums.
+macro_rules! impl_error_codes_enum {
+    ($name:ident, $($variant:path => $str:expr),*) => {
+        use std::str::FromStr;
+
+        impl fmt::Display for $name {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                match *self {
+                    $($variant => write!(f, $str)),*
+                }
+            }
+        }
+
+
+        impl FromStr for $name {
+            type Err = Error;
+
+            fn from_str(s: &str) -> Result<Self> {
+                match s {
+                    $($str => Ok($variant)),*,
+                    _ => Err(Error::UnknownErrorCode()),
+                }
             }
         }
     };
