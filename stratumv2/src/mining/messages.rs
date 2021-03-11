@@ -197,33 +197,14 @@ impl_open_mining_channel_error!(
 pub enum OpenMiningChannelErrorCodes {
     UnknownUser,
     MaxTargetOutOfRange,
-    UnknownFlag,
-}
-impl fmt::Display for OpenMiningChannelErrorCodes {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            OpenMiningChannelErrorCodes::UnknownUser => write!(f, "unknown-user"),
-            OpenMiningChannelErrorCodes::MaxTargetOutOfRange => {
-                write!(f, "max-target-out-of-range")
-            }
-
-            // TODO: Review this, I don't like it
-            OpenMiningChannelErrorCodes::UnknownFlag => write!(f, "unknown flag"),
-        }
-    }
 }
 
-impl From<&str> for OpenMiningChannelErrorCodes {
-    fn from(error_code: &str) -> Self {
-        match error_code {
-            "unknown-user" => OpenMiningChannelErrorCodes::UnknownUser,
-            "max-target-out-of-range" => OpenMiningChannelErrorCodes::MaxTargetOutOfRange,
+impl_error_codes_enum!(
+    OpenMiningChannelErrorCodes,
+    OpenMiningChannelErrorCodes::UnknownUser => "unknown-user",
+    OpenMiningChannelErrorCodes::MaxTargetOutOfRange => "max-target-out-of-range"
 
-            // TODO: Review this, I don't like it
-            _ => OpenMiningChannelErrorCodes::UnknownFlag,
-        }
-    }
-}
+);
 
 #[cfg(test)]
 mod setup_connection_tests {
