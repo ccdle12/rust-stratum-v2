@@ -15,6 +15,7 @@ pub enum Error {
     SystemTimeError(std::time::SystemTimeError),
     TryFromSliceError(std::array::TryFromSliceError),
     UnknownErrorCode(),
+    UnknownMessageType(),
 }
 
 impl fmt::Display for Error {
@@ -30,7 +31,8 @@ impl fmt::Display for Error {
             Error::AuthorityKeyError(ref message) => write!(f, "{}", message),
             Error::SystemTimeError(ref message) => write!(f, "{}", message),
             Error::TryFromSliceError(ref message) => write!(f, "{}", message),
-            Error::UnknownErrorCode() => write!(f, "the error code is invalid "),
+            Error::UnknownErrorCode() => write!(f, "the error code is invalid"),
+            Error::UnknownMessageType() => write!(f, "the received message type is unknown"),
         }
     }
 }

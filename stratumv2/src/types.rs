@@ -1,5 +1,5 @@
-use crate::error::Error::RequirementError;
-use crate::error::Result;
+use crate::error::{Error, Result};
+use std::convert::TryFrom;
 
 /// U256 is an unsigned integer type of 256-bits in little endian. This will
 /// usually be used to represent a raw SHA256 byte output.
@@ -26,7 +26,7 @@ impl B0_32 {
     pub fn new<T: Into<Vec<u8>>>(value: T) -> Result<B0_32> {
         let input = value.into();
         if input.len() > Self::MAX_SIZE {
-            return Err(RequirementError(
+            return Err(Error::RequirementError(
                 "length of bytes cannot be greater than 32".into(),
             ));
         }
@@ -48,7 +48,6 @@ impl PartialEq<Vec<u8>> for B0_32 {
 
 /// MessageTypes contain all the variations for the byte representation of
 /// messages used in message frames.
-// TODO: Create a macro maybe for just conversions to keep it more readable.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum MessageTypes {
     SetupConnection,
@@ -58,10 +57,8 @@ pub enum MessageTypes {
     OpenStandardMiningChannelSuccess,
     OpenStandardMiningChannelError,
     OpenExtendedMiningChannelError,
-    Unknown,
 }
 
-// TODO: A macro that will do conversions both ways.
 impl From<MessageTypes> for u8 {
     fn from(m: MessageTypes) -> Self {
         match m {
@@ -72,23 +69,22 @@ impl From<MessageTypes> for u8 {
             MessageTypes::OpenStandardMiningChannelSuccess => 0x11,
             MessageTypes::OpenStandardMiningChannelError => 0x12,
             MessageTypes::OpenExtendedMiningChannelError => 0x15,
-            // TODO: THIS IS NOT SPECIFIED IN THE PROTOCOL.
-            MessageTypes::Unknown => 0xFF,
         }
     }
 }
 
-impl From<u8> for MessageTypes {
-    fn from(byte: u8) -> Self {
+impl TryFrom<u8> for MessageTypes {
+    type Error = Error;
+
+    fn try_from(byte: u8) -> Result<Self> {
         match byte {
-            0x00 => MessageTypes::SetupConnection,
-            0x01 => MessageTypes::SetupConnectionSuccess,
-            0x03 => MessageTypes::SetupConnectionError,
-            0x10 => MessageTypes::OpenStandardMiningChannel,
-            0x11 => MessageTypes::OpenStandardMiningChannelSuccess,
-            0x15 => MessageTypes::OpenExtendedMiningChannelError,
-            // TODO: THIS IS NOT SPECIFIED IN THE PROTOCOL.
-            _ => MessageTypes::Unknown,
+            0x00 => Ok(MessageTypes::SetupConnection),
+            0x01 => Ok(MessageTypes::SetupConnectionSuccess),
+            0x03 => Ok(MessageTypes::SetupConnectionError),
+            0x10 => Ok(MessageTypes::OpenStandardMiningChannel),
+            0x11 => Ok(MessageTypes::OpenStandardMiningChannelSuccess),
+            0x15 => Ok(MessageTypes::OpenExtendedMiningChannelError),
+            _ => Err(Error::UnknownMessageType()),
         }
     }
 }

@@ -2,7 +2,7 @@ use crate::error::{Error, Result};
 use crate::types::MessageTypes;
 use crate::util::ByteParser;
 use crate::Deserializable;
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::fmt;
 
 /// Contains the error codes for the [SetupConnectionError](struct.SetupConnectionError.html) message.
@@ -52,7 +52,7 @@ impl Deserializable for NetworkFrame {
 
         Ok(NetworkFrame {
             extension_type: u16::from_le_bytes(extension_type.try_into()?),
-            msg_type: MessageTypes::from(msg_type),
+            msg_type: MessageTypes::try_from(msg_type)?,
             msg_length,
             payload: payload.to_vec(),
         })
