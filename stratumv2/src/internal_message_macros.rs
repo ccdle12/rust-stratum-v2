@@ -215,7 +215,7 @@ macro_rules! impl_setup_connection {
             }
         }
 
-        impl_frameable_trait_with_liftime!(SetupConnection, MessageTypes::SetupConnection, false, 'a);
+        impl_frameable_trait_with_lifetime!(SetupConnection, MessageTypes::SetupConnection, false, 'a);
     };
 }
 
@@ -293,7 +293,7 @@ macro_rules! impl_setup_connection_success {
             }
         }
 
-        impl_frameable_trait_with_liftime!(SetupConnectionSuccess, MessageTypes::SetupConnectionSuccess, false, 'a);
+        impl_frameable_trait_with_lifetime!(SetupConnectionSuccess, MessageTypes::SetupConnectionSuccess, false, 'a);
     };
 }
 
@@ -394,7 +394,7 @@ macro_rules! impl_setup_connection_error {
             }
         }
 
-        impl_frameable_trait_with_liftime!(SetupConnectionError, MessageTypes::SetupConnectionError, false, 'a);
+        impl_frameable_trait_with_lifetime!(SetupConnectionError, MessageTypes::SetupConnectionError, false, 'a);
     };
 }
 
@@ -517,6 +517,48 @@ macro_rules! impl_error_codes_enum {
                     _ => Err(Error::UnknownErrorCode()),
                 }
             }
+        }
+    };
+}
+
+/// An internal macro to implement the Frameable trait for messages. Some mesages
+/// require the extenstion type to have a channel_msg bit set since the message
+/// is intended for a specific channel_id. The channel_id will always be found
+/// in the deserialized object as a field.
+macro_rules! impl_frameable_trait {
+    ($msg:ident, $msg_type:path, $has_channel_msg_bit:expr) => {
+        impl Frameable for $msg {
+            internal_frameable_trait!($msg_type, $has_channel_msg_bit);
+        }
+    };
+}
+
+macro_rules! impl_frameable_trait_with_lifetime {
+    ($msg:ident, $msg_type:path, $has_channel_msg_bit:expr, $lt:lifetime) => {
+        impl<$lt> Frameable for $msg<$lt> {
+            internal_frameable_trait!($msg_type, $has_channel_msg_bit);
+        }
+    };
+}
+
+// TODO: Implement a conditional branch to set the channel msg bit.
+macro_rules! internal_frameable_trait {
+    ($msg_type:path, $has_channel_msg_bit:expr) => {
+        fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+            let mut payload = Vec::new();
+            let size = *&self.serialize(&mut payload)?;
+
+            // A size_u24 of the message payload.
+            let payload_length = (size as u32).to_le_bytes()[0..=2].to_vec();
+
+            let buffer = serialize_slices!(
+                &[0x00, 0x00],       // empty extension type
+                &[$msg_type.into()], // msg_type
+                &payload_length,
+                &payload
+            );
+
+            Ok(writer.write(&buffer)?)
         }
     };
 }
