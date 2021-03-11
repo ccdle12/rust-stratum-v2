@@ -37,7 +37,8 @@ pub struct OpenStandardMiningChannel {
     /// The Maximum Target that can be acceptd by the connected device or
     /// multiple devices downstream. The Server MUST accept the maximum
     /// target or respond by sending a
-    /// [OpenMiningChannel.Error](struct.OpenMiningChannelError.html)
+    /// [OpenStandardMiningChannel.Error](struct.OpenStandardMiningChannelError.html)
+    /// or [OpenExtendedMiningChannel.Error](struct.OpenExtendedMiningChannelError.html)
     pub max_target: U256,
 }
 
@@ -96,10 +97,11 @@ impl_frameable_trait!(
 );
 
 /// OpenStandardMiningChannelSuccess is a message sent by the Server to the Client
-/// in response to opening a standard mining channel if succesful.
+/// in response to a successful opening of a standard mining channel.
 pub struct OpenStandardMiningChannelSuccess {
-    /// The request_id received in the OpenStandardMiningChannel message. This
-    /// is returned to the Client so that they can pair the responses with the
+    /// The request_id received in the
+    /// [OpenStandardMiningChannel](struct.OpenStandardMiningChannel.html) message.
+    /// This is returned to the Client so that they can pair the responses with the
     /// initial request.
     request_id: u32,
 
@@ -188,8 +190,10 @@ impl_open_mining_channel_error!(
     MessageTypes::OpenExtendedMiningChannelError
 );
 
-/// Contains the error codes for the [OpenMiningChannelError](struct.OpenMiningChannelError.html)
-/// message. Each error code is serialized according to constraints of a STR0_32.
+/// Contains the error codes for the [OpenStandardMiningChannelError](struct.OpenStandardMiningChannelError.html)
+/// and [OpenExtendedMiningChannelError](struct.OpenExtendedMiningChannelError.html)
+/// message. Each error code is serialized according to constraints of a
+/// [STR0_32](../types/struct.STR0_32.html).
 #[derive(Debug, PartialEq)]
 pub enum OpenMiningChannelErrorCodes {
     UnknownUser,
