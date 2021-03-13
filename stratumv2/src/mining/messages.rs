@@ -14,87 +14,9 @@ impl_setup_connection!(Protocol::Mining, SetupConnectionFlags);
 impl_setup_connection_success!(SetupConnectionSuccessFlags);
 impl_setup_connection_error!(SetupConnectionFlags);
 
-/// OpenStandardMiningChannel is a message sent by the Client to the Server
-/// after a [SetupConnection.Success](struct.SetupConnectionSuccess.html) is
-/// sent from the Server. This message is used to request opening a standard
-/// channel to the upstream server. A standard mining channel indicates `header-only`
-/// mining.
-pub struct OpenStandardMiningChannel {
-    /// A Client-specified unique identifier across all client connections.
-    /// The request_id is not interpreted by the Server.
-    pub request_id: u32,
-
-    /// A sequence of bytes that identifies the node to the Server, e.g.
-    /// "braiintest.worker1".
-    pub user_identity: STR0_255,
-
-    /// The expected [h/s] (hash rate/per second) of the
-    /// device or the cumulative on the channel if multiple devices are connected
-    /// downstream. Proxies MUST send 0.0f when there are no mining devices
-    /// connected yet.
-    pub nominal_hash_rate: f32,
-
-    /// The Maximum Target that can be acceptd by the connected device or
-    /// multiple devices downstream. The Server MUST accept the maximum
-    /// target or respond by sending a
-    /// [OpenStandardMiningChannel.Error](struct.OpenStandardMiningChannelError.html)
-    /// or [OpenExtendedMiningChannel.Error](struct.OpenExtendedMiningChannelError.html)
-    pub max_target: U256,
-}
-
-impl OpenStandardMiningChannel {
-    pub fn new<T: Into<String>>(
-        request_id: u32,
-        user_identity: T,
-        nominal_hash_rate: f32,
-        max_target: U256,
-    ) -> Result<OpenStandardMiningChannel> {
-        Ok(OpenStandardMiningChannel {
-            request_id,
-            user_identity: STR0_255::new(user_identity)?,
-            nominal_hash_rate,
-            max_target,
-        })
-    }
-}
-
-impl Serializable for OpenStandardMiningChannel {
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let buffer = serialize_slices!(
-            &self.request_id.to_le_bytes(),
-            &self.user_identity.as_bytes(),
-            &self.nominal_hash_rate.to_le_bytes(),
-            &self.max_target
-        );
-
-        Ok(writer.write(&buffer)?)
-    }
-}
-
-impl Deserializable for OpenStandardMiningChannel {
-    fn deserialize(bytes: &[u8]) -> Result<OpenStandardMiningChannel> {
-        let mut parser = ByteParser::new(bytes, 0);
-
-        let request_id = parser.next_by(4)?;
-        let user_identity_length = parser.next_by(1)?[0] as usize;
-        let user_identity = parser.next_by(user_identity_length)?;
-        let nominal_hash_rate = parser.next_by(4)?;
-        let max_target = parser.next_by(32)?;
-
-        OpenStandardMiningChannel::new(
-            u32::from_le_bytes(request_id.try_into()?),
-            str::from_utf8(user_identity)?,
-            f32::from_le_bytes(nominal_hash_rate.try_into()?),
-            max_target.try_into()?,
-        )
-    }
-}
-
-impl_frameable_trait!(
-    OpenStandardMiningChannel,
-    MessageTypes::OpenStandardMiningChannel,
-    false
-);
+// Implement messages for opening a mining channel - Standard and Extended.
+impl_open_standard_mining_channel!();
+impl_open_extended_mining_channel!();
 
 /// OpenStandardMiningChannelSuccess is a message sent by the Server to the Client
 /// in response to a successful opening of a standard mining channel.
@@ -764,6 +686,79 @@ mod open_standard_mining_tests {
 
         let buffer = frame(message).unwrap();
         assert_eq!(buffer[2], 0x15);
+    }
+
+    #[test]
+    fn open_extended_mining_channel() {
+        let message = OpenExtendedMiningChannel::new(
+            1,
+            "braiinstest.worker1".to_string(),
+            12.3,
+            [0u8; 32],
+            10,
+        );
+        assert!(message.is_ok())
+    }
+
+    #[test]
+    fn serialize_open_extended_mining_channel() {
+        let expected = [
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x13, // length_user_identity
+            0x62, 0x72, 0x61, 0x69, 0x69, 0x6e, 0x73, 0x74, 0x65, 0x73, 0x74, 0x2e, 0x77, 0x6f,
+            0x72, 0x6b, 0x65, 0x72, 0x31, // user_identity
+            0xcd, 0xcc, 0x44, 0x41, // nominal_hash_rate
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // max_target
+            0x0a, 0x00, // min_extranonce_size
+        ];
+
+        let message = OpenExtendedMiningChannel::new(
+            1,
+            "braiinstest.worker1".to_string(),
+            12.3,
+            [0u8; 32],
+            10,
+        )
+        .unwrap();
+
+        let buffer = serialize(message).unwrap();
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn deserialize_open_extended_mining_channel() {
+        let input = [
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x13, // length_user_identity
+            0x62, 0x72, 0x61, 0x69, 0x69, 0x6e, 0x73, 0x74, 0x65, 0x73, 0x74, 0x2e, 0x77, 0x6f,
+            0x72, 0x6b, 0x65, 0x72, 0x31, // user_identity
+            0xcd, 0xcc, 0x44, 0x41, // nominal_hash_rate
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // max_target
+            0x0a, 0x00, // min_extranonce_size
+        ];
+
+        let message = OpenExtendedMiningChannel::deserialize(&input).unwrap();
+        assert_eq!(message.request_id, 1);
+        assert_eq!(message.user_identity, "braiinstest.worker1".to_string());
+    }
+
+    #[test]
+    fn frame_open_extended_mining_channel() {
+        let message = OpenExtendedMiningChannel::new(
+            1,
+            "braiinstest.worker1".to_string(),
+            12.3,
+            [0u8; 32],
+            10,
+        )
+        .unwrap();
+
+        let buffer = frame(message).unwrap();
+        assert_eq!(buffer[2], 0x13);
     }
 }
 
