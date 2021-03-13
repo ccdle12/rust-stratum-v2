@@ -1,18 +1,18 @@
 use crate::BitFlag;
 
-/// Feature flags that can be passed to a SetupConnection message in the mining
-/// sub protocol. Each flag corresponds to a set bit.
+/// Feature flags that can be passed to a SetupConnection message in the Mining
+/// Protocol. Each flag corresponds to a set bit.
 #[derive(Debug, PartialEq, Clone)]
 pub enum SetupConnectionFlags {
-    /// Flag indicating the downstream node requires standard jobs. The node
-    /// doesn't undestand group channels and extended jobs.
+    /// Flag indicating the Client requires Standard Jobs. The Client doesn't
+    /// undestand group channels and extended jobs.
     RequiresStandardJobs,
 
-    /// Flag indicating that the client will send the server SetCustomMiningJob
+    /// Flag indicating that the Client will send the Server a SetCustomMiningJob
     /// message on this connection.
     RequiresWorkSelection,
 
-    /// Flag indicating the client requires version rolling. The server MUST NOT
+    /// Flag indicating the Client requires version rolling. The Server MUST NOT
     /// send jobs which do not allow version rolling.
     RequiresVersionRolling,
 }
@@ -24,18 +24,18 @@ impl_message_flag!(
     SetupConnectionFlags::RequiresVersionRolling => 2
 );
 
-/// Feature flags for the SetupConnectionSuccess message from the server to
-/// the client for the mining protocol.
+/// Feature flags for the SetupConnectionSuccess message from the Server to
+/// the Client for the Mining Protocol.
 #[derive(Debug, PartialEq, Clone)]
 pub enum SetupConnectionSuccessFlags {
     // TODO: Link everthing between ``
-    /// Flag indicating the upstream node does not accept any changes to the
-    /// version field. If `RequiresVersionRolling` was sent in the `SetupConnection`
-    /// message, then this bit MUST NOT be set.
+    /// Flag indicating the upstream node (Server) does not accept any changes
+    /// to the version field. If `RequiresVersionRolling` was sent in the
+    /// `SetupConnection` message, then this bit MUST NOT be set.
     RequiresFixedVersion,
 
-    /// Flag indicating that the upstream node will not accept opening a
-    /// standard channel.
+    /// Flag indicating that the upstream node (Server) will not accept opening
+    /// a standard channel.
     RequiresExtendedChannels,
 }
 
