@@ -654,6 +654,9 @@ macro_rules! impl_open_standard_mining_channel {
 
 macro_rules! impl_open_extended_mining_channel {
     () => {
+        /// OpenExtendedMiningChannel is a message sent by the Client to the Server
+        /// to open a mining channe that has additional capabilities such as
+        /// difficulty aggregate and custom search space splitting.
         pub struct OpenExtendedMiningChannel {
             /// A Client-specified unique identifier across all client connections.
             /// The request_id is not interpreted by the Server.
