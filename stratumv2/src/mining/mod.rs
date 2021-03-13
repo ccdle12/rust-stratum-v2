@@ -22,7 +22,7 @@ mod messages;
 
 pub use flags::{SetupConnectionFlags, SetupConnectionSuccessFlags};
 pub use messages::{
-    OpenExtendedMiningChannelError, OpenMiningChannelErrorCodes, OpenStandardMiningChannel,
-    OpenStandardMiningChannelError, OpenStandardMiningChannelSuccess, SetupConnection,
-    SetupConnectionError, SetupConnectionSuccess,
+    OpenExtendedMiningChannel, OpenExtendedMiningChannelError, OpenMiningChannelErrorCodes,
+    OpenStandardMiningChannel, OpenStandardMiningChannelError, OpenStandardMiningChannelSuccess,
+    SetupConnection, SetupConnectionError, SetupConnectionSuccess,
 };
