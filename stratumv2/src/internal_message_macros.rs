@@ -562,3 +562,181 @@ macro_rules! internal_frameable_trait {
         }
     };
 }
+
+// CCDLE12 TMP:
+// TODO: Figure out how to reuse code between Standard and Extended Mining Channels,
+// while keeping the doc comments.
+macro_rules! impl_open_standard_mining_channel {
+    () => {
+        /// OpenStandardMiningChannel is a message sent by the Client to the Server
+        /// after a [SetupConnection.Success](struct.SetupConnectionSuccess.html) is
+        /// sent from the Server. This message is used to request opening a standard
+        /// channel to the upstream server. A standard mining channel indicates `header-only`
+        /// mining.
+        pub struct OpenStandardMiningChannel {
+            /// A Client-specified unique identifier across all client connections.
+            /// The request_id is not interpreted by the Server.
+            pub request_id: u32,
+
+            /// A sequence of bytes that identifies the node to the Server, e.g.
+            /// "braiintest.worker1".
+            pub user_identity: STR0_255,
+
+            /// The expected [h/s] (hash rate/per second) of the
+            /// device or the cumulative on the channel if multiple devices are connected
+            /// downstream. Proxies MUST send 0.0f when there are no mining devices
+            /// connected yet.
+            pub nominal_hash_rate: f32,
+
+            /// The Maximum Target that can be acceptd by the connected device or
+            /// multiple devices downstream. The Server MUST accept the maximum
+            /// target or respond by sending a
+            /// [OpenStandardMiningChannel.Error](struct.OpenStandardMiningChannelError.html)
+            /// or [OpenExtendedMiningChannel.Error](struct.OpenExtendedMiningChannelError.html)
+            pub max_target: U256,
+        }
+
+        impl OpenStandardMiningChannel {
+            pub fn new<T: Into<String>>(
+                request_id: u32,
+                user_identity: T,
+                nominal_hash_rate: f32,
+                max_target: U256,
+            ) -> Result<OpenStandardMiningChannel> {
+                Ok(OpenStandardMiningChannel {
+                    request_id,
+                    user_identity: STR0_255::new(user_identity)?,
+                    nominal_hash_rate,
+                    max_target,
+                })
+            }
+        }
+
+        impl Serializable for OpenStandardMiningChannel {
+            fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+                let buffer = serialize_slices!(
+                    &self.request_id.to_le_bytes(),
+                    &self.user_identity.as_bytes(),
+                    &self.nominal_hash_rate.to_le_bytes(),
+                    &self.max_target
+                );
+
+                Ok(writer.write(&buffer)?)
+            }
+        }
+
+        impl Deserializable for OpenStandardMiningChannel {
+            fn deserialize(bytes: &[u8]) -> Result<OpenStandardMiningChannel> {
+                let mut parser = ByteParser::new(bytes, 0);
+
+                let request_id = parser.next_by(4)?;
+                let user_identity_length = parser.next_by(1)?[0] as usize;
+                let user_identity = parser.next_by(user_identity_length)?;
+                let nominal_hash_rate = parser.next_by(4)?;
+                let max_target = parser.next_by(32)?;
+
+                OpenStandardMiningChannel::new(
+                    u32::from_le_bytes(request_id.try_into()?),
+                    str::from_utf8(user_identity)?,
+                    f32::from_le_bytes(nominal_hash_rate.try_into()?),
+                    max_target.try_into()?,
+                )
+            }
+        }
+
+        impl_frameable_trait!(
+            OpenStandardMiningChannel,
+            MessageTypes::OpenStandardMiningChannel,
+            false
+        );
+    };
+}
+
+macro_rules! impl_open_extended_mining_channel {
+    () => {
+        pub struct OpenExtendedMiningChannel {
+            /// A Client-specified unique identifier across all client connections.
+            /// The request_id is not interpreted by the Server.
+            pub request_id: u32,
+
+            /// A sequence of bytes that identifies the node to the Server, e.g.
+            /// "braiintest.worker1".
+            pub user_identity: STR0_255,
+
+            /// The expected [h/s] (hash rate/per second) of the
+            /// device or the cumulative on the channel if multiple devices are connected
+            /// downstream. Proxies MUST send 0.0f when there are no mining devices
+            /// connected yet.
+            pub nominal_hash_rate: f32,
+
+            /// The Maximum Target that can be acceptd by the connected device or
+            /// multiple devices downstream. The Server MUST accept the maximum
+            /// target or respond by sending a
+            /// [OpenStandardMiningChannel.Error](struct.OpenStandardMiningChannelError.html)
+            /// or [OpenExtendedMiningChannel.Error](struct.OpenExtendedMiningChannelError.html)
+            pub max_target: U256,
+
+            /// The minimum size of extranonce space required by the Downstream node.
+            pub min_extranonce_size: u16,
+        }
+
+        impl OpenExtendedMiningChannel {
+            pub fn new<T: Into<String>>(
+                request_id: u32,
+                user_identity: T,
+                nominal_hash_rate: f32,
+                max_target: U256,
+                min_extranonce_size: u16,
+            ) -> Result<OpenExtendedMiningChannel> {
+                Ok(OpenExtendedMiningChannel {
+                    request_id,
+                    user_identity: STR0_255::new(user_identity)?,
+                    nominal_hash_rate,
+                    max_target,
+                    min_extranonce_size,
+                })
+            }
+        }
+
+        impl Serializable for OpenExtendedMiningChannel {
+            fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+                let buffer = serialize_slices!(
+                    &self.request_id.to_le_bytes(),
+                    &self.user_identity.as_bytes(),
+                    &self.nominal_hash_rate.to_le_bytes(),
+                    &self.max_target,
+                    &self.min_extranonce_size.to_le_bytes()
+                );
+
+                Ok(writer.write(&buffer)?)
+            }
+        }
+
+        impl Deserializable for OpenExtendedMiningChannel {
+            fn deserialize(bytes: &[u8]) -> Result<OpenExtendedMiningChannel> {
+                let mut parser = ByteParser::new(bytes, 0);
+
+                let request_id = parser.next_by(4)?;
+                let user_identity_length = parser.next_by(1)?[0] as usize;
+                let user_identity = parser.next_by(user_identity_length)?;
+                let nominal_hash_rate = parser.next_by(4)?;
+                let max_target = parser.next_by(32)?;
+                let min_extranonce_size = parser.next_by(2)?;
+
+                OpenExtendedMiningChannel::new(
+                    u32::from_le_bytes(request_id.try_into()?),
+                    str::from_utf8(user_identity)?,
+                    f32::from_le_bytes(nominal_hash_rate.try_into()?),
+                    max_target.try_into()?,
+                    u16::from_le_bytes(min_extranonce_size.try_into()?),
+                )
+            }
+        }
+
+        impl_frameable_trait!(
+            OpenExtendedMiningChannel,
+            MessageTypes::OpenExtendedMiningChannel,
+            false
+        );
+    };
+}
