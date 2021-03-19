@@ -812,15 +812,15 @@ macro_rules! impl_open_standard_mining_channel_success {
                 let request_id = parser.next_by(4)?;
                 let channel_id = parser.next_by(4)?;
                 let target = parser.next_by(32)?;
-                let extranonce_length = parser.next_by(1)?[0] as usize;
-                let extranonce_bytes = parser.next_by(extranonce_length)?;
+                let extranonce_prefix_length = parser.next_by(1)?[0] as usize;
+                let extranonce_prefix = parser.next_by(extranonce_prefix_length)?;
                 let group_channel_id = parser.next_by(4)?;
 
                 OpenStandardMiningChannelSuccess::new(
                     u32::from_le_bytes(request_id.try_into()?),
                     u32::from_le_bytes(channel_id.try_into()?),
                     target.try_into()?,
-                    extranonce_bytes.to_vec(),
+                    extranonce_prefix.to_vec(),
                     u32::from_le_bytes(group_channel_id.try_into()?),
                 )
             }
