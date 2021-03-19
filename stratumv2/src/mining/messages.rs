@@ -20,6 +20,7 @@ impl_open_extended_mining_channel!();
 
 // Implementation of the Standard and Extended OpenMiningChannelSuccess messages.
 impl_open_standard_mining_channel_success!();
+impl_open_extended_mining_channel_success!();
 
 // Implementation of the OpenMiningChannelError messages for Standard and Extended
 // mining.

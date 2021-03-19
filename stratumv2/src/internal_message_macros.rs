@@ -833,3 +833,89 @@ macro_rules! impl_open_standard_mining_channel_success {
         );
     };
 }
+
+macro_rules! impl_open_extended_mining_channel_success {
+    () => {
+        /// OpenExtendedMiningChannelSuccess is a message sent by the Server to the Client
+        /// in response to a successful opening of a standard mining channel.
+        pub struct OpenExtendedMiningChannelSuccess {
+            /// The request_id received in the
+            /// [OpenExtendedMiningChannel](struct.OpenExtendedMiningChannel.html) message.
+            /// This is returned to the Client so that they can pair the responses with the
+            /// initial request.
+            request_id: u32,
+
+            /// Assigned by the Server to uniquely identify the channel, the id is stable
+            /// for the whole lifetime of the connection.
+            channel_id: u32,
+
+            /// The initial target difficulty target for the mining channel.
+            target: U256,
+
+            // TODO: I don't understand the purpose of the extranonce size.
+            extranonce_size: u16,
+
+            // TODO: I don't understand the purpose of the extranonce prefix.
+            extranonce_prefix: B0_32,
+        }
+
+        impl OpenExtendedMiningChannelSuccess {
+            pub fn new<T: Into<Vec<u8>>>(
+                request_id: u32,
+                channel_id: u32,
+                target: U256,
+                extranonce_size: u16,
+                extranonce_prefix: T,
+            ) -> Result<OpenExtendedMiningChannelSuccess> {
+                Ok(OpenExtendedMiningChannelSuccess {
+                    request_id,
+                    channel_id,
+                    target,
+                    extranonce_size,
+                    extranonce_prefix: B0_32::new(extranonce_prefix.into())?,
+                })
+            }
+        }
+
+        impl Serializable for OpenExtendedMiningChannelSuccess {
+            fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+                let buffer = serialize_slices!(
+                    &self.request_id.to_le_bytes(),
+                    &self.channel_id.to_le_bytes(),
+                    &self.target,
+                    &self.extranonce_size.to_le_bytes(),
+                    &self.extranonce_prefix.as_bytes()
+                );
+
+                Ok(writer.write(&buffer)?)
+            }
+        }
+
+        impl Deserializable for OpenExtendedMiningChannelSuccess {
+            fn deserialize(bytes: &[u8]) -> Result<OpenExtendedMiningChannelSuccess> {
+                let mut parser = ByteParser::new(bytes, 0);
+
+                let request_id = parser.next_by(4)?;
+                let channel_id = parser.next_by(4)?;
+                let target = parser.next_by(32)?;
+                let extranonce_size = parser.next_by(2)?;
+                let extranonce_prefix_length = parser.next_by(1)?[0] as usize;
+                let extranonce_prefix = parser.next_by(extranonce_prefix_length)?;
+
+                OpenExtendedMiningChannelSuccess::new(
+                    u32::from_le_bytes(request_id.try_into()?),
+                    u32::from_le_bytes(channel_id.try_into()?),
+                    target.try_into()?,
+                    u16::from_le_bytes(extranonce_size.try_into()?),
+                    extranonce_prefix.to_vec(),
+                )
+            }
+        }
+
+        impl_frameable_trait!(
+            OpenExtendedMiningChannelSuccess,
+            MessageTypes::OpenExtendedMiningChannelSuccess,
+            false
+        );
+    };
+}
