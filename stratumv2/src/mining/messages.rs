@@ -18,87 +18,8 @@ impl_setup_connection_error!(SetupConnectionFlags);
 impl_open_standard_mining_channel!();
 impl_open_extended_mining_channel!();
 
-/// OpenStandardMiningChannelSuccess is a message sent by the Server to the Client
-/// in response to a successful opening of a standard mining channel.
-pub struct OpenStandardMiningChannelSuccess {
-    /// The request_id received in the
-    /// [OpenStandardMiningChannel](struct.OpenStandardMiningChannel.html) message.
-    /// This is returned to the Client so that they can pair the responses with the
-    /// initial request.
-    request_id: u32,
-
-    /// Assigned by the Server to uniquely identify the channel, the id is stable
-    /// for the whole lifetime of the connection.
-    channel_id: u32,
-
-    /// The initial target difficulty target for the mining channel.
-    target: U256,
-
-    // TODO: I don't understand the purpose of the extranonce_prefix.
-    extranonce_prefix: B0_32,
-
-    /// Group channel that the channel belongs to.
-    group_channel_id: u32,
-}
-
-impl OpenStandardMiningChannelSuccess {
-    pub fn new<T: Into<Vec<u8>>>(
-        request_id: u32,
-        channel_id: u32,
-        target: U256,
-        extranonce_prefix: T,
-        group_channel_id: u32,
-    ) -> Result<OpenStandardMiningChannelSuccess> {
-        Ok(OpenStandardMiningChannelSuccess {
-            request_id,
-            channel_id,
-            target,
-            extranonce_prefix: B0_32::new(extranonce_prefix.into())?,
-            group_channel_id,
-        })
-    }
-}
-
-impl Serializable for OpenStandardMiningChannelSuccess {
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let buffer = serialize_slices!(
-            &self.request_id.to_le_bytes(),
-            &self.channel_id.to_le_bytes(),
-            &self.target,
-            &self.extranonce_prefix.as_bytes(),
-            &self.group_channel_id.to_le_bytes()
-        );
-
-        Ok(writer.write(&buffer)?)
-    }
-}
-
-impl Deserializable for OpenStandardMiningChannelSuccess {
-    fn deserialize(bytes: &[u8]) -> Result<OpenStandardMiningChannelSuccess> {
-        let mut parser = ByteParser::new(bytes, 0);
-
-        let request_id = parser.next_by(4)?;
-        let channel_id = parser.next_by(4)?;
-        let target = parser.next_by(32)?;
-        let extranonce_length = parser.next_by(1)?[0] as usize;
-        let extranonce_bytes = parser.next_by(extranonce_length)?;
-        let group_channel_id = parser.next_by(4)?;
-
-        OpenStandardMiningChannelSuccess::new(
-            u32::from_le_bytes(request_id.try_into()?),
-            u32::from_le_bytes(channel_id.try_into()?),
-            target.try_into()?,
-            extranonce_bytes.to_vec(),
-            u32::from_le_bytes(group_channel_id.try_into()?),
-        )
-    }
-}
-
-impl_frameable_trait!(
-    OpenStandardMiningChannelSuccess,
-    MessageTypes::OpenStandardMiningChannelSuccess,
-    false
-);
+// Implementation of the Standard and Extended OpenMiningChannelSuccess messages.
+impl_open_standard_mining_channel_success!();
 
 // Implementation of the OpenMiningChannelError messages for Standard and Extended
 // mining.
