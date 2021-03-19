@@ -14,7 +14,7 @@ impl_setup_connection!(Protocol::Mining, SetupConnectionFlags);
 impl_setup_connection_success!(SetupConnectionSuccessFlags);
 impl_setup_connection_error!(SetupConnectionFlags);
 
-// Implementtation of the Standard and Extending Open Mining Channel messages.
+// Implementation of the Standard and Extended OpenMiningChannel messages.
 impl_open_standard_mining_channel!();
 impl_open_extended_mining_channel!();
 
