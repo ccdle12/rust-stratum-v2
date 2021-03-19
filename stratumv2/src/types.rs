@@ -56,8 +56,9 @@ pub enum MessageTypes {
     OpenStandardMiningChannel,
     OpenStandardMiningChannelSuccess,
     OpenStandardMiningChannelError,
-    OpenExtendedMiningChannelError,
     OpenExtendedMiningChannel,
+    OpenExtendedMiningChannelSuccess,
+    OpenExtendedMiningChannelError,
 }
 
 impl From<MessageTypes> for u8 {
@@ -70,6 +71,7 @@ impl From<MessageTypes> for u8 {
             MessageTypes::OpenStandardMiningChannelSuccess => 0x11,
             MessageTypes::OpenStandardMiningChannelError => 0x12,
             MessageTypes::OpenExtendedMiningChannel => 0x13,
+            MessageTypes::OpenExtendedMiningChannelSuccess => 0x14,
             MessageTypes::OpenExtendedMiningChannelError => 0x15,
         }
     }
@@ -86,6 +88,7 @@ impl TryFrom<u8> for MessageTypes {
             0x10 => Ok(MessageTypes::OpenStandardMiningChannel),
             0x11 => Ok(MessageTypes::OpenStandardMiningChannelSuccess),
             0x13 => Ok(MessageTypes::OpenExtendedMiningChannel),
+            0x14 => Ok(MessageTypes::OpenExtendedMiningChannelSuccess),
             0x15 => Ok(MessageTypes::OpenExtendedMiningChannelError),
             _ => Err(Error::UnknownMessageType()),
         }

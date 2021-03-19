@@ -14,91 +14,13 @@ impl_setup_connection!(Protocol::Mining, SetupConnectionFlags);
 impl_setup_connection_success!(SetupConnectionSuccessFlags);
 impl_setup_connection_error!(SetupConnectionFlags);
 
-// Implementtation of the Standard and Extending Open Mining Channel messages.
+// Implementation of the Standard and Extended OpenMiningChannel messages.
 impl_open_standard_mining_channel!();
 impl_open_extended_mining_channel!();
 
-/// OpenStandardMiningChannelSuccess is a message sent by the Server to the Client
-/// in response to a successful opening of a standard mining channel.
-pub struct OpenStandardMiningChannelSuccess {
-    /// The request_id received in the
-    /// [OpenStandardMiningChannel](struct.OpenStandardMiningChannel.html) message.
-    /// This is returned to the Client so that they can pair the responses with the
-    /// initial request.
-    request_id: u32,
-
-    /// Assigned by the Server to uniquely identify the channel, the id is stable
-    /// for the whole lifetime of the connection.
-    channel_id: u32,
-
-    /// The initial target difficulty target for the mining channel.
-    target: U256,
-
-    // TODO: I don't understand the purpose of the extranonce_prefix.
-    extranonce_prefix: B0_32,
-
-    /// Group channel that the channel belongs to.
-    group_channel_id: u32,
-}
-
-impl OpenStandardMiningChannelSuccess {
-    pub fn new<T: Into<Vec<u8>>>(
-        request_id: u32,
-        channel_id: u32,
-        target: U256,
-        extranonce_prefix: T,
-        group_channel_id: u32,
-    ) -> Result<OpenStandardMiningChannelSuccess> {
-        Ok(OpenStandardMiningChannelSuccess {
-            request_id,
-            channel_id,
-            target,
-            extranonce_prefix: B0_32::new(extranonce_prefix.into())?,
-            group_channel_id,
-        })
-    }
-}
-
-impl Serializable for OpenStandardMiningChannelSuccess {
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let buffer = serialize_slices!(
-            &self.request_id.to_le_bytes(),
-            &self.channel_id.to_le_bytes(),
-            &self.target,
-            &self.extranonce_prefix.as_bytes(),
-            &self.group_channel_id.to_le_bytes()
-        );
-
-        Ok(writer.write(&buffer)?)
-    }
-}
-
-impl Deserializable for OpenStandardMiningChannelSuccess {
-    fn deserialize(bytes: &[u8]) -> Result<OpenStandardMiningChannelSuccess> {
-        let mut parser = ByteParser::new(bytes, 0);
-
-        let request_id = parser.next_by(4)?;
-        let channel_id = parser.next_by(4)?;
-        let target = parser.next_by(32)?;
-        let extranonce_length = parser.next_by(1)?[0] as usize;
-        let extranonce_bytes = parser.next_by(extranonce_length)?;
-        let group_channel_id = parser.next_by(4)?;
-
-        OpenStandardMiningChannelSuccess::new(
-            u32::from_le_bytes(request_id.try_into()?),
-            u32::from_le_bytes(channel_id.try_into()?),
-            target.try_into()?,
-            extranonce_bytes.to_vec(),
-            u32::from_le_bytes(group_channel_id.try_into()?),
-        )
-    }
-}
-
-impl_frameable_trait!(
-    OpenStandardMiningChannelSuccess,
-    MessageTypes::OpenStandardMiningChannelSuccess,
-    false
-);
+// Implementation of the Standard and Extended OpenMiningChannelSuccess messages.
+impl_open_standard_mining_channel_success!();
+impl_open_extended_mining_channel_success!();
 
 // Implementation of the OpenMiningChannelError messages for Standard and Extended
 // mining.
@@ -759,6 +681,88 @@ mod open_standard_mining_tests {
 
         let buffer = frame(message).unwrap();
         assert_eq!(buffer[2], 0x13);
+    }
+
+    #[test]
+    fn open_extended_mining_sucess() {
+        let extranonce_prefix = [0x00, 0x00];
+        let channel_id = new_channel_id();
+        let message =
+            OpenExtendedMiningChannelSuccess::new(1, channel_id, [0u8; 32], 1, extranonce_prefix)
+                .unwrap();
+
+        assert_eq!(message.request_id, 1);
+        assert_eq!(message.channel_id, channel_id);
+        assert_eq!(message.target, [0u8; 32]);
+        assert_eq!(message.extranonce_size, 1);
+        assert_eq!(message.extranonce_prefix, extranonce_prefix.to_vec());
+    }
+
+    #[test]
+    fn serialize_open_extended_mining_success() {
+        let expected = [
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x01, 0x00, 0x00, 0x00, // channel_id
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // target
+            0x01, 0x00, // extranonce_size
+            0x02, // length extranonce_prefix
+            0x00, 0x00, // extranonce_prefix
+        ];
+
+        let extranonce_prefix = [0x00, 0x00];
+        let message =
+            OpenExtendedMiningChannelSuccess::new(1, 1, [0u8; 32], 1, extranonce_prefix).unwrap();
+
+        let buffer = serialize(message).unwrap();
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn deserialize_open_extended_mining_success() {
+        let input = [
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x01, 0x00, 0x00, 0x00, // channel_id
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // target
+            0x01, 0x00, // extranonce_size
+            0x02, // length extranonce_prefix
+            0x00, 0x00, // extranonce_prefix
+        ];
+
+        let message = OpenExtendedMiningChannelSuccess::deserialize(&input).unwrap();
+        assert_eq!(message.request_id, 1);
+        assert_eq!(message.channel_id, 1);
+        assert_eq!(message.target, [0u8; 32]);
+        assert_eq!(message.extranonce_size, 1);
+        assert_eq!(message.extranonce_prefix, vec![0x00, 0x00]);
+    }
+
+    #[test]
+    fn frame_open_extended_mining() {
+        let extranonce_prefix = [0x00, 0x00];
+        let message =
+            OpenExtendedMiningChannelSuccess::new(1, 1, [0u8; 32], 1, extranonce_prefix).unwrap();
+
+        let buffer = frame(message).unwrap();
+
+        let expected = [
+            0x00, 0x00, // extension_type
+            0x14, // msg_type
+            0x2d, 0x00, 0x00, // msg_length
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x01, 0x00, 0x00, 0x00, // channel_id
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // target
+            0x01, 0x00, // extranonce_size
+            0x02, // length extranonce_prefix
+            0x00, 0x00, // extranonce_prefix
+        ];
+        assert_eq!(buffer, expected);
     }
 }
 

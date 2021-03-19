@@ -30,4 +30,8 @@ fn main() {
     fuzz!(|data: &[u8]| {
         mining::OpenExtendedMiningChannel::deserialize(&data);
     });
+
+    fuzz!(|data: &[u8]| {
+        mining::OpenExtendedMiningChannelSuccess::deserialize(&data);
+    });
 }
