@@ -682,6 +682,88 @@ mod open_standard_mining_tests {
         let buffer = frame(message).unwrap();
         assert_eq!(buffer[2], 0x13);
     }
+
+    #[test]
+    fn open_extended_mining_sucess() {
+        let extranonce_prefix = [0x00, 0x00];
+        let channel_id = new_channel_id();
+        let message =
+            OpenExtendedMiningChannelSuccess::new(1, channel_id, [0u8; 32], 1, extranonce_prefix)
+                .unwrap();
+
+        assert_eq!(message.request_id, 1);
+        assert_eq!(message.channel_id, channel_id);
+        assert_eq!(message.target, [0u8; 32]);
+        assert_eq!(message.extranonce_size, 1);
+        assert_eq!(message.extranonce_prefix, extranonce_prefix.to_vec());
+    }
+
+    #[test]
+    fn serialize_open_extended_mining_success() {
+        let expected = [
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x01, 0x00, 0x00, 0x00, // channel_id
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // target
+            0x01, 0x00, // extranonce_size
+            0x02, // length extranonce_prefix
+            0x00, 0x00, // extranonce_prefix
+        ];
+
+        let extranonce_prefix = [0x00, 0x00];
+        let message =
+            OpenExtendedMiningChannelSuccess::new(1, 1, [0u8; 32], 1, extranonce_prefix).unwrap();
+
+        let buffer = serialize(message).unwrap();
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn deserialize_open_extended_mining_success() {
+        let input = [
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x01, 0x00, 0x00, 0x00, // channel_id
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // target
+            0x01, 0x00, // extranonce_size
+            0x02, // length extranonce_prefix
+            0x00, 0x00, // extranonce_prefix
+        ];
+
+        let message = OpenExtendedMiningChannelSuccess::deserialize(&input).unwrap();
+        assert_eq!(message.request_id, 1);
+        assert_eq!(message.channel_id, 1);
+        assert_eq!(message.target, [0u8; 32]);
+        assert_eq!(message.extranonce_size, 1);
+        assert_eq!(message.extranonce_prefix, vec![0x00, 0x00]);
+    }
+
+    #[test]
+    fn frame_open_extended_mining() {
+        let extranonce_prefix = [0x00, 0x00];
+        let message =
+            OpenExtendedMiningChannelSuccess::new(1, 1, [0u8; 32], 1, extranonce_prefix).unwrap();
+
+        let buffer = frame(message).unwrap();
+
+        let expected = [
+            0x00, 0x00, // extension_type
+            0x14, // msg_type
+            0x2d, 0x00, 0x00, // msg_length
+            0x01, 0x00, 0x00, 0x00, // request_id
+            0x01, 0x00, 0x00, 0x00, // channel_id
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // target
+            0x01, 0x00, // extranonce_size
+            0x02, // length extranonce_prefix
+            0x00, 0x00, // extranonce_prefix
+        ];
+        assert_eq!(buffer, expected);
+    }
 }
 
 #[cfg(test)]
