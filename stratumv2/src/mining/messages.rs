@@ -377,6 +377,65 @@ impl_error_codes_enum!(
 
 );
 
+/// UpdateChannel is sent from the Client to a Server. This message is used by
+/// the Client to notify the server about specific changes to a channel.
+struct UpdateChannel {
+    /// The unique identifier of the channel.
+    channel_id: u32,
+
+    /// The expected [h/s] (hash rate/per second) of the device or the
+    /// cumulative rate on the channel if multiple devices are connected
+    /// downstream. Proxies MUST send 0.0f when there are no mining devices
+    /// connected yet.
+    pub nominal_hash_rate: f32,
+
+    /// The Max Target that can be acceptd by the connected device or
+    /// multiple devices downstream. In this case, if the max_target of
+    /// the channel is smaller than the current max target, the Server MUST
+    /// respond with a SetTarget message.
+    max_target: U256,
+}
+
+impl UpdateChannel {
+    pub fn new(channel_id: u32, nominal_hash_rate: f32, max_target: U256) -> UpdateChannel {
+        UpdateChannel {
+            channel_id,
+            nominal_hash_rate,
+            max_target,
+        }
+    }
+}
+
+impl Serializable for UpdateChannel {
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        let buffer = serialize_slices!(
+            &self.channel_id.to_le_bytes(),
+            &self.nominal_hash_rate.to_le_bytes(),
+            &self.max_target
+        );
+
+        Ok(writer.write(&buffer)?)
+    }
+}
+
+impl Deserializable for UpdateChannel {
+    fn deserialize(bytes: &[u8]) -> Result<UpdateChannel> {
+        let mut parser = ByteParser::new(bytes, 0);
+
+        let channel_id = parser.next_by(4)?;
+        let nominal_hash_rate = parser.next_by(4)?;
+        let max_target = parser.next_by(32)?;
+
+        Ok(UpdateChannel::new(
+            u32::from_le_bytes(channel_id.try_into()?),
+            f32::from_le_bytes(nominal_hash_rate.try_into()?),
+            max_target.try_into()?,
+        ))
+    }
+}
+
+impl_frameable_trait!(UpdateChannel, MessageTypes::UpdateChannel, true);
+
 #[cfg(test)]
 mod setup_connection_tests {
     use super::*;
@@ -1300,5 +1359,64 @@ mod connection_error_tests {
             0xff, 0xff, 0xff, 0x72, 0x65, 0x2d, 0x66, 0x6c, 0x61, 0x67, 0x73, // error_code
         ];
         assert!(SetupConnectionError::deserialize(&input).is_err());
+    }
+}
+
+#[cfg(test)]
+mod update_channel_tests {
+    use super::*;
+    use crate::util::{frame, serialize};
+
+    #[test]
+    fn serialize_update_channel() {
+        let update = UpdateChannel::new(1, 12.3, [0; 32]);
+        let buffer = serialize(update).unwrap();
+
+        let expected = [
+            0x01, 0x00, 0x00, 0x00, // channel_id
+            0xcd, 0xcc, 0x44, 0x41, // nominal_hash_rate
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // max_target
+        ];
+
+        assert_eq!(buffer, expected);
+    }
+
+    #[test]
+    fn deserialize_update_channel() {
+        let input = [
+            0x01, 0x00, 0x00, 0x00, // channel_id
+            0xcd, 0xcc, 0x44, 0x41, // nominal_hash_rate
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // max_target
+        ];
+
+        let update = UpdateChannel::deserialize(&input).unwrap();
+
+        assert_eq!(update.channel_id, 1);
+        assert_eq!(update.nominal_hash_rate, 12.3);
+        assert_eq!(update.max_target, [0; 32]);
+    }
+
+    #[test]
+    fn frame_update_channel() {
+        let update = UpdateChannel::new(1, 12.3, [0; 32]);
+
+        let buffer = frame(update).unwrap();
+
+        let expected = [
+            0x00, 0x80, // extension_type
+            0x16, // msg_type
+            0x28, 0x00, 0x00, // msg_length
+            0x01, 0x00, 0x00, 0x00, // channel_id
+            0xcd, 0xcc, 0x44, 0x41, // nominal_hash_rate
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, // max_target
+        ];
+
+        assert_eq!(buffer, expected);
     }
 }
