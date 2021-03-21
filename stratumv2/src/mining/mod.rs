@@ -25,5 +25,5 @@ pub use messages::{
     OpenExtendedMiningChannel, OpenExtendedMiningChannelError, OpenExtendedMiningChannelSuccess,
     OpenMiningChannelErrorCodes, OpenStandardMiningChannel, OpenStandardMiningChannelError,
     OpenStandardMiningChannelSuccess, SetupConnection, SetupConnectionError,
-    SetupConnectionSuccess,
+    SetupConnectionSuccess, UpdateChannel,
 };

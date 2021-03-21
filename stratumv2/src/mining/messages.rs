@@ -379,7 +379,7 @@ impl_error_codes_enum!(
 
 /// UpdateChannel is sent from the Client to a Server. This message is used by
 /// the Client to notify the server about specific changes to a channel.
-struct UpdateChannel {
+pub struct UpdateChannel {
     /// The unique identifier of the channel.
     channel_id: u32,
 
@@ -387,7 +387,7 @@ struct UpdateChannel {
     /// cumulative rate on the channel if multiple devices are connected
     /// downstream. Proxies MUST send 0.0f when there are no mining devices
     /// connected yet.
-    pub nominal_hash_rate: f32,
+    nominal_hash_rate: f32,
 
     /// The Max Target that can be acceptd by the connected device or
     /// multiple devices downstream. In this case, if the max_target of
