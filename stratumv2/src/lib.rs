@@ -102,3 +102,5 @@ pub trait BitFlag {
 pub trait Frameable {
     fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize>;
 }
+
+mod message;

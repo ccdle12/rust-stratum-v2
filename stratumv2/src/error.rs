@@ -7,6 +7,7 @@ pub enum Error {
     VersionError(String),
     IOError(io::Error),
     Utf8Error(std::str::Utf8Error),
+    FromUtf8Error(std::string::FromUtf8Error),
     ProtocolMismatchError(String),
     RequirementError(String),
     DeserializationError(String),
@@ -24,6 +25,7 @@ impl fmt::Display for Error {
             Error::VersionError(ref message) => write!(f, "{}", message),
             Error::IOError(ref message) => write!(f, "{}", message),
             Error::Utf8Error(ref message) => write!(f, "{}", message),
+            Error::FromUtf8Error(ref message) => write!(f, "{}", message),
             Error::ProtocolMismatchError(ref message) => write!(f, "{}", message),
             Error::RequirementError(ref message) => write!(f, "{}", message),
             Error::DeserializationError(ref message) => write!(f, "{}", message),
@@ -39,6 +41,7 @@ impl fmt::Display for Error {
 
 impl_error_conversions!(
     std::str::Utf8Error => Error::Utf8Error,
+    std::string::FromUtf8Error => Error::FromUtf8Error,
     io::Error => Error::IOError,
     ed25519_dalek::ed25519::Error => Error::AuthorityKeyError,
     std::time::SystemTimeError => Error::SystemTimeError,
