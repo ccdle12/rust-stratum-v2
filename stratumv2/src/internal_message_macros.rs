@@ -541,7 +541,6 @@ macro_rules! impl_frameable_trait_with_lifetime {
     };
 }
 
-// TODO: Implement a conditional branch to set the channel msg bit.
 macro_rules! internal_frameable_trait {
     ($msg_type:path, $has_channel_msg_bit:expr) => {
         fn frame<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
@@ -551,9 +550,15 @@ macro_rules! internal_frameable_trait {
             // A size_u24 of the message payload.
             let payload_length = (size as u32).to_le_bytes()[0..=2].to_vec();
 
+            // Set the MSB if the message is meant to for a particular channel.
+            let extension_type: u16 = match $has_channel_msg_bit {
+                true => (1 << 15),
+                false => 0,
+            };
+
             let buffer = serialize_slices!(
-                &[0x00, 0x00],       // empty extension type
-                &[$msg_type.into()], // msg_type
+                &extension_type.to_le_bytes(),
+                &[$msg_type.into()],
                 &payload_length,
                 &payload
             );
