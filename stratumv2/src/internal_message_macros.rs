@@ -215,7 +215,7 @@ macro_rules! impl_setup_connection {
             }
         }
 
-        impl_frameable_trait_with_lifetime!(SetupConnection, MessageTypes::SetupConnection, false, 'a);
+        impl_frameable_trait!(SetupConnection, MessageTypes::SetupConnection, false, 'a);
     };
 }
 
@@ -293,7 +293,7 @@ macro_rules! impl_setup_connection_success {
             }
         }
 
-        impl_frameable_trait_with_lifetime!(SetupConnectionSuccess, MessageTypes::SetupConnectionSuccess, false, 'a);
+        impl_frameable_trait!(SetupConnectionSuccess, MessageTypes::SetupConnectionSuccess, false, 'a);
     };
 }
 
@@ -394,7 +394,7 @@ macro_rules! impl_setup_connection_error {
             }
         }
 
-        impl_frameable_trait_with_lifetime!(SetupConnectionError, MessageTypes::SetupConnectionError, false, 'a);
+        impl_frameable_trait!(SetupConnectionError, MessageTypes::SetupConnectionError, false, 'a);
     };
 }
 
@@ -531,9 +531,6 @@ macro_rules! impl_frameable_trait {
             internal_frameable_trait!($msg_type, $has_channel_msg_bit);
         }
     };
-}
-
-macro_rules! impl_frameable_trait_with_lifetime {
     ($msg:ident, $msg_type:path, $has_channel_msg_bit:expr, $lt:lifetime) => {
         impl<$lt> Frameable for $msg<$lt> {
             internal_frameable_trait!($msg_type, $has_channel_msg_bit);
