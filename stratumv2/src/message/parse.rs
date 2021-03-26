@@ -177,9 +177,9 @@ mod tests {
         let bytes: [u8; 4] = [0, 1, 2, 3];
 
         let mut parser = ByteParser::new(&bytes, 1);
-        assert!(matches!(parser.next_by(2), Ok(&[1, 2])));
+        assert_eq!(parser.next_by(2).unwrap(), &[1, 2]);
         assert!(matches!(parser.next_by(2), Err(Error::ParseError { .. })));
-        assert!(matches!(parser.next_by(1), Ok(&[3])));
+        assert_eq!(parser.next_by(1).unwrap(), &[3]);
         assert!(matches!(parser.next_by(1), Err(Error::ParseError { .. })));
     }
 }

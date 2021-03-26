@@ -78,7 +78,7 @@ impl Deserializable for U24 {
 
 impl Serializable for U24 {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        writer.write(&self.0.to_le_bytes()[0..2])?;
+        writer.write(&self.0.to_le_bytes()[0..3])?;
         Ok(3)
     }
 }
@@ -132,9 +132,9 @@ mod tests {
 
     #[test]
     fn u24_new() {
-        assert!(matches!(U24::new(0), Ok(U24(0))));
-        assert!(matches!(U24::new(1), Ok(U24(1))));
-        assert!(matches!(U24::new(2u32.pow(24) - 1), Ok(U24(U24::MAX))));
+        assert_eq!(U24::new(0).unwrap(), U24(0));
+        assert_eq!(U24::new(1).unwrap(), U24(1));
+        assert_eq!(U24::new(2u32.pow(24) - 1).unwrap(), U24(U24::MAX));
         assert!(matches!(
             U24::new(2u32.pow(24)),
             Err(Error::RequirementError { .. })
@@ -150,8 +150,8 @@ mod tests {
         let encoded = make_encoded_u24(5);
         let decoded = U24::new(5).unwrap();
 
-        assert!(matches!(deserialize::<U24>(&encoded), Ok(decoded)));
-        assert!(matches!(serialize(&decoded), Ok(encoded)));
+        assert_eq!(deserialize::<U24>(&encoded).unwrap(), decoded);
+        assert_eq!(serialize(&decoded).unwrap(), encoded);
     }
 
     #[test]
@@ -168,7 +168,7 @@ mod tests {
         // Since we are performing bounds-checking in the U24::new factory, we will not be
         // performing any bounds-checking on serialization.
         let encoded = make_encoded_u24(0);
-        assert!(matches!(serialize(&U24(2u32.pow(24))), Ok(encoded)));
+        assert_eq!(serialize(&U24(2u32.pow(24))).unwrap(), encoded);
     }
 
     fn make_encoded_u256(a: u64, b: u64, c: u64, d: u64) -> Vec<u8> {
@@ -189,8 +189,8 @@ mod tests {
             0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 3
             0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // 4
         ]);
-        assert!(matches!(deserialize::<U256>(&encoded), Ok(decoded)));
-        assert!(matches!(serialize(&decoded), Ok(encoded)));
+        assert_eq!(deserialize::<U256>(&encoded).unwrap(), decoded);
+        assert_eq!(serialize(&decoded).unwrap(), encoded);
     }
 
     #[test]

@@ -66,7 +66,7 @@ macro_rules! impl_sized_B0 {
                 // Then parse the byte buffer.
                 let bytes = parser.next_by(header_length.clone().into())?;
 
-                $type::new(bytes.iter().cloned().collect::<Vec<u8>>())
+                $type::new(bytes)
             }
         }
 
@@ -84,75 +84,105 @@ macro_rules! impl_sized_B0 {
     };
 }
 
+#[cfg(test)]
 macro_rules! impl_sized_B0_tests {
     ($type:ident, $length_type:ident) => {
-        impl_sized_B0!($type, $length_type, $length_type::MAX as usize);
+        impl_sized_B0_tests!($type, $length_type, $length_type::MAX as usize);
     };
     ($type:ident, $length_type:ident, $max_length:expr) => {
-        fn make_encoded_bytes(s: &[u8]) -> Vec<u8> {
+        fn make_encoded_bytes(payload: &[u8]) -> Vec<u8> {
+            use std::convert::TryInto;
+
+            let length = payload.len().try_into().unwrap();
+            let header = serialize::<$length_type>(&length).unwrap();
+
             let mut buffer = vec![];
-            buffer.push(s.len() as u8);
-            buffer.extend_from_slice(s);
+            buffer.extend_from_slice(header.as_slice());
+            buffer.extend_from_slice(payload);
             return buffer;
         }
 
         fn make_decoded_bytes(s: &[u8]) -> $type {
+            use std::convert::TryInto;
             $type {
-                length: s.len() as u8,
+                length: s.len().try_into().unwrap(),
                 data: s.into(),
             }
         }
 
         #[test]
-        fn new() {
-            let empty = vec![];
-            assert!(matches!(
-                $type::new(empty.clone()),
-                Ok($type {
-                    length: 0,
-                    data: empty
-                })
-            ));
+        fn new_empty() {
+            use std::convert::TryInto;
+            let data = vec![];
+            let length: $length_type = 0usize.try_into().unwrap();
+            assert_eq!(
+                $type::new(data.clone()).unwrap(),
+                $type {
+                    length: length,
+                    data: data
+                }
+            );
+        }
 
-            let nonempty = vec![1, 2, 3, 4, 5];
-            assert!(matches!(
-                $type::new(nonempty.clone()),
-                Ok($type {
-                    length: 5,
-                    data: nonempty
-                })
-            ));
+        #[test]
+        fn new_nonempty() {
+            use std::convert::TryInto;
+            let data = vec![1, 2, 3, 4, 5];
+            let length: $length_type = 5usize.try_into().unwrap();
+            assert_eq!(
+                $type::new(data.clone()).unwrap(),
+                $type {
+                    length: length,
+                    data: data
+                }
+            );
+        }
 
-            let max_length: Vec<u8> = (0..$max_length).map(|_| 0).collect();
-            assert!(matches!(
-                $type::new(max_length.clone()),
-                Ok($type {
-                    length: $max_length,
-                    data: max_length
-                })
-            ));
+        #[test]
+        fn new_max_length() {
+            // There's no need to test the larger variants of this macro. If it works for the
+            // smaller sizes it will work for the larger ones as well.
+            if $max_length < 100000 {
+                use std::convert::TryInto;
+                let data: Vec<u8> = [0; $max_length].into();
+                let length: $length_type = $max_length.try_into().unwrap();
+                assert_eq!(
+                    $type::new(data.clone()).unwrap(),
+                    $type {
+                        length: length,
+                        data: data
+                    }
+                );
+            }
+        }
 
-            let over_limit: Vec<u8> = (0..$max_length + 1).map(|_| 0).collect();
-            assert!(matches!(
-                $type::new(over_limit),
-                Err(Error::RequirementError { .. })
-            ));
+        #[test]
+        fn new_over_limit() {
+            // There's no need to test the larger variants of this macro. If it works for the
+            // smaller sizes it will work for the larger ones as well.
+            if $max_length < 100000 {
+                let data: Vec<u8> = [0; $max_length + 1].into();
+                assert!(matches!(
+                    $type::new(data),
+                    Err(Error::RequirementError { .. })
+                ));
+            }
         }
 
         #[test]
         fn serde_ok_empty() {
             let encoded = make_encoded_bytes(&[]);
             let decoded = make_decoded_bytes(&[]);
-            assert!(matches!(deserialize::<$type>(&encoded), Ok(decoded)));
-            assert!(matches!(serialize(&decoded), Ok(encoded)));
+            assert_eq!(deserialize::<$type>(&encoded).unwrap(), decoded);
+            assert_eq!(serialize(&decoded).unwrap(), encoded);
         }
 
         #[test]
         fn serde_ok_nonempty() {
             let encoded = make_encoded_bytes(&[1, 2, 3, 4, 5]);
             let decoded = make_decoded_bytes(&[1, 2, 3, 4, 5]);
-            assert!(matches!(deserialize::<$type>(&encoded), Ok(decoded)));
-            assert!(matches!(serialize(&decoded), Ok(encoded)));
+            assert_eq!(deserialize::<$type>(&encoded).unwrap(), decoded);
+            assert_eq!(serialize(&decoded).unwrap(), encoded);
         }
 
         #[test]
@@ -193,7 +223,7 @@ mod b0_31_tests {
 
     #[test]
     fn deserialize_over_max_length() {
-        let data = make_encoded_bytes((0..32).map(|_| 0 as u8).collect::<Vec<u8>>().as_slice());
+        let data = make_encoded_bytes(&[0; 32]);
         assert!(matches!(
             deserialize::<B0_31>(data.as_slice()),
             Err(Error::RequirementError { .. })
@@ -210,7 +240,7 @@ mod b0_32_tests {
 
     #[test]
     fn deserialize_over_max_length() {
-        let data = make_encoded_bytes((0..33).map(|_| 0 as u8).collect::<Vec<u8>>().as_slice());
+        let data = make_encoded_bytes(&[0; 33]);
         assert!(matches!(
             deserialize::<B0_32>(data.as_slice()),
             Err(Error::RequirementError { .. })
@@ -227,7 +257,7 @@ mod b0_255_tests {
 }
 
 #[cfg(test)]
-mod b0_64k_tests {
+mod b0_64_k_tests {
     use super::*;
     use crate::message::parse::{deserialize, serialize};
 
@@ -235,7 +265,7 @@ mod b0_64k_tests {
 }
 
 #[cfg(test)]
-mod b0_16M_tests {
+mod b0_16_m_tests {
     use super::*;
     use crate::message::parse::{deserialize, serialize};
 

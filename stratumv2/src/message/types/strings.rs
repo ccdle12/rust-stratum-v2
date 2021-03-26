@@ -82,6 +82,7 @@ macro_rules! impl_sized_STR0 {
     };
 }
 
+#[cfg(test)]
 macro_rules! impl_sized_STR0_tests {
     ($type:ident, $max_length:expr) => {
         fn make_encoded_str(s: &str) -> Vec<u8> {
@@ -101,31 +102,31 @@ macro_rules! impl_sized_STR0_tests {
         #[test]
         fn new() {
             let empty: String = "".into();
-            assert!(matches!(
-                $type::new(""),
-                Ok($type {
+            assert_eq!(
+                $type::new("").unwrap(),
+                $type {
                     length: 0,
                     data: empty
-                })
-            ));
+                }
+            );
 
             let nonempty: String = "human-readable-data".into();
-            assert!(matches!(
-                $type::new("human-readable-data"),
-                Ok($type {
+            assert_eq!(
+                $type::new("human-readable-data").unwrap(),
+                $type {
                     length: 19,
                     data: nonempty
-                })
-            ));
+                }
+            );
 
             let max_length: String = (0..$max_length).map(|_| 'a').collect();
-            assert!(matches!(
-                $type::new(max_length.clone()),
-                Ok($type {
+            assert_eq!(
+                $type::new(max_length.clone()).unwrap(),
+                $type {
                     length: $max_length,
                     data: max_length
-                })
-            ));
+                }
+            );
 
             let over_limit: String = (0..$max_length + 1).map(|_| 'a').collect();
             assert!(matches!(
@@ -138,16 +139,16 @@ macro_rules! impl_sized_STR0_tests {
         fn serde_ok_empty() {
             let encoded = make_encoded_str("");
             let decoded = make_decoded_str("");
-            assert!(matches!(deserialize::<$type>(&encoded), Ok(decoded)));
-            assert!(matches!(serialize(&decoded), Ok(encoded)));
+            assert_eq!(deserialize::<$type>(&encoded).unwrap(), decoded);
+            assert_eq!(serialize(&decoded).unwrap(), encoded);
         }
 
         #[test]
         fn serde_ok_nonempty() {
             let encoded = make_encoded_str("valid data");
             let decoded = make_decoded_str("valid data");
-            assert!(matches!(deserialize::<$type>(&encoded), Ok(decoded)));
-            assert!(matches!(serialize(&decoded), Ok(encoded)));
+            assert_eq!(deserialize::<$type>(&encoded).unwrap(), decoded);
+            assert_eq!(serialize(&decoded).unwrap(), encoded);
         }
 
         #[test]
