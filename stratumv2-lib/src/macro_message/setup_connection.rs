@@ -197,7 +197,7 @@ macro_rules! impl_setup_connection {
 
 #[cfg(test)]
 macro_rules! impl_setup_connection_tests {
-    ($type:ident, $empty_flag:expr, $flags:expr) => {
+    ($type:ident, $flags:ident) => {
         use crate::common::Protocol;
         use crate::error::Result;
         use crate::frame::{frame, unframe, Message};
@@ -213,6 +213,7 @@ macro_rules! impl_setup_connection_tests {
             let mut max_version = 2;
             let mut vendor = "Bitmain";
             let mut firmware = "braiins-os-2018-09-22-1-hash";
+            let mut flags = $flags::all();
 
             if args.contains_key("min_version") {
                 min_version = args.get("min_version").unwrap().parse::<u16>().unwrap();
@@ -230,10 +231,14 @@ macro_rules! impl_setup_connection_tests {
                 firmware = args.get("firmware").unwrap();
             }
 
+            if args.contains_key("empty_flags") {
+                flags = $flags::empty();
+            }
+
             let message = $type::new(
                 min_version,
                 max_version,
-                $flags,
+                flags,
                 "0.0.0.0",
                 8545,
                 vendor,
@@ -302,18 +307,10 @@ macro_rules! impl_setup_connection_tests {
 
         #[test]
         fn serialize_empty_flags() {
-            let message = $type::new(
-                2,
-                2,
-                $empty_flag,
-                "0.0.0.0",
-                8545,
-                "Bitmain",
-                "S9i 13.5",
-                "braiins-os-2018-09-22-1-hash",
-                "some-uuid",
-            )
-            .unwrap();
+            let mut args = HashMap::new();
+            args.insert("empty_flags".into(), "true".to_string());
+
+            let message = default_setup_connection(args).unwrap();
 
             let buffer = serialize(&message).unwrap();
             assert_eq!(buffer.len(), 75);
@@ -356,12 +353,7 @@ mod mining_connection_tests {
     use crate::mining::SetupConnection;
     use crate::mining::SetupConnectionFlags;
 
-    impl_setup_connection_tests!(
-        SetupConnection,
-        SetupConnectionFlags::empty(),
-        SetupConnectionFlags::REQUIRES_STANDARD_JOBS
-            | SetupConnectionFlags::REQUIRES_WORK_SELECTION
-    );
+    impl_setup_connection_tests!(SetupConnection, SetupConnectionFlags);
 }
 
 #[cfg(test)]
@@ -369,9 +361,5 @@ mod job_negotiation_tests {
     use crate::job_negotiation::SetupConnection;
     use crate::job_negotiation::SetupConnectionFlags;
 
-    impl_setup_connection_tests!(
-        SetupConnection,
-        SetupConnectionFlags::empty(),
-        SetupConnectionFlags::REQUIRES_ASYNC_JOB_MINING
-    );
+    impl_setup_connection_tests!(SetupConnection, SetupConnectionFlags);
 }
