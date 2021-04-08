@@ -7,9 +7,9 @@
 //! nodes (Mining Farms/Devices) can use the same negotiation result on all
 //! their connections.
 
-pub mod setup_connection;
-pub mod setup_connection_error;
-pub mod setup_connection_success;
+mod setup_connection;
+mod setup_connection_error;
+mod setup_connection_success;
 
 pub use setup_connection::{SetupConnection, SetupConnectionFlags};
 pub use setup_connection_error::SetupConnectionError;
