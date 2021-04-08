@@ -6,8 +6,6 @@
 
 #[macro_use]
 extern crate bitflags;
-
-#[macro_use]
 extern crate thiserror;
 
 /// Common messages and flags for all sub protocols.
