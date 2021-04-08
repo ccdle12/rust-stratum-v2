@@ -1,3 +1,4 @@
+use crate::common::Protocol;
 use crate::impl_bitflags_serde;
 use crate::impl_setup_connection;
 
@@ -21,7 +22,7 @@ bitflags!(
 
 impl_bitflags_serde!(SetupConnectionFlags, u32);
 
-impl_setup_connection!(SetupConnectionFlags);
+impl_setup_connection!(Protocol::Mining, SetupConnectionFlags);
 
 #[cfg(test)]
 mod tests {
