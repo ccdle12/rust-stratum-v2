@@ -113,7 +113,7 @@ impl Deserializable for SetupConnection {
             Protocol::JobNegotiation => SetupConnection::JobNegotiation(
                 job_negotiation::SetupConnection::deserialize(parser)?,
             ),
-            _ => panic!("Unimplemented"),
+            _ => return Err(Error::Unimplemented()),
             // Protocol::TemplateDistribution => SetupConnection::TemplateDistribution(
             //     template_distribution::SetupConnection::deserialize(parser)?,
             // ),
