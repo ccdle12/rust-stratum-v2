@@ -23,6 +23,7 @@ impl Serializable for Message {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let message_type: u8 = self.message_type.msg_type();
         let mut extension_type: u16 = self.message_type.ext_type();
+        // Enable the MSB to indicate if this message type has a channel id.
         if self.message_type.channel_bit() {
             extension_type |= 0x8000;
         }
@@ -41,7 +42,10 @@ impl Serializable for Message {
 impl Deserializable for Message {
     fn deserialize(parser: &mut ByteParser) -> Result<Message> {
         let mut extension_type = u16::deserialize(parser)?;
+        // Mask out the MSB to identify if this message type has a channel id.
         let channel_bit = (extension_type & 0x8000) != 0;
+        // Disable the MSB so the u16 representation of the extension type has the same value as the
+        // u15 representation.
         extension_type &= 0x7FFF;
 
         let message_type = MessageType::new(extension_type, u8::deserialize(parser)?)?;
