@@ -68,10 +68,12 @@ macro_rules! impl_setup_connection_error {
 
         impl Serializable for SetupConnectionError {
             fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-                let length =
-                    self.flags.bits().serialize(writer)? + self.error_code.serialize(writer)?;
-
-                Ok(length)
+                Ok([
+                    self.flags.bits().serialize(writer)?,
+                    self.error_code.serialize(writer)?,
+                ]
+                .iter()
+                .sum())
             }
         }
 

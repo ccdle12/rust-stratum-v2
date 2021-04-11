@@ -69,9 +69,7 @@ macro_rules! impl_error_code_enum {
 
         impl Serializable for $name {
             fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-                let length = STR0_255::from(self).serialize(writer)?;
-
-                Ok(length)
+                Ok(STR0_255::from(self).serialize(writer)?)
             }
         }
 

@@ -25,9 +25,7 @@ impl ChannelEndpointChanged {
 
 impl Serializable for ChannelEndpointChanged {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let length = self.channel_id.serialize(writer)?;
-
-        Ok(length)
+        Ok(self.channel_id.serialize(writer)?)
     }
 }
 

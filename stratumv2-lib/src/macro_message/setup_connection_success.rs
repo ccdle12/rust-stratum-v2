@@ -50,10 +50,12 @@ macro_rules! impl_setup_connection_success {
 
         impl Serializable for SetupConnectionSuccess {
             fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-                let length =
-                    self.used_version.serialize(writer)? + self.flags.bits().serialize(writer)?;
-
-                Ok(length)
+                Ok([
+                    self.used_version.serialize(writer)?,
+                    self.flags.bits().serialize(writer)?,
+                ]
+                .iter()
+                .sum())
             }
         }
 

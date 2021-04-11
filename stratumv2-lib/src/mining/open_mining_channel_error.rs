@@ -49,10 +49,12 @@ macro_rules! impl_open_mining_channel_error {
 
         impl Serializable for $name {
             fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-                let length =
-                    self.request_id.serialize(writer)? + self.error_code.serialize(writer)?;
-
-                Ok(length)
+                Ok([
+                    self.request_id.serialize(writer)?,
+                    self.error_code.serialize(writer)?,
+                ]
+                .iter()
+                .sum())
             }
         }
 

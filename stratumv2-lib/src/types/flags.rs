@@ -15,9 +15,7 @@ macro_rules! impl_bitflags_serde {
 
         impl Serializable for $name {
             fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-                let length = self.bits().serialize(writer)?;
-
-                Ok(length)
+                Ok(self.bits().serialize(writer)?)
             }
         }
 

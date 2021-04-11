@@ -64,9 +64,7 @@ impl TryFrom<u8> for Protocol {
 
 impl Serializable for Protocol {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let length = u8::from(self).serialize(writer)?;
-
-        Ok(length)
+        Ok(u8::from(self).serialize(writer)?)
     }
 }
 

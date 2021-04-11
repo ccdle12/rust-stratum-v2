@@ -47,13 +47,15 @@ impl OpenStandardMiningChannelSuccess {
 
 impl Serializable for OpenStandardMiningChannelSuccess {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let length = self.request_id.serialize(writer)?
-            + self.channel_id.serialize(writer)?
-            + self.target.serialize(writer)?
-            + self.extranonce_prefix.serialize(writer)?
-            + self.group_channel_id.serialize(writer)?;
-
-        Ok(length)
+        Ok([
+            self.request_id.serialize(writer)?,
+            self.channel_id.serialize(writer)?,
+            self.target.serialize(writer)?,
+            self.extranonce_prefix.serialize(writer)?,
+            self.group_channel_id.serialize(writer)?,
+        ]
+        .iter()
+        .sum())
     }
 }
 

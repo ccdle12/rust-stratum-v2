@@ -139,17 +139,19 @@ macro_rules! impl_setup_connection {
         /// of the SetupConnection message to the valid message format.
         impl Serializable for SetupConnection {
             fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-                let length = self.min_version.serialize(writer)?
-                    + self.max_version.serialize(writer)?
-                    + self.flags.serialize(writer)?
-                    + self.endpoint_host.serialize(writer)?
-                    + self.endpoint_port.serialize(writer)?
-                    + self.vendor.serialize(writer)?
-                    + self.hardware_version.serialize(writer)?
-                    + self.firmware.serialize(writer)?
-                    + self.device_id.serialize(writer)?;
-
-                Ok(length)
+                Ok([
+                    self.min_version.serialize(writer)?,
+                    self.max_version.serialize(writer)?,
+                    self.flags.serialize(writer)?,
+                    self.endpoint_host.serialize(writer)?,
+                    self.endpoint_port.serialize(writer)?,
+                    self.vendor.serialize(writer)?,
+                    self.hardware_version.serialize(writer)?,
+                    self.firmware.serialize(writer)?,
+                    self.device_id.serialize(writer)?,
+                ]
+                .iter()
+                .sum())
             }
         }
 

@@ -50,12 +50,14 @@ impl OpenStandardMiningChannel {
 
 impl Serializable for OpenStandardMiningChannel {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let length = self.request_id.serialize(writer)?
-            + self.user_identity.serialize(writer)?
-            + self.nominal_hash_rate.serialize(writer)?
-            + self.max_target.serialize(writer)?;
-
-        Ok(length)
+        Ok([
+            self.request_id.serialize(writer)?,
+            self.user_identity.serialize(writer)?,
+            self.nominal_hash_rate.serialize(writer)?,
+            self.max_target.serialize(writer)?,
+        ]
+        .iter()
+        .sum())
     }
 }
 

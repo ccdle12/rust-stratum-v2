@@ -30,12 +30,14 @@ impl Serializable for Message {
 
         let message_length = U24::new(self.payload.len() as u32)?;
 
-        let length = extension_type.serialize(writer)?
-            + message_type.serialize(writer)?
-            + message_length.serialize(writer)?
-            + writer.write(self.payload.as_slice())?;
-
-        Ok(length)
+        Ok([
+            extension_type.serialize(writer)?,
+            message_type.serialize(writer)?,
+            message_length.serialize(writer)?,
+            writer.write(self.payload.as_slice())?,
+        ]
+        .iter()
+        .sum())
     }
 }
 
