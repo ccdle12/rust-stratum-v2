@@ -67,11 +67,11 @@ pub trait Frameable: Deserializable + Serializable {
     fn message_type() -> MessageType;
 }
 
-fn frame<T: Frameable>(payload: &T) -> Result<Message> {
+pub fn frame<T: Frameable>(payload: &T) -> Result<Message> {
     Ok(Message::new(T::message_type(), serialize(payload)?))
 }
 
-fn unframe<T: Frameable>(message: Message) -> Result<T> {
+pub fn unframe<T: Frameable>(message: &Message) -> Result<T> {
     let expected_message_type = T::message_type();
     if expected_message_type != message.message_type {
         return Err(Error::UnexpectedMessageType(
