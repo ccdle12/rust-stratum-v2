@@ -4,6 +4,8 @@ use crate::mining;
 use crate::parse::{ByteParser, Deserializable, Serializable};
 // use crate::template_distribution;
 // use crate::job_distribution;
+pub use crate::frame::Frameable;
+pub use crate::types::MessageType;
 use std::convert::TryFrom;
 use std::io;
 
@@ -122,4 +124,101 @@ impl Deserializable for SetupConnection {
 
         Ok(variant)
     }
+}
+
+impl Frameable for SetupConnection {
+    fn message_type() -> MessageType {
+        MessageType::SetupConnection
+    }
+}
+
+#[cfg(test)]
+macro_rules! impl_setup_connection_enum_tests {
+    ($struct:ident, $flags:expr, $enum:path, $protocol:path) => {
+        use crate::common::setup_connection::Protocol;
+        use crate::frame::frame;
+        use crate::parse::{deserialize, serialize};
+        use crate::types::{MessageType, U24};
+        use std::convert::TryFrom;
+
+        fn default_setup_conn_msg() -> SetupConnectionEnum {
+            $enum(
+                $struct::new(
+                    2,
+                    2,
+                    $flags,
+                    "0.0.0.0",
+                    8545,
+                    "Bitmain",
+                    "S9i 13.5",
+                    "braiins-os-2018-09-22-1-hash",
+                    "some-uuid",
+                )
+                .unwrap(),
+            )
+        }
+
+        #[test]
+        fn serialize_setup_connection() {
+            let setup_conn = default_setup_conn_msg();
+
+            let bytes = serialize(&setup_conn).unwrap();
+
+            // Assert the SetupConnection enum includes the Protocol u8 in the
+            // serialized form as the first byte.
+            let protocol = Protocol::try_from(bytes[0]).unwrap();
+            assert_eq!(protocol, $protocol);
+        }
+
+        #[test]
+        fn frame_setup_connection() {
+            let setup_conn = default_setup_conn_msg();
+
+            let network_message = frame(&setup_conn).unwrap();
+            let bytes = serialize(&network_message).unwrap();
+            assert_eq!(bytes.len(), 81);
+
+            // Check the extension type is empty.
+            assert_eq!(bytes[0..2], [0u8; 2]);
+
+            // Check that the correct byte for the message type was used.
+            assert_eq!(MessageType::SetupConnection, network_message.message_type);
+            assert_eq!(bytes[2], network_message.message_type.msg_type());
+
+            // Check that the correct message length was used.
+            assert_eq!(
+                deserialize::<U24>(&bytes[3..6]).unwrap(),
+                network_message.payload.len() as u32
+            );
+        }
+    };
+}
+
+#[cfg(test)]
+mod mining_setup_connection_test {
+    use super::SetupConnection as SetupConnectionEnum;
+    use crate::mining::SetupConnection;
+    use crate::mining::SetupConnectionFlags;
+
+    impl_setup_connection_enum_tests!(
+        SetupConnection,
+        SetupConnectionFlags::REQUIRES_STANDARD_JOBS
+            | SetupConnectionFlags::REQUIRES_WORK_SELECTION,
+        SetupConnectionEnum::Mining,
+        Protocol::Mining
+    );
+}
+
+#[cfg(test)]
+mod job_negotiation_setup_connection_test {
+    use super::SetupConnection as SetupConnectionEnum;
+    use crate::job_negotiation::SetupConnection;
+    use crate::job_negotiation::SetupConnectionFlags;
+
+    impl_setup_connection_enum_tests!(
+        SetupConnection,
+        SetupConnectionFlags::REQUIRES_ASYNC_JOB_MINING,
+        SetupConnectionEnum::JobNegotiation,
+        Protocol::JobNegotiation
+    );
 }
