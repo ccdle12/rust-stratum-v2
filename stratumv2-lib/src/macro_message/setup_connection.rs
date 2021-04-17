@@ -180,11 +180,5 @@ macro_rules! impl_setup_connection {
                 )
             }
         }
-
-        impl Frameable for SetupConnection {
-            fn message_type() -> MessageType {
-                MessageType::SetupConnection
-            }
-        }
     };
 }
