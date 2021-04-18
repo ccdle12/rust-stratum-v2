@@ -1,9 +1,5 @@
 use crate::error::{Error, Result};
-use crate::job_negotiation;
-use crate::mining;
 use crate::parse::{ByteParser, Deserializable, Serializable};
-// use crate::template_distribution;
-// use crate::job_distribution;
 use std::convert::TryFrom;
 use std::io;
 
@@ -71,55 +67,5 @@ impl Serializable for Protocol {
 impl Deserializable for Protocol {
     fn deserialize(parser: &mut ByteParser) -> Result<Protocol> {
         Protocol::try_from(u8::deserialize(parser)?)
-    }
-}
-
-pub enum SetupConnection {
-    Mining(mining::SetupConnection),
-    JobNegotiation(job_negotiation::SetupConnection),
-    // TemplateDistribution(template_distribution::SetupConnection),
-    // JobDistribution(job_distribution::SetupConnection),
-}
-
-impl Serializable for SetupConnection {
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let length = match self {
-            SetupConnection::Mining(v) => {
-                Protocol::Mining.serialize(writer)? + v.serialize(writer)?
-            }
-            SetupConnection::JobNegotiation(v) => {
-                Protocol::JobNegotiation.serialize(writer)? + v.serialize(writer)?
-            } // SetupConnection::TemplateDistribution(v) => {
-              //     Protocol::TemplateDistribution.serialize(writer)? + v.serialize(writer)?
-              // }
-              // SetupConnection::JobDistribution(v) => {
-              //     Protocol::JobDistribution.serialize(writer)? + v.serialize(writer)?
-              // }
-        };
-
-        Ok(length)
-    }
-}
-
-impl Deserializable for SetupConnection {
-    fn deserialize(parser: &mut ByteParser) -> Result<SetupConnection> {
-        let protocol = Protocol::deserialize(parser)?;
-        let variant = match protocol {
-            Protocol::Mining => {
-                SetupConnection::Mining(mining::SetupConnection::deserialize(parser)?)
-            }
-            Protocol::JobNegotiation => SetupConnection::JobNegotiation(
-                job_negotiation::SetupConnection::deserialize(parser)?,
-            ),
-            _ => return Err(Error::Unimplemented()),
-            // Protocol::TemplateDistribution => SetupConnection::TemplateDistribution(
-            //     template_distribution::SetupConnection::deserialize(parser)?,
-            // ),
-            // Protocol::JobDistribution => SetupConnection::JobDistribution(
-            //     job_distribution::SetupConnection::deserialize(parser)?,
-            // ),
-        };
-
-        Ok(variant)
     }
 }
