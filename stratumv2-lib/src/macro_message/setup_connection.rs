@@ -342,7 +342,7 @@ macro_rules! impl_setup_connection_tests {
             // Check that the network message bytes can be deserialized and
             // unframed back into the SetupConnection message.
             let der_network_message = deserialize::<Message>(&buffer).unwrap();
-            let der_message = unframe::<$type>(&network_message).unwrap();
+            let der_message = unframe::<$type>(&der_network_message).unwrap();
             assert_eq!(der_message, message);
         }
     };
