@@ -54,7 +54,7 @@ macro_rules! impl_setup_connection {
         /// );
         /// assert!(job_negotiation_connection.is_ok());
         /// ```
-        #[derive(Debug, Clone)]
+        #[derive(Debug, Clone, PartialEq)]
         pub struct SetupConnection {
             /// Used to indicate the protocol the client wants to use on the new connection.
             pub(crate) protocol: Protocol,
@@ -200,7 +200,7 @@ macro_rules! impl_setup_connection_tests {
     ($type:ident, $empty_flag:expr, $flags:expr) => {
         use crate::common::Protocol;
         use crate::error::Result;
-        use crate::frame::frame;
+        use crate::frame::{frame, unframe, Message};
         use crate::parse::{deserialize, serialize};
         use crate::types::U24;
         use std::collections::HashMap;
@@ -341,6 +341,12 @@ macro_rules! impl_setup_connection_tests {
                 deserialize::<U24>(&buffer[3..6]).unwrap(),
                 network_message.payload.len() as u32
             );
+
+            // Check that the network message bytes can be deserialized and
+            // unframed back into the SetupConnection message.
+            let der_network_message = deserialize::<Message>(&buffer).unwrap();
+            let der_message = unframe::<$type>(&network_message).unwrap();
+            assert_eq!(der_message, message);
         }
     };
 }
