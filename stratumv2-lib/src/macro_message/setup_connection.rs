@@ -1,6 +1,5 @@
 pub mod macro_prelude {
     pub use crate::error::{Error, Result};
-    pub use crate::frame::Frameable;
     pub use crate::parse::{ByteParser, Deserializable, Serializable};
     pub use crate::types::{MessageType, STR0_255};
     pub use std::convert::TryInto;
@@ -178,12 +177,6 @@ macro_rules! impl_setup_connection {
                     firmware,
                     device_id,
                 )
-            }
-        }
-
-        impl Frameable for SetupConnection {
-            fn message_type() -> MessageType {
-                MessageType::SetupConnection
             }
         }
     };

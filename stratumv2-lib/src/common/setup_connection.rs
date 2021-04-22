@@ -1,7 +1,9 @@
 use crate::error::{Error, Result};
+use crate::frame::Frameable;
 use crate::job_negotiation;
 use crate::mining;
 use crate::parse::{ByteParser, Deserializable, Serializable};
+use crate::types::MessageType;
 // use crate::template_distribution;
 // use crate::job_distribution;
 use std::convert::TryFrom;
@@ -175,11 +177,18 @@ impl Deserializable for SetupConnection {
     }
 }
 
+impl Frameable for SetupConnection {
+    fn message_type() -> MessageType {
+        MessageType::SetupConnection
+    }
+}
+
 #[cfg(test)]
 macro_rules! impl_setup_connection_tests {
     ($protocol:expr, $fn:expr, $flags:ident) => {
         use crate::frame::frame;
         use crate::parse;
+        use crate::types::U24;
 
         fn default_setup_conn(empty: bool) -> SetupConnection {
             let flags = if empty {
@@ -231,6 +240,27 @@ macro_rules! impl_setup_connection_tests {
 
             // Check the optional flags still serialize but to empty values.
             assert_eq!(result[5..9], [0u8; 4]);
+        }
+
+        #[test]
+        fn frame_message() {
+            let conn = default_setup_conn(false);
+            let network_message = frame(&conn).unwrap();
+
+            let result = parse::serialize(&network_message).unwrap();
+            assert_eq!(result.len(), 81);
+
+            // Check the extension type is empty.
+            assert_eq!(result[0..2], [0u8; 2]);
+
+            // Check that the correct byte for the message type was used.
+            assert_eq!(result[2], network_message.message_type.msg_type());
+
+            // Check that the correct message length was used.
+            assert_eq!(
+                parse::deserialize::<U24>(&result[3..6]).unwrap(),
+                network_message.payload.len() as u32
+            );
         }
     };
 }
