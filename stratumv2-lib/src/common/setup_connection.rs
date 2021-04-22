@@ -6,7 +6,6 @@ use crate::parse::{ByteParser, Deserializable, Serializable};
 // use crate::job_distribution;
 use std::convert::TryFrom;
 use std::io;
-
 /// Protocol is an enum representing each sub protocol of Stratum V2.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Protocol {
@@ -81,6 +80,58 @@ pub enum SetupConnection {
     // JobDistribution(job_distribution::SetupConnection),
 }
 
+impl SetupConnection {
+    pub fn new_mining<T: Into<String>>(
+        min_version: u16,
+        max_version: u16,
+        flags: mining::SetupConnectionFlags,
+        endpoint_host: T,
+        endpoint_port: u16,
+        vendor: T,
+        hardware_version: T,
+        firmware: T,
+        device_id: T,
+    ) -> Result<SetupConnection> {
+        Ok(SetupConnection::Mining(mining::SetupConnection::new(
+            min_version,
+            max_version,
+            flags,
+            endpoint_host,
+            endpoint_port,
+            vendor,
+            hardware_version,
+            firmware,
+            device_id,
+        )?))
+    }
+
+    pub fn new_job_negotation<T: Into<String>>(
+        min_version: u16,
+        max_version: u16,
+        flags: job_negotiation::SetupConnectionFlags,
+        endpoint_host: T,
+        endpoint_port: u16,
+        vendor: T,
+        hardware_version: T,
+        firmware: T,
+        device_id: T,
+    ) -> Result<SetupConnection> {
+        Ok(SetupConnection::JobNegotiation(
+            job_negotiation::SetupConnection::new(
+                min_version,
+                max_version,
+                flags,
+                endpoint_host,
+                endpoint_port,
+                vendor,
+                hardware_version,
+                firmware,
+                device_id,
+            )?,
+        ))
+    }
+}
+
 impl Serializable for SetupConnection {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let length = match self {
@@ -122,4 +173,88 @@ impl Deserializable for SetupConnection {
 
         Ok(variant)
     }
+}
+
+#[cfg(test)]
+macro_rules! impl_setup_connection_tests {
+    ($protocol:expr, $fn:expr, $flags:ident) => {
+        use crate::frame::frame;
+        use crate::parse;
+
+        fn default_setup_conn(empty: bool) -> SetupConnection {
+            let flags = if empty {
+                $flags::empty()
+            } else {
+                $flags::all()
+            };
+
+            let conn = $fn(
+                2,
+                2,
+                flags,
+                "0.0.0.0",
+                8545,
+                "Bitmain",
+                "S9u 13.5",
+                "braiins-os-2018-09-22-1-hash",
+                "some-uuid",
+            );
+            assert!(conn.is_ok());
+
+            conn.unwrap()
+        }
+
+        #[test]
+        fn serialize() {
+            let conn = default_setup_conn(false);
+            let result = parse::serialize(&conn).unwrap();
+
+            // Check the serialized connection is the correct length.
+            assert_eq!(result.len(), 75);
+
+            // Check the protocol byte was serialized correctly.
+            assert_eq!(result[0], $protocol.into());
+
+            // Check the flags were serialized correctly.
+            // assert_eq!(result[5..9], parse::serialize(&$flags).unwrap());
+            assert_eq!(result[5..9], parse::serialize(&$flags::all()).unwrap());
+
+            // Sanity check - deserializing back to the struct does not cause
+            // errors.
+            assert!(parse::deserialize::<SetupConnection>(&result).is_ok());
+        }
+
+        #[test]
+        fn serialize_empty_flags() {
+            let conn = default_setup_conn(true);
+            let result = parse::serialize(&conn).unwrap();
+
+            // Check the optional flags still serialize but to empty values.
+            assert_eq!(result[5..9], [0u8; 4]);
+        }
+    };
+}
+
+#[cfg(test)]
+mod mining_setup_connection_tests {
+    use super::*;
+    use crate::mining::SetupConnectionFlags;
+
+    impl_setup_connection_tests!(
+        Protocol::Mining,
+        SetupConnection::new_mining,
+        SetupConnectionFlags
+    );
+}
+
+#[cfg(test)]
+mod job_negotiation_setup_connection_tests {
+    use super::*;
+    use crate::job_negotiation::SetupConnectionFlags;
+
+    impl_setup_connection_tests!(
+        Protocol::JobNegotiation,
+        SetupConnection::new_job_negotation,
+        SetupConnectionFlags
+    );
 }
