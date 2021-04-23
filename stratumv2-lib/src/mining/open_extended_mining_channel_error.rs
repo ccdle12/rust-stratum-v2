@@ -1,0 +1,7 @@
+use crate::impl_open_mining_channel_error;
+use crate::types::MessageType;
+
+impl_open_mining_channel_error!(
+    OpenExtendedMiningChannelError,
+    MessageType::OpenExtendedMiningChannelError
+);
