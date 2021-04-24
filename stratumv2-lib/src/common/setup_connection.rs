@@ -75,6 +75,9 @@ impl Deserializable for Protocol {
     }
 }
 
+/// SetupConnection is the first message sent by a client on a new connection.
+/// The SetupConnection Enum contains all the variants for each sub protocol required
+/// to open a new connection.
 pub enum SetupConnection {
     Mining(mining::SetupConnection),
     JobNegotiation(job_negotiation::SetupConnection),
@@ -83,6 +86,26 @@ pub enum SetupConnection {
 }
 
 impl SetupConnection {
+    /// SetupConnection message for the mining subprotocol.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use stratumv2_lib::mining::SetupConnectionFlags;
+    /// use stratumv2_lib::common::SetupConnection;
+    ///
+    /// let new_connection = SetupConnection::new_mining(
+    ///    2,
+    ///    2,
+    ///    SetupConnectionFlags::REQUIRES_STANDARD_JOBS | SetupConnectionFlags::REQUIRES_VERSION_ROLLING,
+    ///    "0.0.0.0",
+    ///    8545,
+    ///    "Bitmain",
+    ///    "S9i 13.5",
+    ///    "braiins-os-2018-09-22-1-hash",
+    ///    "some-device-uuid",
+    /// );
+    /// assert!(new_connection.is_ok());
     pub fn new_mining<T: Into<String>>(
         min_version: u16,
         max_version: u16,
@@ -107,6 +130,26 @@ impl SetupConnection {
         )?))
     }
 
+    /// SetupConnection message for the job negotiation subprotocol.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use stratumv2_lib::job_negotiation::SetupConnectionFlags;
+    /// use stratumv2_lib::common::SetupConnection;
+    ///
+    /// let new_connection = SetupConnection::new_job_negotation(
+    ///    2,
+    ///    2,
+    ///    SetupConnectionFlags::REQUIRES_ASYNC_JOB_MINING,
+    ///    "0.0.0.0",
+    ///    8545,
+    ///    "Bitmain",
+    ///    "S9i 13.5",
+    ///    "braiins-os-2018-09-22-1-hash",
+    ///    "some-device-uuid",
+    /// );
+    /// assert!(new_connection.is_ok());
     pub fn new_job_negotation<T: Into<String>>(
         min_version: u16,
         max_version: u16,
