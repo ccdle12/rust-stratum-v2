@@ -13,18 +13,23 @@ macro_rules! impl_setup_connection {
     ($flags_type:ident) => {
         use crate::macro_message::setup_connection::macro_prelude::*;
 
+        /// It's strongly recommended to use the [SetupConnection Enum](../../common/setup_connection/enum.SetupConnection.html)
+        /// and NOT this struct to initialize, serialize, deserialize and frame each SetupConnection
+        /// message. Use this struct to extract the inner values of the message.
+        ///
         /// SetupConnection is the first message sent by a client on a new connection.
         ///
         /// The SetupConnection struct contains all the common fields for the
-        /// SetupConnection message for each Stratum V2 subprotocol.
+        /// SetupConnection message required for each Stratum V2 subprotocol.
         ///
         /// # Examples
         ///
         /// ```rust
         /// use stratumv2_lib::mining;
         /// use stratumv2_lib::job_negotiation;
+        /// use stratumv2_lib::common::SetupConnection;
         ///
-        /// let mining_connection = mining::SetupConnection::new(
+        /// let mining_conn = SetupConnection::new_mining(
         ///    2,
         ///    2,
         ///    mining::SetupConnectionFlags::REQUIRES_STANDARD_JOBS | mining::SetupConnectionFlags::REQUIRES_VERSION_ROLLING,
@@ -35,12 +40,9 @@ macro_rules! impl_setup_connection {
         ///    "braiins-os-2018-09-22-1-hash",
         ///    "some-device-uuid",
         /// );
-        /// assert!(mining_connection.is_ok());
-        /// assert!(mining_connection.unwrap().flags.contains(
-        ///     mining::SetupConnectionFlags::REQUIRES_STANDARD_JOBS)
-        /// );
+        /// assert!(mining_conn.is_ok());
         ///
-        /// let job_negotiation_connection = job_negotiation::SetupConnection::new(
+        /// let job_negotiation_conn = SetupConnection::new_job_negotation(
         ///    2,
         ///    2,
         ///    job_negotiation::SetupConnectionFlags::REQUIRES_ASYNC_JOB_MINING,
@@ -51,7 +53,16 @@ macro_rules! impl_setup_connection {
         ///    "braiins-os-2018-09-22-1-hash",
         ///    "some-device-uuid",
         /// );
-        /// assert!(job_negotiation_connection.is_ok());
+        /// assert!(job_negotiation_conn.is_ok());
+        ///
+        /// if let SetupConnection::Mining(v) = mining_conn.unwrap() {
+        ///     assert_eq!(v.min_version, 2);
+        /// }
+        ///
+        /// if let SetupConnection::JobNegotiation(v) = job_negotiation_conn.unwrap() {
+        ///     assert_eq!(v.min_version, 2);
+        /// }
+        ///
         /// ```
         #[derive(Debug, Clone)]
         pub struct SetupConnection {
