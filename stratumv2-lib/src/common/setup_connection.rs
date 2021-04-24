@@ -225,7 +225,6 @@ macro_rules! impl_setup_connection_tests {
             assert_eq!(result[0], $protocol.into());
 
             // Check the flags were serialized correctly.
-            // assert_eq!(result[5..9], parse::serialize(&$flags).unwrap());
             assert_eq!(result[5..9], parse::serialize(&$flags::all()).unwrap());
 
             // Sanity check - deserializing back to the struct does not cause
