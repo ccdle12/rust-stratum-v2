@@ -74,10 +74,14 @@ pub trait Frameable: Deserializable + Serializable {
     fn message_type() -> MessageType;
 }
 
+/// Utility function to create a network frame message according to a type
+/// that implements the Frameable trait.
 pub fn frame<T: Frameable>(payload: &T) -> Result<Message> {
     Ok(Message::new(T::message_type(), serialize(payload)?))
 }
 
+/// Utility function to convert a network frame message into a type that implements
+/// the Frameable trait.
 pub fn unframe<T: Frameable>(message: &Message) -> Result<T> {
     let expected_message_type = T::message_type();
     if expected_message_type != message.message_type {
