@@ -74,6 +74,9 @@ impl Deserializable for Protocol {
     }
 }
 
+/// Contains all the variants of each subprotocols SetupConnection message.
+/// When constructing a NetworkMessage this enum should be used to correctly
+/// serialize the SetupConnection specific to the subprotocol.
 pub enum SetupConnection {
     Mining(mining::SetupConnection),
     JobNegotiation(job_negotiation::SetupConnection),
