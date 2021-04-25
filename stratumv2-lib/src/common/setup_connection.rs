@@ -75,9 +75,9 @@ impl Deserializable for Protocol {
     }
 }
 
-/// SetupConnection is the first message sent by a client on a new connection.
-/// The SetupConnection Enum contains all the variants for each sub protocol required
-/// to open a new connection.
+/// Contains all the variants of each subprotocols SetupConnection message.
+/// When constructing a NetworkMessage this enum should be used to correctly
+/// serialize the SetupConnection specific to the subprotocol.
 pub enum SetupConnection {
     Mining(mining::SetupConnection),
     JobNegotiation(job_negotiation::SetupConnection),
