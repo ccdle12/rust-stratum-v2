@@ -15,6 +15,7 @@ honggfuzz_fuzz = ["honggfuzz"]
 [dependencies]
 honggfuzz = { version = "0.5", optional = true }
 stratumv2 = { path = "../stratumv2" }
+stratumv2_lib = { path = "../stratumv2-lib" }
 
 [workspace]
 members = ["."]

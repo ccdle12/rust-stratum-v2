@@ -1,37 +1,37 @@
 use honggfuzz::fuzz;
-use stratumv2::mining;
-use stratumv2::Deserializable;
+use stratumv2_lib::mining;
+use stratumv2_lib::parse::{deserialize, Deserializable};
 
 fn main() {
     fuzz!(|data: &[u8]| {
-        mining::SetupConnectionError::deserialize(&data);
+        deserialize::<mining::SetupConnectionError>(&data);
     });
 
     fuzz!(|data: &[u8]| {
-        mining::SetupConnectionSuccess::deserialize(&data);
+        deserialize::<mining::SetupConnectionSuccess>(&data);
     });
 
     fuzz!(|data: &[u8]| {
-        mining::SetupConnection::deserialize(&data);
+        deserialize::<mining::SetupConnection>(&data);
     });
 
     fuzz!(|data: &[u8]| {
-        mining::OpenStandardMiningChannel::deserialize(&data);
+        deserialize::<mining::OpenStandardMiningChannel>(&data);
     });
 
     fuzz!(|data: &[u8]| {
-        mining::OpenStandardMiningChannelSuccess::deserialize(&data);
+        deserialize::<mining::OpenStandardMiningChannelSuccess>(&data);
     });
 
     fuzz!(|data: &[u8]| {
-        mining::OpenStandardMiningChannelError::deserialize(&data);
+        deserialize::<mining::OpenStandardMiningChannelError>(&data);
     });
 
     fuzz!(|data: &[u8]| {
-        mining::OpenExtendedMiningChannel::deserialize(&data);
+        deserialize::<mining::OpenExtendedMiningChannel>(&data);
     });
 
     fuzz!(|data: &[u8]| {
-        mining::OpenExtendedMiningChannelSuccess::deserialize(&data);
+        deserialize::<mining::OpenExtendedMiningChannelSuccess>(&data);
     });
 }

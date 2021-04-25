@@ -1,9 +1,9 @@
 use honggfuzz::fuzz;
-use stratumv2::common::NetworkFrame;
-use stratumv2::Deserializable;
+use stratumv2_lib::frame::Message;
+use stratumv2_lib::parse::{deserialize, Deserializable};
 
 fn main() {
     fuzz!(|data: &[u8]| {
-        NetworkFrame::deserialize(data);
+        deserialize::<Message>(&data);
     });
 }
