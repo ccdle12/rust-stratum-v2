@@ -3,6 +3,14 @@ use crate::parse::{serialize, ByteParser, Deserializable, Serializable};
 use crate::types::{MessageType, U24};
 use std::io;
 
+/// The CHANNEL_BIT_MASK is used to mask out the MSB to identify if a message
+/// type has a channel id in a message frame.
+const CHANNEL_BIT_MASK: u16 = 0x8000;
+
+/// The EXTENSION_TYPE_MASK disables the MSB so the u16 representation of the
+/// extension type in a message frame has the same value as the u15 representation.
+const EXTENSION_TYPE_MASK: u16 = 0x7FFF;
+
 /// Used to deserialize a received network frame. The payload would be further
 /// deserialized according to the received MessageTypes.
 pub struct Message {
@@ -25,7 +33,7 @@ impl Serializable for Message {
         let mut extension_type: u16 = self.message_type.ext_type();
         // Enable the MSB to indicate if this message type has a channel id.
         if self.message_type.channel_bit() {
-            extension_type |= 0x8000;
+            extension_type |= CHANNEL_BIT_MASK;
         }
 
         let message_length = U24::new(self.payload.len() as u32)?;
@@ -44,11 +52,8 @@ impl Serializable for Message {
 impl Deserializable for Message {
     fn deserialize(parser: &mut ByteParser) -> Result<Message> {
         let mut extension_type = u16::deserialize(parser)?;
-        // Mask out the MSB to identify if this message type has a channel id.
-        let channel_bit = (extension_type & 0x8000) != 0;
-        // Disable the MSB so the u16 representation of the extension type has the same value as the
-        // u15 representation.
-        extension_type &= 0x7FFF;
+        let channel_bit: bool = (extension_type & CHANNEL_BIT_MASK) != 0;
+        extension_type &= EXTENSION_TYPE_MASK;
 
         let message_type = MessageType::new(extension_type, u8::deserialize(parser)?)?;
 
@@ -69,10 +74,14 @@ pub trait Frameable: Deserializable + Serializable {
     fn message_type() -> MessageType;
 }
 
+/// Utility function to create a network frame message according to a type
+/// that implements the Frameable trait.
 pub fn frame<T: Frameable>(payload: &T) -> Result<Message> {
     Ok(Message::new(T::message_type(), serialize(payload)?))
 }
 
+/// Utility function to convert a network frame message into a type that implements
+/// the Frameable trait.
 pub fn unframe<T: Frameable>(message: &Message) -> Result<T> {
     let expected_message_type = T::message_type();
     if expected_message_type != message.message_type {

@@ -1,11 +1,11 @@
-pub mod bytes;
-pub mod channel_id;
-pub mod error_code;
-pub mod fixed;
-pub mod flags;
-pub mod message_type;
-pub mod strings;
-pub mod unix_timestamp;
+mod bytes;
+mod channel_id;
+pub(crate) mod error_code;
+mod fixed;
+pub(crate) mod flags;
+mod message_type;
+mod strings;
+mod unix_timestamp;
 
 pub use bytes::{B0_16M, B0_255, B0_31, B0_32, B0_64K};
 pub use channel_id::new_channel_id;
