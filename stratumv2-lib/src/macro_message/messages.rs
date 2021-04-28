@@ -19,7 +19,7 @@ macro_rules! impl_message {
     use crate::macro_message::messages::macro_prelude::*;
 
     $(#[$doc_comment])*
-    #[derive(Debug, Clone)]
+    #[derive(Debug, Clone, PartialEq)]
     pub struct $struct_name {
       $(
         $(#[$field_comment])*
