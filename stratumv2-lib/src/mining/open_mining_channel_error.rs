@@ -32,9 +32,9 @@ macro_rules! impl_open_mining_channel_error {
             /// Standard Mining Channels and Extended Mining Channels.
             $struct_name,
             $msg_type,
-            /// TODO
+            /// A client specified request ID from the original OpenMiningChannel message.
             pub request_id u32,
-            /// TODO
+            /// Pre-determined human readable error codes for the OpenMiningChannel message.
             pub error_code OpenMiningChannelErrorCode
 
         );
