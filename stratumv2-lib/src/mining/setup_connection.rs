@@ -58,5 +58,10 @@ mod tests {
             deserialize::<SetupConnectionFlags>(&0x04u32.to_le_bytes()).unwrap(),
             SetupConnectionFlags::REQUIRES_VERSION_ROLLING,
         );
+
+        assert!(matches!(
+            deserialize::<SetupConnectionFlags>(&0xffu32.to_le_bytes()),
+            Err(Error::UnknownFlags { .. })
+        ));
     }
 }
