@@ -1,11 +1,11 @@
 use std::io;
-use stratumv2_lib::common::SetupConnection;
-use stratumv2_lib::frame::{frame, unframe, Frameable, Message};
-use stratumv2_lib::mining::{
-    SetupConnectionFlags, SetupConnectionSuccess, SetupConnectionSuccessFlags,
+use stratumv2_lib::{
+    common::SetupConnection,
+    frame::{frame, unframe, Frameable, Message},
+    mining::{SetupConnectionFlags, SetupConnectionSuccess, SetupConnectionSuccessFlags},
+    parse::{deserialize, serialize},
+    types::MessageType,
 };
-use stratumv2_lib::parse::{deserialize, serialize};
-use stratumv2_lib::types::MessageType;
 use tokio::net::{TcpListener, TcpStream};
 
 // Addreses and ports for the example.
