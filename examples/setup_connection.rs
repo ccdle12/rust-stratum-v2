@@ -94,7 +94,8 @@ impl<'a> Pool<'a> {
                         let conn_success = SetupConnectionSuccess::new(
                             v.min_version,
                             self.required_mining_feature_flags,
-                        );
+                        )
+                        .unwrap();
 
                         println!("Pool: sending SetupConnectionSuccess message");
                         let network_message = frame(&conn_success).unwrap();
