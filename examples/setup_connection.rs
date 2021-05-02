@@ -1,10 +1,11 @@
-use std::borrow::Cow;
 use std::io;
-use stratumv2::common::NetworkFrame;
-use stratumv2::mining;
-use stratumv2::types::MessageTypes;
-use stratumv2::util::frame;
-use stratumv2::{Deserializable, Frameable, Protocol};
+use stratumv2_lib::{
+    common::SetupConnection,
+    frame::{frame, unframe, Frameable, Message},
+    mining::{SetupConnectionFlags, SetupConnectionSuccess, SetupConnectionSuccessFlags},
+    parse::{deserialize, serialize},
+    types::MessageType,
+};
 use tokio::net::{TcpListener, TcpStream};
 
 // Addreses and ports for the example.
@@ -21,10 +22,10 @@ async fn main() {
     println!("Miner: sending SetupConnection for new Mining Connection");
     let miner = Miner::new(&MINER_ADDR);
 
-    let setup_connection_msg = mining::SetupConnection::new(
+    let setup_conn = SetupConnection::new_mining(
         2,
         2,
-        Cow::Borrowed(&[mining::SetupConnectionFlags::RequiresStandardJobs]),
+        SetupConnectionFlags::REQUIRES_STANDARD_JOBS,
         "0.0.0.0",
         8545,
         "Bitmain",
@@ -35,10 +36,7 @@ async fn main() {
     .unwrap();
 
     miner
-        .send_message(
-            &TcpStream::connect(&POOL_ADDR).await.unwrap(),
-            setup_connection_msg,
-        )
+        .send_message(&TcpStream::connect(&POOL_ADDR).await.unwrap(), &setup_conn)
         .await;
 
     miner.listen().await;
@@ -51,16 +49,14 @@ struct Pool<'a> {
 
     /// The required feature flags for the mining sub protocol. These flags
     /// should be sent on a SetupConnectionSuccess.
-    required_mining_feature_flags: &'a [mining::SetupConnectionSuccessFlags],
+    required_mining_feature_flags: SetupConnectionSuccessFlags,
 }
 
 impl<'a> Pool<'a> {
     fn new(listening_addr: &'a str) -> Pool<'a> {
         Pool {
             listening_addr,
-            required_mining_feature_flags: &[
-                mining::SetupConnectionSuccessFlags::RequiresFixedVersion,
-            ],
+            required_mining_feature_flags: SetupConnectionSuccessFlags::REQUIRES_FIXED_VERSION,
         }
     }
 
@@ -87,24 +83,23 @@ impl<'a> Pool<'a> {
     }
 
     async fn handle_recv_bytes(&self, buffer: &[u8]) {
-        let network_frame = NetworkFrame::deserialize(&buffer).unwrap();
+        let network_message = deserialize::<Message>(&buffer).unwrap();
 
-        match network_frame.msg_type {
-            MessageTypes::SetupConnection => {
-                // The first byte in a SetupConnection message defines the
-                // protocol.
-                match Protocol::from(network_frame.payload[0]) {
-                    Protocol::Mining => {
-                        let setup_conn =
-                            mining::SetupConnection::deserialize(&network_frame.payload).unwrap();
+        match network_message.message_type {
+            MessageType::SetupConnection => {
+                let setup_conn = unframe::<SetupConnection>(&network_message).unwrap();
 
-                        let conn_success = mining::SetupConnectionSuccess::new(
-                            setup_conn.min_version,
-                            Cow::Borrowed(self.required_mining_feature_flags),
-                        );
+                match setup_conn {
+                    SetupConnection::Mining(v) => {
+                        let conn_success = SetupConnectionSuccess::new(
+                            v.min_version,
+                            self.required_mining_feature_flags,
+                        )
+                        .unwrap();
 
                         println!("Pool: sending SetupConnectionSuccess message");
-                        let buffer = frame(conn_success).unwrap();
+                        let network_message = frame(&conn_success).unwrap();
+                        let buffer = serialize(&network_message).unwrap();
 
                         TcpStream::connect(&MINER_ADDR)
                             .await
@@ -153,18 +148,20 @@ impl<'a> Miner<'a> {
         }
     }
 
-    async fn send_message<T: Frameable>(&self, stream: &TcpStream, msg: T) {
-        let buffer = frame(msg).unwrap();
+    async fn send_message<T: Frameable>(&self, stream: &TcpStream, msg: &T) {
+        let network_message = frame(msg).unwrap();
+        let buffer = serialize(&network_message).unwrap();
+
         stream.try_write(&buffer).unwrap();
     }
 
     async fn handle_recv_bytes(&self, buffer: &[u8]) {
-        let network_frame = NetworkFrame::deserialize(&buffer).unwrap();
+        let network_message = deserialize::<Message>(&buffer).unwrap();
 
-        match network_frame.msg_type {
-            MessageTypes::SetupConnectionSuccess => {
+        match network_message.message_type {
+            MessageType::SetupConnectionSuccess => {
                 let setup_conn_success =
-                    mining::SetupConnectionSuccess::deserialize(&network_frame.payload).unwrap();
+                    unframe::<SetupConnectionSuccess>(&network_message).unwrap();
 
                 println!("Miner: Received a SetupConnectionSuccess message with feature flags supported by the Mining Pool: {:?}", setup_conn_success.flags)
             }

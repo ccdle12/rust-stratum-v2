@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 stratumv2 = { version = "0.1.0", path = "../stratumv2" }
+stratumv2_lib = { version = "0.1.0", path = "../stratumv2-lib" }
 rand = "0.7.3"
 
 [dev-dependencies]
