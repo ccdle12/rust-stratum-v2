@@ -232,33 +232,77 @@ macro_rules! impl_setup_connection_tests {
         use crate::frame::frame;
         use crate::parse;
         use crate::types::U24;
+        use std::collections::HashMap;
 
-        fn default_setup_conn(empty: bool) -> SetupConnection {
+        fn default_setup_conn(
+            empty: bool,
+            args: HashMap<String, String>,
+        ) -> Result<SetupConnection> {
+            let mut min_version = 2;
+            let mut max_version = 2;
+            let mut vendor = "Bitmain";
+            let mut firmware = "braiins-os-2018-09-22-1-hash";
+
+            if args.contains_key("min_version") {
+                min_version = args.get("min_version").unwrap().parse::<u16>().unwrap();
+            }
+
+            if args.contains_key("max_version") {
+                max_version = args.get("max_version").unwrap().parse::<u16>().unwrap();
+            }
+
+            if args.contains_key("vendor") {
+                vendor = args.get("vendor").unwrap();
+            }
+
+            if args.contains_key("firmware") {
+                firmware = args.get("firmware").unwrap();
+            }
+
             let flags = if empty {
                 $flags::empty()
             } else {
                 $flags::all()
             };
 
-            let conn = $fn(
-                2,
-                2,
+            $fn(
+                min_version,
+                max_version,
                 flags,
                 "0.0.0.0",
                 8545,
-                "Bitmain",
+                vendor,
                 "S9u 13.5",
-                "braiins-os-2018-09-22-1-hash",
+                firmware,
                 "some-uuid",
-            );
-            assert!(conn.is_ok());
+            )
+        }
 
-            conn.unwrap()
+        #[test]
+        fn constructor_errors() {
+            // Check that empty vendor string should return an error.
+            let mut args = HashMap::new();
+            args.insert("vendor".into(), "".into());
+            assert!(default_setup_conn(false, args).is_err());
+
+            // Check that empty firmware string should return an error.
+            let mut args = HashMap::new();
+            args.insert("firmware".into(), "".into());
+            assert!(default_setup_conn(false, args).is_err());
+
+            // Check that min and max versions must be atleast 2.
+            let mut args = HashMap::new();
+            args.insert("min_version".into(), "1".into());
+            assert!(default_setup_conn(false, args).is_err());
+
+            let mut args = HashMap::new();
+            args.insert("max_version".into(), "1".into());
+            assert!(default_setup_conn(false, args).is_err());
         }
 
         #[test]
         fn serialize() {
-            let conn = default_setup_conn(false);
+            let conn = default_setup_conn(false, HashMap::new()).unwrap();
             let result = parse::serialize(&conn).unwrap();
 
             // Check the serialized connection is the correct length.
@@ -277,7 +321,7 @@ macro_rules! impl_setup_connection_tests {
 
         #[test]
         fn serialize_empty_flags() {
-            let conn = default_setup_conn(true);
+            let conn = default_setup_conn(true, HashMap::new()).unwrap();
             let result = parse::serialize(&conn).unwrap();
 
             // Check the optional flags still serialize but to empty values.
@@ -286,7 +330,7 @@ macro_rules! impl_setup_connection_tests {
 
         #[test]
         fn frame_message() {
-            let conn = default_setup_conn(false);
+            let conn = default_setup_conn(false, HashMap::new()).unwrap();
             let network_message = frame(&conn).unwrap();
 
             let result = parse::serialize(&network_message).unwrap();
