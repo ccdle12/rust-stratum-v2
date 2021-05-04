@@ -9,6 +9,7 @@ pub mod macro_prelude {
 }
 
 /// Implemenation of all the common traits for ErrorCode enums.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_error_code_enum {
     ($name:ident, $($variant:path => $str:expr),*) => {

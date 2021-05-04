@@ -7,6 +7,7 @@ pub mod macro_prelude {
 }
 
 /// Implementation of the SetupConnectionError message for each sub protocol.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_setup_connection_error {
     ($flags_type:ident) => {
