@@ -12,7 +12,7 @@ pub enum Error {
     RequirementError(String),
     DeserializationError(String),
     ParseError(String),
-    // AuthorityKeyError(ed25519_dalek::ed25519::Error),
+    AuthorityKeyError(ed25519_dalek::ed25519::Error),
     SystemTimeError(std::time::SystemTimeError),
     TryFromSliceError(std::array::TryFromSliceError),
     Unimplemented(),
@@ -34,7 +34,7 @@ impl fmt::Display for Error {
             Error::RequirementError(ref message) => write!(f, "{}", message),
             Error::DeserializationError(ref message) => write!(f, "{}", message),
             Error::ParseError(ref message) => write!(f, "{}", message),
-            // Error::AuthorityKeyError(ref message) => write!(f, "{}", message),
+            Error::AuthorityKeyError(ref message) => write!(f, "{}", message),
             Error::SystemTimeError(ref message) => write!(f, "{}", message),
             Error::TryFromSliceError(ref message) => write!(f, "{}", message),
             Error::Unimplemented() => write!(f, "unimplemented"),
@@ -76,7 +76,7 @@ impl_error_conversions!(
     std::str::Utf8Error => Error::Utf8Error,
     std::string::FromUtf8Error => Error::FromUtf8Error,
     io::Error => Error::IOError,
-    // ed25519_dalek::ed25519::Error => Error::AuthorityKeyError,
+    ed25519_dalek::ed25519::Error => Error::AuthorityKeyError,
     std::time::SystemTimeError => Error::SystemTimeError,
     std::array::TryFromSliceError => Error::TryFromSliceError
 );
