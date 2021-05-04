@@ -4,9 +4,9 @@ use crate::types::MessageType;
 use crate::types::{STR0_255, U256};
 
 impl_message!(
-    /// OpenExtendedMiningChannel is a message sent by the Client to the Server
-    /// to open a mining channe that has additional capabilities such as
-    /// difficulty aggregate and custom search space splitting.
+    /// A message sent by the Client to the Server to open a mining channel that
+    /// has additional capabilities such as difficulty aggregatation and custom
+    /// search space splitting.
     OpenExtendedMiningChannel,
     MessageType::OpenExtendedMiningChannel,
 
