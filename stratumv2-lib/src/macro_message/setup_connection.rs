@@ -1,5 +1,6 @@
 pub mod macro_prelude {
     pub use crate::error::{Error, Result};
+    pub use crate::impl_message;
     pub use crate::parse::{ByteParser, Deserializable, Serializable};
     pub use crate::types::{MessageType, STR0_255};
     pub use std::convert::TryInto;
@@ -13,89 +14,90 @@ macro_rules! impl_setup_connection {
     ($flags_type:ident) => {
         use crate::macro_message::setup_connection::macro_prelude::*;
 
-        /// It's strongly recommended to use the [SetupConnection Enum](../../common/setup_connection/enum.SetupConnection.html)
-        /// and NOT this struct to initialize, serialize, deserialize and frame each SetupConnection
-        /// message. Use this struct to extract the inner values of the message.
-        ///
-        /// SetupConnection is the first message sent by a client on a new connection.
-        ///
-        /// The SetupConnection struct contains all the common fields for the
-        /// SetupConnection message required for each Stratum V2 subprotocol.
-        ///
-        /// # Examples
-        ///
-        /// ```rust
-        /// use stratumv2_lib::mining;
-        /// use stratumv2_lib::job_negotiation;
-        /// use stratumv2_lib::common::SetupConnection;
-        ///
-        /// let mining_conn = SetupConnection::new_mining(
-        ///    2,
-        ///    2,
-        ///    mining::SetupConnectionFlags::REQUIRES_STANDARD_JOBS | mining::SetupConnectionFlags::REQUIRES_VERSION_ROLLING,
-        ///    "0.0.0.0",
-        ///    8545,
-        ///    "Bitmain",
-        ///    "S9i 13.5",
-        ///    "braiins-os-2018-09-22-1-hash",
-        ///    "some-device-uuid",
-        /// );
-        /// assert!(mining_conn.is_ok());
-        ///
-        /// let job_negotiation_conn = SetupConnection::new_job_negotation(
-        ///    2,
-        ///    2,
-        ///    job_negotiation::SetupConnectionFlags::REQUIRES_ASYNC_JOB_MINING,
-        ///    "0.0.0.0",
-        ///    8545,
-        ///    "Bitmain",
-        ///    "S9i 13.5",
-        ///    "braiins-os-2018-09-22-1-hash",
-        ///    "some-device-uuid",
-        /// );
-        /// assert!(job_negotiation_conn.is_ok());
-        ///
-        /// if let SetupConnection::Mining(v) = mining_conn.unwrap() {
-        ///     assert_eq!(v.min_version, 2);
-        /// }
-        ///
-        /// if let SetupConnection::JobNegotiation(v) = job_negotiation_conn.unwrap() {
-        ///     assert_eq!(v.min_version, 2);
-        /// }
-        ///
-        /// ```
-        #[derive(Debug, Clone)]
-        pub struct SetupConnection {
+        impl_message!(
+            /// It's strongly recommended to use the [SetupConnection Enum](../../common/setup_connection/enum.SetupConnection.html)
+            /// and NOT this struct to initialize, serialize, deserialize and frame each SetupConnection
+            /// message. Use this struct to extract the inner values of the message.
+            ///
+            /// SetupConnection is the first message sent by a client on a new connection.
+            ///
+            /// The SetupConnection struct contains all the common fields for the
+            /// SetupConnection message required for each Stratum V2 subprotocol.
+            ///
+            /// # Examples
+            ///
+            /// ```rust
+            /// use stratumv2_lib::mining;
+            /// use stratumv2_lib::job_negotiation;
+            /// use stratumv2_lib::common::SetupConnection;
+            ///
+            /// let mining_conn = SetupConnection::new_mining(
+            ///    2,
+            ///    2,
+            ///    mining::SetupConnectionFlags::REQUIRES_STANDARD_JOBS | mining::SetupConnectionFlags::REQUIRES_VERSION_ROLLING,
+            ///    "0.0.0.0",
+            ///    8545,
+            ///    "Bitmain",
+            ///    "S9i 13.5",
+            ///    "braiins-os-2018-09-22-1-hash",
+            ///    "some-device-uuid",
+            /// );
+            /// assert!(mining_conn.is_ok());
+            ///
+            /// let job_negotiation_conn = SetupConnection::new_job_negotation(
+            ///    2,
+            ///    2,
+            ///    job_negotiation::SetupConnectionFlags::REQUIRES_ASYNC_JOB_MINING,
+            ///    "0.0.0.0",
+            ///    8545,
+            ///    "Bitmain",
+            ///    "S9i 13.5",
+            ///    "braiins-os-2018-09-22-1-hash",
+            ///    "some-device-uuid",
+            /// );
+            /// assert!(job_negotiation_conn.is_ok());
+            ///
+            /// if let SetupConnection::Mining(v) = mining_conn.unwrap() {
+            ///     assert_eq!(v.min_version, 2);
+            /// }
+            ///
+            /// if let SetupConnection::JobNegotiation(v) = job_negotiation_conn.unwrap() {
+            ///     assert_eq!(v.min_version, 2);
+            /// }
+            ///
+            /// ```
+            SetupConnection,
+            MessageType::SetupConnection,
             /// The minimum protocol version the client supports. (current default: 2)
-            pub min_version: u16,
+            pub min_version u16,
 
             /// The maxmimum protocol version the client supports. (current default: 2)
-            pub max_version: u16,
+            pub max_version u16,
 
             /// Flags indicating the optional protocol features the client supports.
-            pub flags: $flags_type,
+            pub flags $flags_type,
 
             /// Used to indicate the hostname or IP address of the endpoint.
-            pub endpoint_host: STR0_255,
+            pub endpoint_host STR0_255,
 
             /// Used to indicate the connecting port value of the endpoint.
-            pub endpoint_port: u16,
+            pub endpoint_port u16,
 
             /// The following fields relay the new_mining device information.
             ///
             /// Used to indicate the vendor/manufacturer of the device.
-            pub vendor: STR0_255,
+            pub vendor STR0_255,
 
             /// Used to indicate the hardware version of the device.
-            pub hardware_version: STR0_255,
+            pub hardware_version STR0_255,
 
             /// Used to indicate the firmware on the device.
-            pub firmware: STR0_255,
+            pub firmware STR0_255,
 
             /// Used to indicate the unique identifier of the device defined by the
             /// vendor.
-            pub device_id: STR0_255,
-        }
+            pub device_id STR0_255
+        );
 
         impl SetupConnection {
             pub fn new<T: Into<String>>(
@@ -142,52 +144,6 @@ macro_rules! impl_setup_connection {
                     firmware: STR0_255::new(firmware)?,
                     device_id: STR0_255::new(device_id)?,
                 })
-            }
-        }
-
-        /// Implementation of the Serializable trait to serialize the contents
-        /// of the SetupConnection message to the valid message format.
-        impl Serializable for SetupConnection {
-            fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-                Ok([
-                    self.min_version.serialize(writer)?,
-                    self.max_version.serialize(writer)?,
-                    self.flags.serialize(writer)?,
-                    self.endpoint_host.serialize(writer)?,
-                    self.endpoint_port.serialize(writer)?,
-                    self.vendor.serialize(writer)?,
-                    self.hardware_version.serialize(writer)?,
-                    self.firmware.serialize(writer)?,
-                    self.device_id.serialize(writer)?,
-                ]
-                .iter()
-                .sum())
-            }
-        }
-
-        impl Deserializable for SetupConnection {
-            fn deserialize(parser: &mut ByteParser) -> Result<SetupConnection> {
-                let min_version = u16::deserialize(parser)?;
-                let max_version = u16::deserialize(parser)?;
-                let flags = $flags_type::deserialize(parser)?;
-                let endpoint_host = STR0_255::deserialize(parser)?;
-                let endpoint_port = u16::deserialize(parser)?;
-                let vendor = STR0_255::deserialize(parser)?;
-                let hardware_version = STR0_255::deserialize(parser)?;
-                let firmware = STR0_255::deserialize(parser)?;
-                let device_id = STR0_255::deserialize(parser)?;
-
-                SetupConnection::new(
-                    min_version,
-                    max_version,
-                    flags,
-                    endpoint_host,
-                    endpoint_port,
-                    vendor,
-                    hardware_version,
-                    firmware,
-                    device_id,
-                )
             }
         }
     };
