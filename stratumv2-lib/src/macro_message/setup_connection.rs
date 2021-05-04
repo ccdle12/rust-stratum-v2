@@ -9,6 +9,7 @@ pub mod macro_prelude {
 
 /// Implemention of the requirements for a SetupConnection message for each
 /// sub protocol.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_setup_connection {
     ($flags_type:ident) => {

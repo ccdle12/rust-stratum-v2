@@ -5,6 +5,7 @@ pub mod macro_prelude {
     pub use std::io;
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_setup_connection_success {
     ($flags_type:ident) => {
