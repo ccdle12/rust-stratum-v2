@@ -22,6 +22,7 @@ pub mod macro_prelude {
     pub use crate::error::Result;
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_open_mining_channel_error {
     ($struct_name:ident, $msg_type:path) => {

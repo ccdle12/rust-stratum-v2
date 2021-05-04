@@ -8,7 +8,8 @@ pub fn system_unix_time_to_u32(time: &SystemTime) -> Result<u32> {
         .map(|duration| duration.as_secs() as u32)?)
 }
 
-/// An internal helper macro for getting the unix time now as a u32.
+/// An helper macro to get the unix timestamp now in seconds as a wrapped u32
+/// Result.
 #[macro_export]
 macro_rules! unix_u32_now {
     () => {

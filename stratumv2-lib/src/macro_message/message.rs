@@ -7,6 +7,7 @@ pub mod macro_prelude {
 }
 
 /// Internal macro to build all the common requirements for a Stratum-v2 message.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_message {
     (
