@@ -1,9 +1,11 @@
 use honggfuzz::fuzz;
-use stratumv2::noise;
-use stratumv2::Deserializable;
+use stratumv2_lib::{
+    noise::SignatureNoiseMessage,
+    parse::{deserialize, Deserializable},
+};
 
 fn main() {
     fuzz!(|data: &[u8]| {
-        noise::SignatureNoiseMessage::deserialize(&data);
+        deserialize::<SignatureNoiseMessage>(&data);
     });
 }
