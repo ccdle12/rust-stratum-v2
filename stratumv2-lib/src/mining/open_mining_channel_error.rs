@@ -29,7 +29,7 @@ macro_rules! impl_open_mining_channel_error {
         use crate::mining::open_mining_channel_error::macro_prelude::*;
 
         impl_message!(
-            /// Implementation of the OpenMiningChannelError. This message applies to both
+            /// An implementation of the OpenMiningChannelError. This message applies to both
             /// Standard Mining Channels and Extended Mining Channels.
             $struct_name,
             $msg_type,

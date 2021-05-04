@@ -14,11 +14,11 @@ macro_rules! impl_setup_connection_error {
         use crate::macro_message::setup_connection_error::macro_prelude::*;
 
         impl_message!(
-            /// SetupConnectionError is one of the required responses from a Server
-            /// to a Client when a new connection has failed. The server is required
-            /// to send this message with an error code before closing the connection.
+            /// One of the required responses from a Server to a Client when a
+            /// new connection has failed. The server is required to send this
+            /// message with an error code before closing the connection.
             ///
-            /// If the error is a variant of [UnsupportedFeatureFlags](enum.SetupConnectionErrorCode.html),
+            /// If the error is a variant of [UnsupportedFeatureFlags](../common/enum.SetupConnectionErrorCode.html),
             /// the server MUST respond with all the feature flags that it does NOT support.
             ///
             /// If the flag is 0, then the error is some condition aside from unsupported

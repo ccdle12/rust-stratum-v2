@@ -16,7 +16,7 @@ macro_rules! impl_setup_connection {
         use crate::macro_message::setup_connection::macro_prelude::*;
 
         impl_message!(
-            /// It's strongly recommended to use the [SetupConnection Enum](../../common/setup_connection/enum.SetupConnection.html)
+            /// It's strongly recommended to use the [SetupConnection Enum](../common/setup_connection/enum.SetupConnection.html)
             /// and NOT this struct to initialize, serialize, deserialize and frame each SetupConnection
             /// message. Use this struct to extract the inner values of the message.
             ///

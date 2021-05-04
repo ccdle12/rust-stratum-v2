@@ -3,9 +3,8 @@ use crate::impl_message;
 use crate::types::{MessageType, STR0_255, U256};
 
 impl_message!(
-    /// OpenStandardMiningChannel is a message sent by the Client to the Server
-    /// after a [SetupConnection.Success](struct.SetupConnectionSuccess.html) is
-    /// sent from the Server. This message is used to request opening a standard
+    /// A message sent by the Client to the Server after a [SetupConnection.Success](struct.SetupConnectionSuccess.html)
+    /// is sent from the Server. This message is used to request opening a standard
     /// channel to the upstream server. A standard mining channel indicates `header-only`
     /// mining.
     OpenStandardMiningChannel,
