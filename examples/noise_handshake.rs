@@ -1,12 +1,14 @@
 use rand::rngs::OsRng;
 use std::io;
 use std::time::SystemTime;
-use stratumv2::noise::{
-    new_noise_initiator, new_noise_responder, AuthorityKeyPair, AuthorityPublicKey,
-    CertificateFormat, NoiseSession, SignatureNoiseMessage, SignedCertificate, StaticKeyPair,
+use stratumv2_lib::{
+    noise::{
+        new_noise_initiator, new_noise_responder, AuthorityKeyPair, AuthorityPublicKey,
+        CertificateFormat, NoiseSession, SignatureNoiseMessage, SignedCertificate, StaticKeyPair,
+    },
+    parse::{deserialize, serialize, Deserializable, Serializable},
+    types::unix_timestamp::{system_unix_time_to_u32, unix_u32_now},
 };
-use stratumv2::util::{serialize, system_unix_time_to_u32};
-use stratumv2::Deserializable;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::time::{sleep, Duration};
 
@@ -87,7 +89,7 @@ impl<'a> Pool<'a> {
             .await;
 
         // Construct and send the SignatureNoiseMessage.
-        let valid_from = system_unix_time_to_u32(&SystemTime::now()).unwrap();
+        let valid_from = unix_u32_now().unwrap();
         let not_valid_after =
             system_unix_time_to_u32(&(SystemTime::now() + Duration::from_secs(5))).unwrap();
 
@@ -97,7 +99,7 @@ impl<'a> Pool<'a> {
         let signature_noise_msg =
             SignatureNoiseMessage::from_auth_key(&self.authority_keypair, &cert).unwrap();
 
-        let serialized_msg = serialize(signature_noise_msg).unwrap();
+        let serialized_msg = serialize(&signature_noise_msg).unwrap();
 
         let mut buf = [0u8; 1024];
         buf[..serialized_msg.len()].copy_from_slice(&serialized_msg);
@@ -162,7 +164,7 @@ impl<'a> Miner<'a> {
 
             // Deserialize and recreate the certificate format. Validate the
             // signature is valid over the counter parties static key.
-            let msg = SignatureNoiseMessage::deserialize(buffer).unwrap();
+            let msg = deserialize::<SignatureNoiseMessage>(buffer).unwrap();
             let remote_static_key = self.noise_session.get_remote_static_public_key().unwrap();
 
             println!(
