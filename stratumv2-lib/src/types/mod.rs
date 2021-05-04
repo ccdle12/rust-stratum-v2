@@ -5,7 +5,7 @@ mod fixed;
 pub(crate) mod flags;
 mod message_type;
 mod strings;
-mod unix_timestamp;
+pub mod unix_timestamp;
 
 pub use bytes::{B0_16M, B0_255, B0_31, B0_32, B0_64K};
 pub use channel_id::new_channel_id;
