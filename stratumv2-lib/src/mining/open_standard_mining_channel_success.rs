@@ -3,8 +3,8 @@ use crate::impl_message;
 use crate::types::{MessageType, B0_32, U256};
 
 impl_message!(
-    /// OpenStandardMiningChannelSuccess is a message sent by the Server to the Client
-    /// in response to a successful opening of a standard mining channel.
+    /// A message sent by the Server to the Client in response to a successful
+    /// opening of a standard mining channel.
     OpenStandardMiningChannelSuccess,
     MessageType::OpenStandardMiningChannelSuccess,
     /// The request_id received in the [OpenStandardMiningChannel](struct.OpenStandardMiningChannel.html) message.
