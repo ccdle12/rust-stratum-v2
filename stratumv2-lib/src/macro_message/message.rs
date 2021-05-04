@@ -16,7 +16,7 @@ macro_rules! impl_message {
       $($(#[$field_comment:meta])*
       $field_visibility: ident $field: ident $field_type:ident),*
     ) => {
-    use crate::macro_message::messages::macro_prelude::*;
+    use crate::macro_message::message::macro_prelude::*;
 
     $(#[$doc_comment])*
     #[derive(Debug, Clone, PartialEq)]
