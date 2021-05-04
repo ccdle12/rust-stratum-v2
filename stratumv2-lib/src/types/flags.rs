@@ -4,6 +4,7 @@ pub mod macro_prelude {
 }
 
 /// Implemenation of all the ser/de traits for bitflags.
+#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_bitflags_serde {
     ($name:ident) => {
