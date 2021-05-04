@@ -11,8 +11,8 @@ macro_rules! impl_setup_connection_success {
         use crate::macro_message::setup_connection_success::macro_prelude::*;
 
         impl_message!(
-            /// SetupConnectionSuccess is one of the required responses from a
-            /// Server to a Client when a connection is accepted.
+            /// One of the required responses from a Server to a Client when a
+            /// connection is accepted.
             ///
             /// # Examples
             ///
