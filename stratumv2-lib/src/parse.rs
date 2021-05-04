@@ -1,7 +1,7 @@
 use crate::error::{Error, Result};
 use std::io;
 
-/// ByteParser is a custom iterator-like struct. It's used to extract segments
+/// A custom iterator-like struct. It's used to extract segments
 /// from a slice using by providing an offset to return the bytes from start
 /// to step.
 pub struct ByteParser<'a> {
