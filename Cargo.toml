@@ -1,7 +1,6 @@
 [workspace]
 
 members = [
-    "stratumv2",
     "stratumv2-lib",
 
     # Internal
