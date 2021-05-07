@@ -14,6 +14,7 @@ noiseexplorer_nx = { version = "1.0.2", path = "../nx-noise" }
 rand = "0.7.3"
 bitflags = "1.2.1"
 thiserror = "1.0.24"
+bitcoin = "0.26.0"
 
 [dependencies.ed25519-dalek]
 version = "1"

@@ -8,6 +8,8 @@
 extern crate bitflags;
 extern crate thiserror;
 
+pub extern crate bitcoin;
+
 /// Common messages and flags for all sub protocols.
 pub mod common;
 
