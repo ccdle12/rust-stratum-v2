@@ -1,11 +1,16 @@
 use crate::error::Result;
 use crate::parse::{ByteParser, Deserializable, Serializable};
+use rand::rngs::OsRng;
 use std::convert::TryInto;
 use std::io;
 
 /// AuthorityKeyPair is an ed25519_dalek::Keypair used as the Authentication Authority
 /// Keypair for the Mining Pool.
 pub type AuthorityKeyPair = ed25519_dalek::Keypair;
+
+pub fn generate_authority_keypair() -> AuthorityKeyPair {
+    AuthorityKeyPair::generate(&mut OsRng {})
+}
 
 /// AuthorityPublicKey is the publicly known key of the
 /// [AuthorityKeyPair](struct.AuthorityKeyPair.html) of the Mining Pool.
@@ -30,6 +35,15 @@ impl Serializable for StaticPublicKey {
 /// StaticKeyPair is a Keypair used by the responder (Server) as a pre-determined
 /// static key that will be signed by the AuthorityKeyPair and used in the
 /// [NoiseSession](struct.NoiseSession.html).
+///
+/// # Examples
+///
+/// ```rust
+/// use stratumv2_lib::noise::StaticKeyPair;
+///
+///
+/// let static_keypair = StaticKeyPair::default();
+/// ```
 pub type StaticKeyPair = noiseexplorer_nx::types::Keypair;
 
 // TODO: DOC STRING
