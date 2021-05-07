@@ -2,6 +2,7 @@ use rand::rngs::OsRng;
 use std::io;
 use std::time::SystemTime;
 use stratumv2_lib::{
+    bitcoin::util::base58,
     noise::{
         new_noise_initiator, new_noise_responder, AuthorityKeyPair, AuthorityPublicKey,
         CertificateFormat, NoiseSession, SignatureNoiseMessage, SignedCertificate, StaticKeyPair,
@@ -18,7 +19,7 @@ const MINER_ADDR: &str = "127.0.0.1:8545";
 #[tokio::main]
 async fn main() {
     let authority_keypair = AuthorityKeyPair::generate(&mut OsRng {});
-    let authority_public_key = authority_keypair.public.clone();
+    let authority_public_key = base58::encode_slice(&authority_keypair.public.to_bytes());
 
     tokio::spawn(async move {
         Pool::new(&POOL_ADDR, &authority_keypair).listen().await;
@@ -119,12 +120,13 @@ impl<'a> Pool<'a> {
 struct Miner<'a> {
     /// Listening address of the miner to accept incoming connections.
     listening_addr: &'a str,
-    authority_public_key: &'a AuthorityPublicKey,
+    /// Base58 encoded string of the authority public key.
+    authority_public_key: &'a str,
     noise_session: NoiseSession,
 }
 
 impl<'a> Miner<'a> {
-    pub fn new(listening_addr: &'a str, authority_public_key: &'a AuthorityPublicKey) -> Miner<'a> {
+    pub fn new(listening_addr: &'a str, authority_public_key: &'a str) -> Miner<'a> {
         Miner {
             listening_addr,
             authority_public_key,
@@ -170,6 +172,7 @@ impl<'a> Miner<'a> {
             println!(
                 "Is the SignatureNoiseMessage valid? - {:?}",
                 CertificateFormat::new(&self.authority_public_key, &remote_static_key, &msg)
+                    .unwrap()
                     .verify()
                     .is_ok()
             );
