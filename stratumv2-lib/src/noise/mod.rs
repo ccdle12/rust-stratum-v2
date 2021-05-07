@@ -8,7 +8,10 @@ pub use certificate_format::CertificateFormat;
 pub use noise_session::{new_noise_initiator, new_noise_responder, NoiseSession};
 pub use signature_noise_message::SignatureNoiseMessage;
 pub use signed_certificate::SignedCertificate;
-pub use types::{AuthorityKeyPair, AuthorityPublicKey, Signature, StaticKeyPair, StaticPublicKey};
+pub use types::{
+    generate_authority_keypair, AuthorityKeyPair, AuthorityPublicKey, Signature, StaticKeyPair,
+    StaticPublicKey,
+};
 
 #[cfg(test)]
 mod test {
@@ -16,20 +19,17 @@ mod test {
         noise::certificate_format::CertificateFormat,
         noise::noise_session::{new_noise_initiator, new_noise_responder},
         noise::signature_noise_message::SignatureNoiseMessage,
-        noise::signed_certificate::authority_sign_cert,
-        noise::signed_certificate::SignedCertificate,
-        noise::types::{
-            AuthorityKeyPair, AuthorityPublicKey, Signature, StaticKeyPair, StaticPublicKey,
-        },
-        parse::{deserialize, ByteParser, Deserializable, Serializable},
+        noise::signed_certificate::{authority_sign_cert, SignedCertificate},
+        noise::types::{AuthorityKeyPair, StaticKeyPair, StaticPublicKey},
+        parse::{deserialize, Serializable},
         types::unix_timestamp::system_unix_time_to_u32,
         types::unix_timestamp::unix_u32_now,
     };
+    use bitcoin::util::base58;
     use noiseexplorer_nx::types::Keypair;
     use rand::rngs::OsRng;
     use std::thread::sleep;
-    use std::time::Duration;
-    use std::time::SystemTime;
+    use std::time::{Duration, SystemTime};
 
     // Helper function to generate timestamps for SignedCertificates.
     fn setup_timestamps(valid_until: u32) -> (u32, u32) {
@@ -81,11 +81,9 @@ mod test {
         let (authority_keypair, static_pub_key, signature_noise_message) =
             setup_keys_and_signature();
 
-        let certificate = CertificateFormat::new(
-            &authority_keypair.public,
-            &static_pub_key,
-            &signature_noise_message,
-        );
+        let key = &base58::encode_slice(&authority_keypair.public.to_bytes());
+        let certificate =
+            CertificateFormat::new(&key, &static_pub_key, &signature_noise_message).unwrap();
 
         // TODO: It would be better if we could mock the system time.
         sleep(Duration::new(1, 0));
@@ -154,11 +152,12 @@ mod test {
         let signature_noise_message = deserialize::<SignatureNoiseMessage>(&buf).unwrap();
         let remote_static_key = client.get_remote_static_public_key().unwrap();
 
-        let cert = CertificateFormat::new(
-            &authority_keypair.public,
-            &remote_static_key,
-            &signature_noise_message,
-        );
+        // By Base58 encoding the public authority key, it mimicks the behaviour
+        // of the client downloading this from the server pools website or some
+        // other public forum.
+        let key = &base58::encode_slice(&authority_keypair.public.to_bytes());
+        let cert =
+            CertificateFormat::new(&key, &remote_static_key, &signature_noise_message).unwrap();
 
         assert!(cert.verify().is_ok());
     }
