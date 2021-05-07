@@ -1,12 +1,15 @@
 use rand::rngs::OsRng;
 use std::io;
 use std::time::SystemTime;
-use stratumv2::noise::{
-    new_noise_initiator, new_noise_responder, AuthorityKeyPair, AuthorityPublicKey,
-    CertificateFormat, NoiseSession, SignatureNoiseMessage, SignedCertificate, StaticKeyPair,
+use stratumv2_lib::{
+    bitcoin::util::base58,
+    noise::{
+        new_noise_initiator, new_noise_responder, AuthorityKeyPair, AuthorityPublicKey,
+        CertificateFormat, NoiseSession, SignatureNoiseMessage, SignedCertificate, StaticKeyPair,
+    },
+    parse::{deserialize, serialize, Deserializable, Serializable},
+    types::unix_timestamp::{system_unix_time_to_u32, unix_u32_now},
 };
-use stratumv2::util::{serialize, system_unix_time_to_u32};
-use stratumv2::Deserializable;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::time::{sleep, Duration};
 
@@ -16,7 +19,7 @@ const MINER_ADDR: &str = "127.0.0.1:8545";
 #[tokio::main]
 async fn main() {
     let authority_keypair = AuthorityKeyPair::generate(&mut OsRng {});
-    let authority_public_key = authority_keypair.public.clone();
+    let authority_public_key = base58::encode_slice(&authority_keypair.public.to_bytes());
 
     tokio::spawn(async move {
         Pool::new(&POOL_ADDR, &authority_keypair).listen().await;
@@ -87,7 +90,7 @@ impl<'a> Pool<'a> {
             .await;
 
         // Construct and send the SignatureNoiseMessage.
-        let valid_from = system_unix_time_to_u32(&SystemTime::now()).unwrap();
+        let valid_from = unix_u32_now().unwrap();
         let not_valid_after =
             system_unix_time_to_u32(&(SystemTime::now() + Duration::from_secs(5))).unwrap();
 
@@ -97,7 +100,7 @@ impl<'a> Pool<'a> {
         let signature_noise_msg =
             SignatureNoiseMessage::from_auth_key(&self.authority_keypair, &cert).unwrap();
 
-        let serialized_msg = serialize(signature_noise_msg).unwrap();
+        let serialized_msg = serialize(&signature_noise_msg).unwrap();
 
         let mut buf = [0u8; 1024];
         buf[..serialized_msg.len()].copy_from_slice(&serialized_msg);
@@ -117,12 +120,13 @@ impl<'a> Pool<'a> {
 struct Miner<'a> {
     /// Listening address of the miner to accept incoming connections.
     listening_addr: &'a str,
-    authority_public_key: &'a AuthorityPublicKey,
+    /// Base58 encoded string of the authority public key.
+    authority_public_key: &'a str,
     noise_session: NoiseSession,
 }
 
 impl<'a> Miner<'a> {
-    pub fn new(listening_addr: &'a str, authority_public_key: &'a AuthorityPublicKey) -> Miner<'a> {
+    pub fn new(listening_addr: &'a str, authority_public_key: &'a str) -> Miner<'a> {
         Miner {
             listening_addr,
             authority_public_key,
@@ -162,12 +166,13 @@ impl<'a> Miner<'a> {
 
             // Deserialize and recreate the certificate format. Validate the
             // signature is valid over the counter parties static key.
-            let msg = SignatureNoiseMessage::deserialize(buffer).unwrap();
+            let msg = deserialize::<SignatureNoiseMessage>(buffer).unwrap();
             let remote_static_key = self.noise_session.get_remote_static_public_key().unwrap();
 
             println!(
                 "Is the SignatureNoiseMessage valid? - {:?}",
                 CertificateFormat::new(&self.authority_public_key, &remote_static_key, &msg)
+                    .unwrap()
                     .verify()
                     .is_ok()
             );

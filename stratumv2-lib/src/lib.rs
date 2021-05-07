@@ -8,6 +8,8 @@
 extern crate bitflags;
 extern crate thiserror;
 
+pub extern crate bitcoin;
+
 /// Common messages and flags for all sub protocols.
 pub mod common;
 
@@ -31,3 +33,9 @@ pub mod parse;
 
 /// Types used in all Stratum V2 Protocols.
 pub mod types;
+
+/// Noise contains all the required messages and functions to perform the Noise
+/// Handshake, creating a symmetric key to perform secure communication.
+/// This module contains functions to verify and generate signatures
+/// for both Client and Server to attest to the authenticty of an Upstream Node.
+pub mod noise;
