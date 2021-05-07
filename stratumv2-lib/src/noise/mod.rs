@@ -16,6 +16,7 @@ pub use types::{
 #[cfg(test)]
 mod test {
     use crate::{
+        error::Error,
         noise::certificate_format::CertificateFormat,
         noise::noise_session::{new_noise_initiator, new_noise_responder},
         noise::signature_noise_message::SignatureNoiseMessage,
@@ -88,6 +89,18 @@ mod test {
         // TODO: It would be better if we could mock the system time.
         sleep(Duration::new(1, 0));
         assert!(certificate.verify().is_err())
+    }
+
+    #[test]
+    fn invalid_pubkey() {
+        let (authority_keypair, static_pub_key, signature_noise_message) =
+            setup_keys_and_signature();
+        let invalid_pubkey = "jg9QygGzKSVyxExPrj6bSCDq93c17Krj9yq5kNQnM3GP65";
+
+        let certificate =
+            CertificateFormat::new(invalid_pubkey, &static_pub_key, &signature_noise_message);
+
+        assert!(matches!(certificate, Err(Error::ParseError { .. })));
     }
 
     #[test]
