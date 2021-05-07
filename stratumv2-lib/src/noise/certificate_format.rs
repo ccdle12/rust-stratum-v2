@@ -3,7 +3,9 @@ use crate::noise::signature_noise_message::SignatureNoiseMessage;
 use crate::noise::types::{AuthorityPublicKey, StaticPublicKey};
 use crate::parse::Serializable;
 use crate::types::unix_timestamp::unix_u32_now;
+use bitcoin::util::base58;
 use ed25519_dalek::Verifier;
+use std::convert::TryInto;
 use std::io;
 
 /// CertificateFormat is used to reconstruct a message to verify a signature
@@ -14,22 +16,27 @@ use std::io;
 /// and the static key of the server to verify the signature was signed with
 /// the correct Authority Key.
 pub struct CertificateFormat<'a> {
-    authority_public_key: &'a AuthorityPublicKey,
+    authority_public_key: AuthorityPublicKey,
     static_public_key: &'a StaticPublicKey,
     signature_noise_message: &'a SignatureNoiseMessage,
 }
 
 impl<'a> CertificateFormat<'a> {
     pub fn new(
-        authority_public_key: &'a AuthorityPublicKey,
+        authority_public_key: &'a str,
         static_public_key: &'a StaticPublicKey,
         signature_noise_message: &'a SignatureNoiseMessage,
-    ) -> CertificateFormat<'a> {
-        CertificateFormat {
+    ) -> Result<CertificateFormat<'a>> {
+        // Convert the base58 encoded String into an AuthorityPublicKey object.
+        let key_bytes: [u8; 32] = base58::from(authority_public_key)?
+            .try_into()
+            .map_err(|_| Error::ParseError("Failed to deserialize the base58 public key".into()))?;
+
+        Ok(CertificateFormat {
+            authority_public_key: AuthorityPublicKey::from_bytes(&key_bytes)?,
             static_public_key,
-            authority_public_key,
             signature_noise_message,
-        }
+        })
     }
 
     /// Verify the certificate, specifically the validity of the certificate time
