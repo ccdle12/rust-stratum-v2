@@ -219,7 +219,7 @@ impl PrivateKey {
     pub(crate) fn from_hacl_secret_key(hacl_secret: curve25519::SecretKey) -> Self {
         Self { k: hacl_secret.0 }
     }
-    pub(crate) fn as_bytes(&self) -> [u8; DHLEN] {
+    pub fn as_bytes(&self) -> [u8; DHLEN] {
         self.k
     }
     /// Checks whether a `PrivateKey` object is empty or not.
@@ -383,8 +383,8 @@ impl Nonce {
 
 #[derive(Clone, PartialEq)]
 pub struct Keypair {
-    private_key: PrivateKey,
-    public_key: PublicKey,
+    pub private_key: PrivateKey,
+    pub public_key: PublicKey,
 }
 impl Keypair {
     pub fn clear(&mut self) {
