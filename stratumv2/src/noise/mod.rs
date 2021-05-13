@@ -10,7 +10,7 @@ pub use signature_noise_message::SignatureNoiseMessage;
 pub use signed_certificate::SignedCertificate;
 pub use types::{
     generate_authority_keypair, AuthorityKeyPair, AuthorityPublicKey, Signature, StaticKeyPair,
-    StaticPublicKey,
+    StaticPrivateKey, StaticPublicKey,
 };
 
 #[cfg(test)]
