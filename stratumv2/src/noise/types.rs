@@ -22,6 +22,7 @@ pub type AuthorityPublicKey = ed25519_dalek::PublicKey;
 /// will be signed by the AuthorityKeyPair, to attest to the authenticity of
 /// the Mining Pool Server.
 pub type StaticPublicKey = noiseexplorer_nx::types::PublicKey;
+pub type StaticPrivateKey = noiseexplorer_nx::types::PrivateKey;
 
 impl Serializable for StaticPublicKey {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
