@@ -1,89 +1,62 @@
-use std::convert::From;
-use std::fmt;
-use std::io;
+use thiserror::Error;
 
-/// Error is the main error type for this library.
-#[derive(Debug)]
+/// The main error type for this library.
+#[derive(Error, Debug)]
 pub enum Error {
-    Base58Error(bitcoin::util::base58::Error),
+    #[error(transparent)]
+    Base58Error(#[from] bitcoin::util::base58::Error),
+
+    #[error("`{0}`")]
     VersionError(String),
-    IOError(io::Error),
-    Utf8Error(std::str::Utf8Error),
-    FromUtf8Error(std::string::FromUtf8Error),
+
+    #[error(transparent)]
+    IOError(#[from] std::io::Error),
+
+    #[error(transparent)]
+    Utf8Error(#[from] std::str::Utf8Error),
+
+    #[error(transparent)]
+    FromUtf8Error(#[from] std::string::FromUtf8Error),
+
+    #[error("`{0}`")]
     ProtocolMismatchError(String),
+
+    #[error("`{0}`")]
     RequirementError(String),
+
+    #[error("`{0}`")]
     DeserializationError(String),
+
+    #[error("`{0}`")]
     ParseError(String),
-    AuthorityKeyError(ed25519_dalek::ed25519::Error),
-    SystemTimeError(std::time::SystemTimeError),
-    TryFromSliceError(std::array::TryFromSliceError),
+
+    #[error(transparent)]
+    AuthorityKeyError(#[from] ed25519_dalek::ed25519::Error),
+
+    #[error(transparent)]
+    SystemTimeError(#[from] std::time::SystemTimeError),
+
+    #[error(transparent)]
+    TryFromSliceError(#[from] std::array::TryFromSliceError),
+
+    #[error("Unimplemented")]
     Unimplemented(),
+
+    #[error("The error code is invalid")]
     UnknownErrorCode(),
+
+    #[error("the received message type is unknown")]
     UnknownMessageType(),
+
+    #[error("the received flags are unknown")]
     UnknownFlags(),
+
+    #[error("parsed message type `{0}/{1}` does not match expected message")]
     UnexpectedMessageType(u16, u8),
+
+    #[error("parsed channel bit `{0}` does not match expected message")]
     UnexpectedChannelBit(bool),
 }
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Error::Base58Error(ref message) => write!(f, "{}", message),
-            Error::VersionError(ref message) => write!(f, "{}", message),
-            Error::IOError(ref message) => write!(f, "{}", message),
-            Error::Utf8Error(ref message) => write!(f, "{}", message),
-            Error::FromUtf8Error(ref message) => write!(f, "{}", message),
-            Error::ProtocolMismatchError(ref message) => write!(f, "{}", message),
-            Error::RequirementError(ref message) => write!(f, "{}", message),
-            Error::DeserializationError(ref message) => write!(f, "{}", message),
-            Error::ParseError(ref message) => write!(f, "{}", message),
-            Error::AuthorityKeyError(ref message) => write!(f, "{}", message),
-            Error::SystemTimeError(ref message) => write!(f, "{}", message),
-            Error::TryFromSliceError(ref message) => write!(f, "{}", message),
-            Error::Unimplemented() => write!(f, "unimplemented"),
-            Error::UnknownErrorCode() => write!(f, "the error code is invalid"),
-            Error::UnknownMessageType() => write!(f, "the received message type is unknown"),
-            Error::UnknownFlags() => write!(f, "the received flags are unknown"),
-            Error::UnexpectedMessageType(ref ext_type, ref msg_type) => {
-                write!(
-                    f,
-                    "parsed message type {}/{} does not match expected message",
-                    ext_type, msg_type
-                )
-            }
-            Error::UnexpectedChannelBit(ref channel_bit) => {
-                write!(
-                    f,
-                    "parsed channel bit {} does not match expected message",
-                    channel_bit
-                )
-            }
-        }
-    }
-}
-
-// TODO(chpatton013): Consider replacing this with `thiserror`
-/// An internal macro for implementing the From trait for existing Error types
-/// into the projects Error type variants.
-macro_rules! impl_error_conversions {
-    ($($error_type:path => $error_variant:path),*) => {
-        $(impl From<$error_type> for Error {
-            fn from(err: $error_type) -> Error {
-                $error_variant(err)
-            }
-        })*
-    };
-}
-
-impl_error_conversions!(
-    bitcoin::util::base58::Error => Error::Base58Error,
-    std::str::Utf8Error => Error::Utf8Error,
-    std::string::FromUtf8Error => Error::FromUtf8Error,
-    io::Error => Error::IOError,
-    ed25519_dalek::ed25519::Error => Error::AuthorityKeyError,
-    std::time::SystemTimeError => Error::SystemTimeError,
-    std::array::TryFromSliceError => Error::TryFromSliceError
-);
 
 /// Alias Result type for the library.
 pub type Result<T> = std::result::Result<T, Error>;
