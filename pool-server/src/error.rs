@@ -9,6 +9,7 @@ pub enum Error {
     Base58Error(bitcoin::util::base58::Error),
     ParseError(String),
     IOError(io::Error),
+    TryFromSliceError(std::array::TryFromSliceError),
 }
 
 impl fmt::Display for Error {
@@ -17,6 +18,7 @@ impl fmt::Display for Error {
             Error::Base58Error(ref message) => write!(f, "{}", message),
             Error::IOError(ref message) => write!(f, "{}", message),
             Error::ParseError(ref message) => write!(f, "{}", message),
+            Error::TryFromSliceError(ref message) => write!(f, "{}", message),
         }
     }
 }
@@ -35,7 +37,8 @@ macro_rules! impl_error_conversions {
 
 impl_error_conversions!(
     bitcoin::util::base58::Error => Error::Base58Error,
-    io::Error => Error::IOError
+    io::Error => Error::IOError,
+    std::array::TryFromSliceError => Error::TryFromSliceError
 );
 
 pub type Result<T> = std::result::Result<T, Error>;
