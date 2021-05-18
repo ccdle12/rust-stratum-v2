@@ -31,7 +31,7 @@ pub fn decode_base58_static_key(base58_priv_key: &String) -> Result<StaticKeyPai
 
     let secret: &[u8] = &decoded[0..32];
 
-    let priv_key = StaticPrivateKey::from_bytes(secret.try_into().unwrap());
+    let priv_key = StaticPrivateKey::from_bytes(secret.try_into()?);
     StaticKeyPair::from_private_key(priv_key).map_err(|e| Error::ParseError(e.to_string()))
 }
 
