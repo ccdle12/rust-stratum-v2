@@ -10,16 +10,16 @@ impl_message!(
     /// The request_id received in the [OpenStandardMiningChannel](struct.OpenStandardMiningChannel.html) message.
     /// This is returned to the Client so that they can pair the responses with the
     /// initial request.
-    pub request_id u32,
+    request_id u32,
     /// Assigned by the Server to uniquely identify the channel, the id is stable
     /// for the whole lifetime of the connection.
-    pub channel_id u32,
+    channel_id u32,
     /// The initial target difficulty target for the mining channel.
-    pub target U256,
+    target U256,
     // TODO: I don't understand the purpose of the extranonce_prefix.
-    pub extranonce_prefix B0_32,
+    extranonce_prefix B0_32,
     /// Group channel that the channel belongs to.
-    pub group_channel_id u32
+    group_channel_id u32
 );
 
 impl OpenStandardMiningChannelSuccess {

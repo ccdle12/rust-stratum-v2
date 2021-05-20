@@ -12,24 +12,24 @@ impl_message!(
 
     /// A Client-specified unique identifier across all client connections.
     /// The request_id is not interpreted by the Server.
-    pub request_id u32,
+    request_id u32,
 
     /// A sequence of bytes that identifies the node to the Server, e.g.
     /// "braiintest.worker1".
-    pub user_identity STR0_255,
+    user_identity STR0_255,
 
     /// The expected [h/s] (hash rate/per second) of the
     /// device or the cumulative on the channel if multiple devices are connected
     /// downstream. Proxies MUST send 0.0f when there are no mining devices
     /// connected yet.
-    pub nominal_hash_rate f32,
+    nominal_hash_rate f32,
 
     /// The Maximum Target that can be acceptd by the connected device or
     /// multiple devices downstream. The Server MUST accept the maximum
     /// target or respond by sending a
     /// [OpenStandardMiningChannel.Error](struct.OpenStandardMiningChannelError.html)
     /// or [OpenExtendedMiningChannel.Error](struct.OpenExtendedMiningChannelError.html)
-    pub max_target U256
+    max_target U256
 );
 
 impl OpenStandardMiningChannel {

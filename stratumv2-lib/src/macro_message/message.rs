@@ -15,7 +15,7 @@ macro_rules! impl_message {
       $struct_name:ident,
       $message_type:path,
       $($(#[$field_comment:meta])*
-      $field_visibility: ident $field: ident $field_type:ident),*
+      $field: ident $field_type:ident),*
     ) => {
     use crate::macro_message::message::macro_prelude::*;
 
@@ -24,7 +24,7 @@ macro_rules! impl_message {
     pub struct $struct_name {
       $(
         $(#[$field_comment])*
-          $field_visibility $field: $field_type
+          pub $field: $field_type
       ),*
     }
 

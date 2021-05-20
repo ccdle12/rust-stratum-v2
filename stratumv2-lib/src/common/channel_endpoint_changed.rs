@@ -17,7 +17,7 @@ impl_message!(
     MessageType::ChannelEndpointChanged,
 
     /// The channel which has changed endpoint.
-    pub channel_id u32
+    channel_id u32
 );
 
 impl ChannelEndpointChanged {
