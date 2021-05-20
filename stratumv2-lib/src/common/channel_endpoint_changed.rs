@@ -1,7 +1,9 @@
-use crate::error::Result;
-use crate::frame::Frameable;
-use crate::parse::{ByteParser, Deserializable, Serializable};
-use crate::types::{new_channel_id, MessageType};
+use crate::{
+    error::Result,
+    frame::Frameable,
+    parse::{ByteParser, Deserializable, Serializable},
+    types::{new_channel_id, MessageType},
+};
 use std::io;
 
 /// When a channel’s upstream or downstream endpoint changes and that channel had previously sent
