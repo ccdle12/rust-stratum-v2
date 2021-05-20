@@ -7,18 +7,23 @@ impl_message!(
     /// in response to a successful opening of a standard mining channel.
     OpenExtendedMiningChannelSuccess,
     MessageType::OpenExtendedMiningChannelSuccess,
+
     /// The request_id received in the
     /// [OpenExtendedMiningChannel](struct.OpenExtendedMiningChannel.html) message.
     /// This is returned to the Client so that they can pair the responses with the
     /// initial request.
     request_id u32,
+
     /// Assigned by the Server to uniquely identify the channel, the id is stable
     /// for the whole lifetime of the connection.
     channel_id u32,
+
     /// The initial target difficulty target for the mining channel.
     target U256,
+
     // TODO: I don't understand the purpose of the extranonce size.
     extranonce_size u16,
+
     // TODO: I don't understand the purpose of the extranonce prefix.
     extranonce_prefix B0_32
 );
