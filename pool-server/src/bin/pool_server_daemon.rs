@@ -17,7 +17,7 @@ fn main() {
         let authority_keypair = generate_authority_keypair();
         let static_keypair = StaticKeyPair::default();
 
-        PoolServer::new(Some(&authority_keypair), Some(&static_keypair));
+        PoolServer::new(Some(&authority_keypair), &static_keypair);
         return;
     }
 
@@ -26,7 +26,7 @@ fn main() {
     let data_dir = DataDir::new(STRATUMV2_FOLDER_PATH).unwrap();
     let static_keypair = data_dir.decode_static_key().unwrap();
 
-    PoolServer::new(None, Some(&static_keypair));
+    PoolServer::new(None, &static_keypair);
 }
 
 #[cfg(test)]
