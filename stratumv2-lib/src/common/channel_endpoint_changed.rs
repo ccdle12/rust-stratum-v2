@@ -3,7 +3,7 @@ use crate::{
     frame::Frameable,
     impl_message,
     parse::{ByteParser, Deserializable, Serializable},
-    types::{new_channel_id, MessageType},
+    types::MessageType,
 };
 use std::io;
 
@@ -26,14 +26,6 @@ impl ChannelEndpointChanged {
     }
 }
 
-impl Default for ChannelEndpointChanged {
-    fn default() -> Self {
-        ChannelEndpointChanged {
-            channel_id: new_channel_id(),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -42,7 +34,7 @@ mod tests {
 
     #[test]
     fn init_channel_endpoint_changed() {
-        let channel_endpoint_changed = ChannelEndpointChanged::default();
+        let channel_endpoint_changed = ChannelEndpointChanged::new(0).unwrap();
 
         let serialized = serialize(&channel_endpoint_changed).unwrap();
         assert!(deserialize::<ChannelEndpointChanged>(&serialized).is_ok());
@@ -50,7 +42,7 @@ mod tests {
 
     #[test]
     fn frame_open_extended_mining() {
-        let network_message = frame(&ChannelEndpointChanged::default()).unwrap();
+        let network_message = frame(&ChannelEndpointChanged::new(0).unwrap()).unwrap();
         assert_eq!(
             network_message.message_type,
             MessageType::ChannelEndpointChanged
