@@ -1,5 +1,5 @@
 use crate::error::Result;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 /// Convert SystemTime to a Unix timestamp as a u32.
 pub fn system_unix_time_to_u32(time: &SystemTime) -> Result<u32> {
@@ -11,6 +11,16 @@ pub fn system_unix_time_to_u32(time: &SystemTime) -> Result<u32> {
 /// A helper function that returns the current unix time in seconds as a u32.
 pub fn unix_u32_now() -> Result<u32> {
     system_unix_time_to_u32(&SystemTime::now())
+}
+
+/// A helper function that returns the current unix time of one year from now
+/// in seconds as a u32.
+pub fn unix_u32_one_year_from_now() -> Result<u32> {
+    system_unix_time_to_u32(
+        &SystemTime::now()
+            .checked_add(Duration::from_secs(60 * 60 * 24 * 365))
+            .unwrap(),
+    )
 }
 
 #[cfg(test)]
