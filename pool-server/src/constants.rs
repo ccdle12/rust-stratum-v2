@@ -1,5 +1,6 @@
 /// Constants used to access and build the Mining Pool Servers Data Directory.
-pub const STRATUMV2_FOLDER_PATH: &str = "/stratumv2/";
+// TODO: update the root folder path for the datadir according to operating system.
+pub const STRATUMV2_FOLDER_PATH: &str = "/root/.stratumv2/";
 const STRATUMV2_KEY_FOLDER: &str = "key/";
 const PRIV_STATIC_KEY: &str = "static-key.priv";
 const PUB_STATIC_KEY: &str = "static-key.pub";
