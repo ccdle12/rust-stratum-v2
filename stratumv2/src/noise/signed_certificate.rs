@@ -10,9 +10,16 @@ use std::io;
 /// the identity of the StaticPublicKey used in the Noise Diffie-Hellman exchange
 /// of the Upstream Node.
 pub struct SignedCertificate<'a> {
+    /// Version of the certificate format.
     pub version: u16,
+
+    /// The starting time the SignedCertificate is valid from (unix timestamp).
     pub valid_from: u32,
+
+    /// The end time the SignedCertificate is invalid (unix timestamp).
     pub not_valid_after: u32,
+
+    /// The public key of the Server used in the noise communication.
     pub public_key: &'a StaticPublicKey,
 }
 
