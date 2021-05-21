@@ -86,9 +86,9 @@ mod test {
             0x0a, 0x00, // min_extranonce_size
         ];
 
-        let serialized = serialize(&default_message().unwrap());
-        assert_eq!(serialized.unwrap(), expected);
-        assert!(deserialize::<OpenExtendedMiningChannel>(&expected).is_ok());
+        let serialized = serialize(&default_message().unwrap()).unwrap();
+        assert_eq!(&serialized, &expected);
+        assert!(deserialize::<OpenExtendedMiningChannel>(&serialized).is_ok());
     }
 
     #[test]

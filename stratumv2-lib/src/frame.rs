@@ -31,6 +31,7 @@ impl Serializable for Message {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
         let message_type: u8 = self.message_type.msg_type();
         let mut extension_type: u16 = self.message_type.ext_type();
+
         // Enable the MSB to indicate if this message type has a channel id.
         if self.message_type.channel_bit() {
             extension_type |= CHANNEL_BIT_MASK;
