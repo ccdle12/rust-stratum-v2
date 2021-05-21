@@ -14,7 +14,6 @@ impl_message!(
     /// negotiation and the presence of support for a given extension) MUST be reset and
     /// version/presence negotiation must begin again.
     ChannelEndpointChanged,
-    MessageType::ChannelEndpointChanged,
 
     /// The channel which has changed endpoint.
     channel_id u32

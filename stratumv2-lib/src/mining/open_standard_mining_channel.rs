@@ -8,7 +8,6 @@ impl_message!(
     /// channel to the upstream server. A standard mining channel indicates `header-only`
     /// mining.
     OpenStandardMiningChannel,
-    MessageType::OpenStandardMiningChannel,
 
     /// A Client-specified unique identifier across all client connections.
     /// The request_id is not interpreted by the Server.

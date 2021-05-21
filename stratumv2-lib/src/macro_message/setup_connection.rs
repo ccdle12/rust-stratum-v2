@@ -68,7 +68,6 @@ macro_rules! impl_setup_connection {
             ///
             /// ```
             SetupConnection,
-            MessageType::SetupConnection,
 
             /// The minimum protocol version the client supports. (current default: 2)
             min_version u16,

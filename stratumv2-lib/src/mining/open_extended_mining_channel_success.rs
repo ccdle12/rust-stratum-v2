@@ -6,7 +6,6 @@ impl_message!(
     /// OpenExtendedMiningChannelSuccess is a message sent by the Server to the Client
     /// in response to a successful opening of a standard mining channel.
     OpenExtendedMiningChannelSuccess,
-    MessageType::OpenExtendedMiningChannelSuccess,
 
     /// The request_id received in the
     /// [OpenExtendedMiningChannel](struct.OpenExtendedMiningChannel.html) message.

@@ -13,7 +13,6 @@ macro_rules! impl_message {
     (
       $(#[$doc_comment:meta])*
       $struct_name:ident,
-      $message_type:path,
       $($(#[$field_comment:meta])*
       $field: ident $field_type:ident),*
     ) => {
@@ -48,7 +47,7 @@ macro_rules! impl_message {
 
     impl Frameable for $struct_name {
       fn message_type() -> MessageType {
-        $message_type
+        MessageType::$struct_name
       }
     }
   };

@@ -25,16 +25,17 @@ pub mod macro_prelude {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! impl_open_mining_channel_error {
-    ($struct_name:ident, $msg_type:path) => {
+    ($struct_name:ident) => {
         use crate::mining::open_mining_channel_error::macro_prelude::*;
 
         impl_message!(
             /// An implementation of the OpenMiningChannelError. This message applies to both
             /// Standard Mining Channels and Extended Mining Channels.
             $struct_name,
-            $msg_type,
+
             /// A client specified request ID from the original OpenMiningChannel message.
             request_id u32,
+
             /// Pre-determined human readable error codes for the OpenMiningChannel message.
             error_code OpenMiningChannelErrorCode
 
