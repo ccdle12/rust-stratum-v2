@@ -69,35 +69,36 @@ macro_rules! impl_setup_connection {
             /// ```
             SetupConnection,
             MessageType::SetupConnection,
+
             /// The minimum protocol version the client supports. (current default: 2)
-            pub min_version u16,
+            min_version u16,
 
             /// The maxmimum protocol version the client supports. (current default: 2)
-            pub max_version u16,
+            max_version u16,
 
             /// Flags indicating the optional protocol features the client supports.
-            pub flags $flags_type,
+            flags $flags_type,
 
             /// Used to indicate the hostname or IP address of the endpoint.
-            pub endpoint_host STR0_255,
+            endpoint_host STR0_255,
 
             /// Used to indicate the connecting port value of the endpoint.
-            pub endpoint_port u16,
+            endpoint_port u16,
 
             /// The following fields relay the new_mining device information.
             ///
             /// Used to indicate the vendor/manufacturer of the device.
-            pub vendor STR0_255,
+            vendor STR0_255,
 
             /// Used to indicate the hardware version of the device.
-            pub hardware_version STR0_255,
+            hardware_version STR0_255,
 
             /// Used to indicate the firmware on the device.
-            pub firmware STR0_255,
+            firmware STR0_255,
 
             /// Used to indicate the unique identifier of the device defined by the
             /// vendor.
-            pub device_id STR0_255
+            device_id STR0_255
         );
 
         impl SetupConnection {

@@ -42,10 +42,12 @@ macro_rules! impl_setup_connection_error {
             /// );
             SetupConnectionError,
             MessageType::SetupConnectionError,
+
             /// Indicates all the flags that the server does NOT support.
-            pub flags $flags_type,
+            flags $flags_type,
+
             /// Error code is a predefined STR0_255 error code.
-            pub error_code SetupConnectionErrorCode
+            error_code SetupConnectionErrorCode
         );
 
         impl SetupConnectionError {
