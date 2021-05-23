@@ -55,7 +55,7 @@ macro_rules! impl_message {
 
 #[cfg(test)]
 pub mod test_macro_prelude {
-    pub use crate::frame::{frame, unframe, Message};
+    pub use crate::frame::{frame, unframe, Frameable, Message};
     pub use crate::parse::{deserialize, serialize};
 }
 

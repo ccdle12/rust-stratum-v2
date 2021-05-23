@@ -97,3 +97,66 @@ pub fn unframe<T: Frameable>(message: &Message) -> Result<T> {
 
     T::deserialize(&mut parser)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::impl_message;
+    use crate::parse::{deserialize, serialize};
+
+    impl_message!(TestMessage1, x u8);
+
+    impl TestMessage1 {
+        fn new(x: u8) -> Result<TestMessage1> {
+            Ok(TestMessage1 { x })
+        }
+    }
+
+    impl_message!(TestMessage2, x u8);
+
+    impl TestMessage2 {
+        fn new(x: u8) -> Result<TestMessage2> {
+            Ok(TestMessage2 { x })
+        }
+    }
+
+    #[test]
+    fn frame_test_message() {
+        let unframed = TestMessage1::new(5u8).unwrap();
+        let framed = Message::new(MessageType::TestMessage1, vec![0x05]);
+        assert_eq!(frame(&unframed).unwrap(), framed);
+        assert_eq!(unframe::<TestMessage1>(&framed).unwrap(), unframed);
+    }
+
+    #[test]
+    fn test_message_1_frame_serde() {
+        let deserialized = Message::new(MessageType::TestMessage1, vec![0x05]);
+        let serialized = vec![
+            0x00, 0x00, // extension type & channel bit (MSB=0)
+            0xfe, // message type
+            0x01, 0x00, 0x00, // message length
+            0x05, // message payload
+        ];
+        assert_eq!(serialize(&deserialized).unwrap(), serialized);
+        assert_eq!(
+            deserialize::<Message>(serialized.as_slice()).unwrap(),
+            deserialized
+        );
+    }
+
+    #[test]
+    fn test_message_2_frame_serde() {
+        let deserialized = Message::new(MessageType::TestMessage2, vec![0x05]);
+        let serialized = vec![
+            0x00, 0x80, // extension type & channel bit (MSB=1)
+            0xff, // message type
+            0x01, 0x00, 0x00, // message length
+            0x05, // message payload
+        ];
+        assert_eq!(serialize(&deserialized).unwrap(), serialized);
+        assert_eq!(
+            deserialize::<Message>(serialized.as_slice()).unwrap(),
+            deserialized
+        );
+    }
+}
