@@ -1,5 +1,4 @@
-use crate::impl_bitflags_serde;
-use crate::impl_setup_connection;
+use crate::{impl_bitflags_serde, impl_setup_connection};
 
 bitflags!(
     /// Feature flags that can be passed to a SetupConnection message in the Mining
@@ -26,10 +25,11 @@ impl_setup_connection!(SetupConnectionFlags);
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::impl_setup_connection_tests;
     use crate::parse::{deserialize, serialize};
 
     #[test]
-    fn test_serialize() {
+    fn flags_serialize() {
         assert_eq!(
             serialize(&SetupConnectionFlags::REQUIRES_STANDARD_JOBS).unwrap(),
             0x01u32.to_le_bytes()
@@ -45,7 +45,7 @@ mod tests {
     }
 
     #[test]
-    fn test_deserialize() {
+    fn flags_deserialize() {
         assert_eq!(
             deserialize::<SetupConnectionFlags>(&0x01u32.to_le_bytes()).unwrap(),
             SetupConnectionFlags::REQUIRES_STANDARD_JOBS,
@@ -64,4 +64,6 @@ mod tests {
             Err(Error::UnknownFlags { .. })
         ));
     }
+
+    impl_setup_connection_tests!(SetupConnectionFlags);
 }
