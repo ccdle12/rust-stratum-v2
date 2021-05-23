@@ -192,6 +192,8 @@ mod str0_32_tests {
 
     #[test]
     fn deserialize_over_max_length() {
+        // The type used to encode the length of this payload has the necessary domain to describe
+        // payloads much longer than the supposed maximum.
         let data = make_encoded_str((0..33).map(|_| 'a').collect::<String>().as_str());
         assert!(matches!(
             deserialize::<STR0_32>(data.as_slice()),
