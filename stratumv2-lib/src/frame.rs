@@ -13,6 +13,7 @@ const EXTENSION_TYPE_MASK: u16 = 0x7FFF;
 
 /// Used to deserialize a received network frame. The payload would be further
 /// deserialized according to the received MessageTypes.
+#[derive(Debug, Clone, PartialEq)]
 pub struct Message {
     pub message_type: MessageType,
     pub payload: Vec<u8>,
