@@ -115,14 +115,14 @@ mod test_message_tests {
     // Ser/de for each of these primitive types already has extensive test coverage in their own
     // unit tests, so repeating that coverage here is unnecessary.
     impl_message!(
-        TestMessage,
+        TestMessage1,
         a u8, b u16, c U24, d u32, e U256,
         f f32,
         g STR0_32, h STR0_255,
         i B0_31, j B0_32, k B0_255, l B0_64K, m B0_16M
     );
 
-    impl TestMessage {
+    impl TestMessage1 {
         fn new(
             a: u8,
             b: u16,
@@ -137,8 +137,8 @@ mod test_message_tests {
             k: B0_255,
             l: B0_64K,
             m: B0_16M,
-        ) -> Result<TestMessage> {
-            Ok(TestMessage {
+        ) -> Result<TestMessage1> {
+            Ok(TestMessage1 {
                 a,
                 b,
                 c,
@@ -156,8 +156,8 @@ mod test_message_tests {
         }
     }
 
-    fn make_deserialized_test_message() -> TestMessage {
-        TestMessage::new(
+    fn make_deserialized_test_message() -> TestMessage1 {
+        TestMessage1::new(
             1u8,
             2u16,
             U24::new(3u32).unwrap(),
@@ -197,7 +197,7 @@ mod test_message_tests {
     }
 
     impl_message_tests!(
-        TestMessage,
+        TestMessage1,
         make_serialized_test_message,
         make_deserialized_test_message
     );
