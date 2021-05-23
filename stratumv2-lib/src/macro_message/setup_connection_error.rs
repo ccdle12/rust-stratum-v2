@@ -67,3 +67,57 @@ macro_rules! impl_setup_connection_error {
         }
     };
 }
+
+#[cfg(test)]
+pub mod test_macro_prelude {
+    pub use crate::impl_message_tests;
+}
+
+#[cfg(test)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! impl_setup_connection_error_tests {
+    ($flags_type:ident) => {
+        use crate::macro_message::setup_connection_error::test_macro_prelude::*;
+
+        fn make_deserialized_setup_connection_error() -> SetupConnectionError {
+            SetupConnectionError::new(
+                $flags_type::all(),
+                SetupConnectionErrorCode::UnsupportedFeatureFlags,
+            )
+            .unwrap()
+        }
+
+        fn make_serialized_setup_connection_error() -> Vec<u8> {
+            let mut serialized = vec![];
+            serialized.extend($flags_type::all().bits().to_le_bytes().iter()); // flags
+            serialized.extend(vec![
+                // error_code
+                0x19, // length (25)
+                0x75, 0x6e, 0x73, 0x75, 0x70, 0x70, 0x6f, 0x72, // "unsuppor"
+                0x74, 0x65, 0x64, 0x2d, 0x66, 0x65, 0x61, 0x74, // "ted-feat"
+                0x75, 0x72, 0x65, 0x2d, 0x66, 0x6c, 0x61, 0x67, // "ure-flag"
+                0x73, // "s"
+            ]);
+
+            serialized
+        }
+
+        impl_message_tests!(
+            SetupConnectionError,
+            make_serialized_setup_connection_error,
+            make_deserialized_setup_connection_error
+        );
+
+        #[test]
+        fn empty_feature_flags_error() {
+            assert!(matches!(
+                SetupConnectionError::new(
+                    $flags_type::empty(),
+                    SetupConnectionErrorCode::UnsupportedFeatureFlags
+                ),
+                Err(Error::RequirementError { .. })
+            ));
+        }
+    };
+}

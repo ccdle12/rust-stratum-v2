@@ -52,3 +52,36 @@ macro_rules! impl_setup_connection_success {
         }
     };
 }
+
+#[cfg(test)]
+pub mod test_macro_prelude {
+    pub use crate::impl_message_tests;
+}
+
+#[cfg(test)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! impl_setup_connection_success_tests {
+    ($flags_type:ident) => {
+        use crate::macro_message::setup_connection_success::test_macro_prelude::*;
+
+        fn make_deserialized_setup_connection_success() -> SetupConnectionSuccess {
+            SetupConnectionSuccess::new(2, $flags_type::all()).unwrap()
+        }
+
+        fn make_serialized_setup_connection_success() -> Vec<u8> {
+            let mut serialized = vec![
+                0x02, 0x00, // used_version
+            ];
+            serialized.extend($flags_type::all().bits().to_le_bytes().iter()); // flags
+
+            serialized
+        }
+
+        impl_message_tests!(
+            SetupConnectionSuccess,
+            make_serialized_setup_connection_success,
+            make_deserialized_setup_connection_success
+        );
+    };
+}
