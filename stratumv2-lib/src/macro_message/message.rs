@@ -98,6 +98,38 @@ macro_rules! impl_message_tests {
             assert_eq!(frame(&deserialized).unwrap(), message);
             assert_eq!(unframe::<$struct_name>(&message).unwrap(), deserialized);
         }
+
+        #[test]
+        fn message_frame_serde() {
+            // Verify that message frames for this type of message ser/de correctly.
+            let serialized_frame = make_serialized_frame();
+            let deserialized_frame = Message::new($struct_name::message_type(), $make_serialized());
+
+            assert_eq!(serialize(&deserialized_frame).unwrap(), serialized_frame);
+            assert_eq!(
+                deserialize::<Message>(&serialized_frame).unwrap(),
+                deserialized_frame
+            );
+        }
+
+        fn make_serialized_frame() -> Vec<u8> {
+            let serialized_message = $make_serialized();
+
+            let mut extension_type = $struct_name::message_type().ext_type();
+            if $struct_name::message_type().channel_bit() {
+                extension_type |= 0x8000;
+            }
+            let message_type = $struct_name::message_type().msg_type();
+            let message_length = serialized_message.len();
+
+            let mut serialized_frame = vec![];
+            serialized_frame.extend(extension_type.to_le_bytes().iter());
+            serialized_frame.extend(message_type.to_le_bytes().iter());
+            serialized_frame.extend(message_length.to_le_bytes()[..3].iter());
+            serialized_frame.extend(serialized_message);
+
+            serialized_frame
+        }
     };
 }
 
