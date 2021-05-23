@@ -8,6 +8,7 @@ use crate::types::MessageType;
 // use crate::job_distribution;
 use std::convert::TryFrom;
 use std::io;
+
 /// Protocol is an enum representing each sub protocol of Stratum V2.
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Protocol {

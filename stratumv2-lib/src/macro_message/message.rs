@@ -16,6 +16,7 @@ macro_rules! impl_message {
       $($(#[$field_comment:meta])*
       $field: ident $field_type:ident),*
     ) => {
+    #[allow(unused_imports)]
     use crate::macro_message::message::macro_prelude::*;
 
     $(#[$doc_comment])*
@@ -64,6 +65,7 @@ pub mod test_macro_prelude {
 #[macro_export]
 macro_rules! impl_message_tests {
     ($struct_name:ident, $make_serialized:ident, $make_deserialized:ident) => {
+        #[allow(unused_imports)]
         use crate::macro_message::message::test_macro_prelude::*;
 
         #[test]
@@ -101,7 +103,6 @@ macro_rules! impl_message_tests {
 
 #[cfg(test)]
 mod test_message_tests {
-    use super::*;
     use crate::types::{B0_16M, B0_255, B0_31, B0_32, B0_64K, STR0_255, STR0_32, U24, U256};
 
     // A test message with all the primitives that comprise the real message types.
