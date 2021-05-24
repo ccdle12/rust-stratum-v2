@@ -51,3 +51,39 @@ macro_rules! impl_open_mining_channel_error {
         }
     };
 }
+
+#[cfg(test)]
+pub mod test_macro_prelude {
+    pub use crate::impl_message_tests;
+}
+
+#[cfg(test)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! impl_open_mining_channel_error_tests {
+    ($struct_name:ident) => {
+        use crate::mining::open_mining_channel_error::test_macro_prelude::*;
+
+        fn make_deserialized_open_mining_channel_error() -> $struct_name {
+            $struct_name::new(0x01, OpenMiningChannelErrorCode::UnknownUser).unwrap()
+        }
+
+        fn make_serialized_open_mining_channel_error() -> Vec<u8> {
+            let mut serialized = vec![0x01, 0x00, 0x00, 0x00]; // request_id
+            serialized.extend(vec![
+                // error_code
+                0x0c, // length (12)
+                0x75, 0x6e, 0x6b, 0x6e, 0x6f, 0x77, 0x6e, 0x2d, // "unknown-"
+                0x75, 0x73, 0x65, 0x72, // "user"
+            ]);
+
+            serialized
+        }
+
+        impl_message_tests!(
+            $struct_name,
+            make_serialized_open_mining_channel_error,
+            make_deserialized_open_mining_channel_error
+        );
+    };
+}
