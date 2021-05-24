@@ -6,7 +6,6 @@ impl_message!(
     /// A message sent by the Server to the Client in response to a successful
     /// opening of a standard mining channel.
     OpenStandardMiningChannelSuccess,
-    MessageType::OpenStandardMiningChannelSuccess,
 
     /// The request_id received in the [OpenStandardMiningChannel](struct.OpenStandardMiningChannel.html) message.
     /// This is returned to the Client so that they can pair the responses with the

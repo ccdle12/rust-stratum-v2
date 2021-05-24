@@ -31,7 +31,6 @@ macro_rules! impl_setup_connection_success {
             /// );
             /// ```
             SetupConnectionSuccess,
-            MessageType::SetupConnectionSuccess,
 
             /// Version proposed by the connecting node as one of the verions supported
             /// by the upstream node. The version will be used during the lifetime of

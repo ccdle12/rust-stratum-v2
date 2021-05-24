@@ -41,7 +41,6 @@ macro_rules! impl_setup_connection_error {
             ///     SetupConnectionErrorCode::UnsupportedFeatureFlags
             /// );
             SetupConnectionError,
-            MessageType::SetupConnectionError,
 
             /// Indicates all the flags that the server does NOT support.
             flags $flags_type,

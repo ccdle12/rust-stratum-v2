@@ -8,7 +8,6 @@ impl_message!(
     /// has additional capabilities such as difficulty aggregatation and custom
     /// search space splitting.
     OpenExtendedMiningChannel,
-    MessageType::OpenExtendedMiningChannel,
 
     /// A Client-specified unique identifier across all client connections.
     /// The request_id is not interpreted by the Server.

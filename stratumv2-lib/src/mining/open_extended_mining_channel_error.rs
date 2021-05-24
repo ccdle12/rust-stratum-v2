@@ -3,10 +3,7 @@ use crate::impl_open_mining_channel_error;
 use crate::mining::OpenMiningChannelErrorCode;
 use crate::types::MessageType;
 
-impl_open_mining_channel_error!(
-    OpenExtendedMiningChannelError,
-    MessageType::OpenExtendedMiningChannelError
-);
+impl_open_mining_channel_error!(OpenExtendedMiningChannelError);
 
 #[cfg(test)]
 mod test {
