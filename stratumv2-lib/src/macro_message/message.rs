@@ -117,7 +117,7 @@ macro_rules! impl_message_tests {
 
             let mut extension_type = $struct_name::message_type().ext_type();
             if $struct_name::message_type().channel_bit() {
-                extension_type |= 0x8000;
+                extension_type |= crate::frame::CHANNEL_BIT_MASK;
             }
             let message_type = $struct_name::message_type().msg_type();
             let message_length = serialized_message.len();
