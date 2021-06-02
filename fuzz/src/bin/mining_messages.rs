@@ -24,4 +24,8 @@ fn main() {
     fuzz!(|data: &[u8]| {
         deserialize::<mining::OpenExtendedMiningChannelSuccess>(&data);
     });
+
+    fuzz!(|data: &[u8]| {
+        deserialize::<mining::UpdateChannel>(&data);
+    });
 }
