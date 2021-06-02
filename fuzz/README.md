@@ -20,7 +20,7 @@ cargo install --force honggfuzz
 ```
 export CPU_COUNT=1 # replace as needed
 export HFUZZ_BUILD_ARGS="--features honggfuzz_fuzz"
-export HFUZZ_RUN_ARGS="-n $CPU_COUNT -N 50000 --exit_upon_crash"
+export HFUZZ_RUN_ARGS="-n $CPU_COUNT -N 100000 --exit_upon_crash"
 export HFUZZ_DEBUGGER=rust-gdb
 ```
 
