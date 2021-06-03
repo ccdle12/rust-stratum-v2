@@ -8,13 +8,35 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  HFUZZ_BUILD_ARGS: "--features honggfuzz_fuzz"
+  HFUZZ_RUN_ARGS: "-n 1 -N 10000 --exit_upon_crash"
+  HFUZZ_DEBUGGER: rust-gdb
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - name: Check out source code
+      uses: actions/checkout@v2
     - name: Build
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo apt install build-essential binutils-dev libunwind-dev -y
+      - name: Install Honggfuzz
+        run: cargo install --force honggfuzz
+      - name: Fuzz test SetupConnection
+        run: cd fuzz && cargo hfuzz run setup_connection
+      - name: Fuzz test Mining Protocol Messages
+        run: cd fuzz && cargo hfuzz run mining_messages
+      - name: Fuzz test Network Frame
+        run: cd fuzz && cargo hfuzz run network_frame
+      - name: Fuzz test Noise
+        run: cd fuzz && cargo hfuzz run noise
