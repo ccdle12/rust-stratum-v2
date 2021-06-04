@@ -34,6 +34,21 @@ pub trait Deserializable {
         Self: std::marker::Sized;
 }
 
+// TODO: The specs states that any bits OUTSIDE of the LSB MUST NOT be interpreted
+// for the meaning of the bool.
+//
+// It DOES suggest that the outside bits maybe reused to be interpreted with
+// additional meaning in the future. So if we want to be able to allow for this,
+// ser/der and initialization of the BOOL type may need to be redesigned.
+impl Deserializable for bool {
+    fn deserialize(parser: &mut ByteParser) -> Result<bool> {
+        let mut buffer: [u8; 1] = [0; 1];
+        buffer.clone_from_slice(parser.next_by(1)?);
+
+        Ok(buffer[0] & 1 == 1)
+    }
+}
+
 impl Deserializable for u8 {
     fn deserialize(parser: &mut ByteParser) -> Result<u8> {
         let mut buffer: [u8; 1] = [0; 1];
@@ -81,6 +96,14 @@ pub fn deserialize<T: Deserializable>(bytes: &[u8]) -> Result<T> {
 /// Stratum V2 protocol.
 pub trait Serializable {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize>;
+}
+
+impl Serializable for bool {
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        let buffer = if *self { vec![1u8] } else { vec![0u8] };
+        writer.write(&buffer)?;
+        Ok(buffer.len())
+    }
 }
 
 impl Serializable for u8 {
@@ -170,6 +193,21 @@ mod tests {
             deserialize::<f32>(&[0b11011011, 0b00001111, 0b01001001u8, 0b01000000u8]).unwrap(),
             3.14159274101257324f32
         );
+    }
+
+    #[test]
+    fn bool_serde() {
+        assert_eq!(serialize(&true).unwrap(), vec![1u8]);
+        assert_eq!(serialize(&false).unwrap(), vec![0u8]);
+        assert_eq!(deserialize::<bool>(&vec![1u8]).unwrap(), true);
+        assert_eq!(deserialize::<bool>(&vec![0u8]).unwrap(), false);
+
+        // Deserialize other values that should ONLY interpret the set or
+        // unset LSB.
+        assert_eq!(deserialize::<bool>(&vec![2u8]).unwrap(), false);
+        assert_eq!(deserialize::<bool>(&vec![3u8]).unwrap(), true);
+        assert_eq!(deserialize::<bool>(&vec![4u8]).unwrap(), false);
+        assert_eq!(deserialize::<bool>(&vec![u8::MAX]).unwrap(), true);
     }
 
     #[test]
