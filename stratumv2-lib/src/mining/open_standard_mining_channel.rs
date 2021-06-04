@@ -50,57 +50,26 @@ impl OpenStandardMiningChannel {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::frame::{frame, unframe, Message};
-    use crate::parse::{deserialize, serialize};
+    use crate::impl_message_tests;
 
-    fn default_message() -> Result<OpenStandardMiningChannel> {
-        let message = OpenStandardMiningChannel::new(
-            1,
-            "braiinstest.worker1".to_string(),
-            12.3,
-            U256([0u8; 32]),
-        );
-        assert!(message.is_ok());
-
-        message
+    fn make_deserialized_open_standard_mining_channel() -> OpenStandardMiningChannel {
+        OpenStandardMiningChannel::new(1u32, "user id", 3.0f32, U256([4u8; 32])).unwrap()
     }
 
-    #[test]
-    fn serialize_open_standard_mining_channel() {
-        let expected = [
-            0x01, 0x00, 0x00, 0x00, // request_id
-            0x13, // length_user_identity
-            0x62, 0x72, 0x61, 0x69, 0x69, 0x6e, 0x73, 0x74, 0x65, 0x73, 0x74, 0x2e, 0x77, 0x6f,
-            0x72, 0x6b, 0x65, 0x72, 0x31, // user_identity
-            0xcd, 0xcc, 0x44, 0x41, // nominal_hash_rate
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, // max_target
+    fn make_serialized_open_standard_mining_channel() -> Vec<u8> {
+        return vec![
+            0x01, 0x00, 0x00, 0x00, // request_id,
+            0x07, 0x75, 0x73, 0x65, 0x72, 0x20, 0x69, 0x64, // user_identity
+            0x00, 0x00, 0x40, 0x40, // nominal_hash_rate
+            0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
+            0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04, 0x04,
+            0x04, 0x04, 0x04, 0x04, // max_target
         ];
-
-        let serialized = serialize(&default_message().unwrap());
-        assert_eq!(serialized.unwrap(), expected);
-        assert!(deserialize::<OpenStandardMiningChannel>(&expected).is_ok());
     }
 
-    #[test]
-    fn frame_open_standard_mining() {
-        let network_message = frame(&default_message().unwrap()).unwrap();
-        assert_eq!(
-            network_message.message_type,
-            MessageType::OpenStandardMiningChannel
-        );
-
-        let result = serialize(&network_message).unwrap();
-
-        // Check the extension type is empty.
-        assert_eq!(result[0..=1], [0u8; 2]);
-
-        // Check that the correct byte for the message type was used.
-        assert_eq!(result[2], network_message.message_type.msg_type());
-
-        // Check the network message can be unframed.
-        let deserialized = deserialize::<Message>(&result).unwrap();
-        assert!(unframe::<OpenStandardMiningChannel>(&deserialized).is_ok());
-    }
+    impl_message_tests!(
+        OpenStandardMiningChannel,
+        make_serialized_open_standard_mining_channel,
+        make_deserialized_open_standard_mining_channel
+    );
 }

@@ -28,37 +28,19 @@ impl ChannelEndpointChanged {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::frame::{frame, unframe, Message};
-    use crate::parse::{deserialize, serialize};
+    use crate::impl_message_tests;
 
-    #[test]
-    fn init_channel_endpoint_changed() {
-        let channel_endpoint_changed = ChannelEndpointChanged::new(0).unwrap();
-
-        let serialized = serialize(&channel_endpoint_changed).unwrap();
-        assert!(deserialize::<ChannelEndpointChanged>(&serialized).is_ok());
+    fn make_deserialized_channel_endpoint_changed() -> ChannelEndpointChanged {
+        ChannelEndpointChanged::new(5u32).unwrap()
     }
 
-    #[test]
-    fn frame_open_extended_mining() {
-        let network_message = frame(&ChannelEndpointChanged::new(0).unwrap()).unwrap();
-        assert_eq!(
-            network_message.message_type,
-            MessageType::ChannelEndpointChanged
-        );
-
-        let result = serialize(&network_message).unwrap();
-
-        // Check the extension type is NOT empty and the MSB is set.
-        // NOTE: the MSB is serialized according to U16 so in serialized form
-        // it will appear as the second byte.
-        assert_eq!(result[0..=1], [0, 128]);
-
-        // Check that the correct byte for the message type was used.
-        assert_eq!(result[2], network_message.message_type.msg_type());
-
-        // Check the network message can be unframed.
-        let deserialized = deserialize::<Message>(&result).unwrap();
-        assert!(unframe::<ChannelEndpointChanged>(&deserialized).is_ok());
+    fn make_serialized_channel_endpoint_changed() -> Vec<u8> {
+        return vec![0x05, 0x00, 0x00, 0x00];
     }
+
+    impl_message_tests!(
+        ChannelEndpointChanged,
+        make_serialized_channel_endpoint_changed,
+        make_deserialized_channel_endpoint_changed
+    );
 }

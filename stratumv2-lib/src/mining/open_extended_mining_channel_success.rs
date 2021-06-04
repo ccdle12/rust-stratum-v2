@@ -48,33 +48,28 @@ impl OpenExtendedMiningChannelSuccess {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::frame::{frame, unframe, Message};
-    use crate::parse::{deserialize, serialize};
-    use crate::types::new_channel_id;
+    use crate::impl_message_tests;
 
-    #[test]
-    fn frame_open_extended_mining_success() {
-        let extranonce_prefix = [0x00, 0x00];
-        let message = OpenExtendedMiningChannelSuccess::new(
-            1,
-            new_channel_id(),
-            U256([0u8; 32]),
-            2,
-            extranonce_prefix,
-        )
-        .unwrap();
-
-        let network_message = frame(&message).unwrap();
-        let result = serialize(&network_message).unwrap();
-
-        // Check the extension type is empty.
-        assert_eq!(result[0..=1], [0u8; 2]);
-
-        // Check that the correct byte for the message type was used.
-        assert_eq!(result[2], network_message.message_type.msg_type());
-
-        // Check the network message can be unframed.
-        let deserialized = deserialize::<Message>(&result).unwrap();
-        assert!(unframe::<OpenExtendedMiningChannelSuccess>(&deserialized).is_ok());
+    fn make_deserialized_open_extended_mining_channel_success() -> OpenExtendedMiningChannelSuccess
+    {
+        OpenExtendedMiningChannelSuccess::new(1u32, 2u32, U256([3u8; 32]), 4u16, [5u8; 4]).unwrap()
     }
+
+    fn make_serialized_open_extended_mining_channel_success() -> Vec<u8> {
+        return vec![
+            0x01, 0x00, 0x00, 0x00, // request_id,
+            0x02, 0x00, 0x00, 0x00, // channel_id,
+            0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
+            0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
+            0x03, 0x03, 0x03, 0x03, // target
+            0x04, 0x00, // extranonce_size
+            0x04, 0x05, 0x05, 0x05, 0x05, // extranonce_prefix
+        ];
+    }
+
+    impl_message_tests!(
+        OpenExtendedMiningChannelSuccess,
+        make_serialized_open_extended_mining_channel_success,
+        make_deserialized_open_extended_mining_channel_success
+    );
 }

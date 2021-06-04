@@ -5,7 +5,7 @@ use std::io;
 
 /// The CHANNEL_BIT_MASK is used to mask out the MSB to identify if a message
 /// type has a channel id in a message frame.
-const CHANNEL_BIT_MASK: u16 = 0x8000;
+pub(crate) const CHANNEL_BIT_MASK: u16 = 0x8000;
 
 /// The EXTENSION_TYPE_MASK disables the MSB so the u16 representation of the
 /// extension type in a message frame has the same value as the u15 representation.
@@ -13,6 +13,7 @@ const EXTENSION_TYPE_MASK: u16 = 0x7FFF;
 
 /// Used to deserialize a received network frame. The payload would be further
 /// deserialized according to the received MessageTypes.
+#[derive(Debug, Clone, PartialEq)]
 pub struct Message {
     pub message_type: MessageType,
     pub payload: Vec<u8>,
@@ -95,4 +96,67 @@ pub fn unframe<T: Frameable>(message: &Message) -> Result<T> {
     let mut parser = ByteParser::new(message.payload.as_slice(), 0);
 
     T::deserialize(&mut parser)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::impl_message;
+    use crate::parse::{deserialize, serialize};
+
+    impl_message!(TestMessage1, x u8);
+
+    impl TestMessage1 {
+        fn new(x: u8) -> Result<TestMessage1> {
+            Ok(TestMessage1 { x })
+        }
+    }
+
+    impl_message!(TestMessage2, x u8);
+
+    impl TestMessage2 {
+        fn new(x: u8) -> Result<TestMessage2> {
+            Ok(TestMessage2 { x })
+        }
+    }
+
+    #[test]
+    fn frame_test_message() {
+        let unframed = TestMessage1::new(5u8).unwrap();
+        let framed = Message::new(MessageType::TestMessage1, vec![0x05]);
+        assert_eq!(frame(&unframed).unwrap(), framed);
+        assert_eq!(unframe::<TestMessage1>(&framed).unwrap(), unframed);
+    }
+
+    #[test]
+    fn test_message_1_frame_serde() {
+        let deserialized = Message::new(MessageType::TestMessage1, vec![0x05]);
+        let serialized = vec![
+            0x00, 0x00, // extension type & channel bit (MSB=0)
+            0xfe, // message type
+            0x01, 0x00, 0x00, // message length
+            0x05, // message payload
+        ];
+        assert_eq!(serialize(&deserialized).unwrap(), serialized);
+        assert_eq!(
+            deserialize::<Message>(serialized.as_slice()).unwrap(),
+            deserialized
+        );
+    }
+
+    #[test]
+    fn test_message_2_frame_serde() {
+        let deserialized = Message::new(MessageType::TestMessage2, vec![0x05]);
+        let serialized = vec![
+            0x00, 0x80, // extension type & channel bit (MSB=1)
+            0xff, // message type
+            0x01, 0x00, 0x00, // message length
+            0x05, // message payload
+        ];
+        assert_eq!(serialize(&deserialized).unwrap(), serialized);
+        assert_eq!(
+            deserialize::<Message>(serialized.as_slice()).unwrap(),
+            deserialized
+        );
+    }
 }

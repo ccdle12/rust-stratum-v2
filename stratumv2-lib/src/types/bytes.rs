@@ -223,6 +223,8 @@ mod b0_31_tests {
 
     #[test]
     fn deserialize_over_max_length() {
+        // The type used to encode the length of this payload has the necessary domain to describe
+        // payloads much longer than the supposed maximum.
         let data = make_encoded_bytes(&[0; 32]);
         assert!(matches!(
             deserialize::<B0_31>(data.as_slice()),
@@ -240,6 +242,8 @@ mod b0_32_tests {
 
     #[test]
     fn deserialize_over_max_length() {
+        // The type used to encode the length of this payload has the necessary domain to describe
+        // payloads much longer than the supposed maximum.
         let data = make_encoded_bytes(&[0; 33]);
         assert!(matches!(
             deserialize::<B0_32>(data.as_slice()),

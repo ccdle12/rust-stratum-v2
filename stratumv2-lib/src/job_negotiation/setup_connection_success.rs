@@ -1,5 +1,4 @@
-use crate::impl_bitflags_serde;
-use crate::impl_setup_connection_success;
+use crate::{impl_bitflags_serde, impl_setup_connection_success};
 
 bitflags!(
     /// Feature flags for the SetupConnectionSuccess message from the Server to
@@ -15,5 +14,8 @@ impl_setup_connection_success!(SetupConnectionSuccessFlags);
 
 #[cfg(test)]
 mod tests {
-    // Nothing to test until SetupConnectionSuccessFlags gets some members.
+    use super::*;
+    use crate::impl_setup_connection_success_tests;
+
+    impl_setup_connection_success_tests!(SetupConnectionSuccessFlags);
 }

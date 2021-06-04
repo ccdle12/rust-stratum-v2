@@ -149,3 +149,131 @@ macro_rules! impl_setup_connection {
         }
     };
 }
+
+#[cfg(test)]
+pub mod test_macro_prelude {
+    pub use crate::impl_message_tests;
+}
+
+#[cfg(test)]
+#[doc(hidden)]
+#[macro_export]
+macro_rules! impl_setup_connection_tests {
+    ($flags_type:ident) => {
+        use crate::macro_message::setup_connection::test_macro_prelude::*;
+
+        fn make_deserialized_setup_connection() -> SetupConnection {
+            SetupConnection::new(
+                2,
+                2,
+                $flags_type::all(),
+                "0.0.0.0",
+                8545,
+                "Bitmain",
+                "S9i 13.5",
+                "braiins-os-2018-09-22-1-hash",
+                "some-device-uuid",
+            )
+            .unwrap()
+        }
+
+        fn make_serialized_setup_connection() -> Vec<u8> {
+            let mut serialized = vec![
+                0x02, 0x00, // min_version
+                0x02, 0x00, // max_version
+            ];
+            serialized.extend($flags_type::all().bits().to_le_bytes().iter()); // flags
+            serialized.extend(vec![
+                0x07, 0x30, 0x2e, 0x30, 0x2e, 0x30, 0x2e, 0x30, // endpoint_address
+                0x61, 0x21, // endpoint_port
+                0x07, 0x42, 0x69, 0x74, 0x6d, 0x61, 0x69, 0x6e, // vendor
+                0x08, 0x53, 0x39, 0x69, 0x20, 0x31, 0x33, 0x2e, 0x35, // hardware_version
+                0x1c, 0x62, 0x72, 0x61, 0x69, 0x69, 0x6e, 0x73, 0x2d, 0x6f, 0x73, 0x2d, 0x32, 0x30,
+                0x31, 0x38, 0x2d, 0x30, 0x39, 0x2d, 0x32, 0x32, 0x2d, 0x31, 0x2d, 0x68, 0x61, 0x73,
+                0x68, //firmware
+                0x10, 0x73, 0x6f, 0x6d, 0x65, 0x2d, 0x64, 0x65, 0x76, 0x69, 0x63, 0x65, 0x2d, 0x75,
+                0x75, 0x69, 0x64, // device_id
+            ]);
+
+            serialized
+        }
+
+        impl_message_tests!(
+            SetupConnection,
+            make_serialized_setup_connection,
+            make_deserialized_setup_connection
+        );
+
+        #[test]
+        fn empty_vendor() {
+            assert!(matches!(
+                SetupConnection::new(
+                    2,
+                    2,
+                    $flags_type::all(),
+                    "0.0.0.0",
+                    8545,
+                    "",
+                    "S9i 13.5",
+                    "braiins-os-2018-09-22-1-hash",
+                    "some-device-uuid",
+                ),
+                Err(Error::RequirementError { .. })
+            ));
+        }
+
+        #[test]
+        fn empty_firmware() {
+            assert!(matches!(
+                SetupConnection::new(
+                    2,
+                    2,
+                    $flags_type::all(),
+                    "0.0.0.0",
+                    8545,
+                    "Bitmain",
+                    "S9i 13.5",
+                    "",
+                    "some-device-uuid",
+                ),
+                Err(Error::RequirementError { .. })
+            ));
+        }
+
+        #[test]
+        fn bad_min_version() {
+            assert!(matches!(
+                SetupConnection::new(
+                    1,
+                    2,
+                    $flags_type::all(),
+                    "0.0.0.0",
+                    8545,
+                    "Bitmain",
+                    "S9i 13.5",
+                    "braiins-os-2018-09-22-1-hash",
+                    "some-device-uuid",
+                ),
+                Err(Error::VersionError { .. })
+            ));
+        }
+
+        #[test]
+        fn bad_max_version() {
+            assert!(matches!(
+                SetupConnection::new(
+                    2,
+                    1,
+                    $flags_type::all(),
+                    "0.0.0.0",
+                    8545,
+                    "Bitmain",
+                    "S9i 13.5",
+                    "braiins-os-2018-09-22-1-hash",
+                    "some-device-uuid",
+                ),
+                Err(Error::VersionError { .. })
+            ));
+        }
+    };
+}

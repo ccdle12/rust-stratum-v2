@@ -35,6 +35,9 @@ pub enum MessageType {
     SetGroupChannel,
     // TODO(chpatton013): Job negotiation protocol messages
     // TODO(chpatton013): Template distribution protocol messages
+    // Testing messages
+    TestMessage1,
+    TestMessage2,
 }
 
 macro_rules! impl_enum_message_types {
@@ -96,5 +99,7 @@ impl_enum_message_types!(
     MessageType::SetCustomMiningJobSuccess => (0x0000, 0x23, false),
     MessageType::SetCustomMiningJobError => (0x0000, 0x24, false),
     MessageType::Reconnect => (0x0000, 0x25, false),
-    MessageType::SetGroupChannel => (0x0000, 0x26, false)
+    MessageType::SetGroupChannel => (0x0000, 0x26, false),
+    MessageType::TestMessage1 => (0x0000, 0xfe, false),
+    MessageType::TestMessage2 => (0x0000, 0xff, true)
 );
