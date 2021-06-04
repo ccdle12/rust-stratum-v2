@@ -5,7 +5,7 @@ use std::io;
 
 /// The CHANNEL_BIT_MASK is used to mask out the MSB to identify if a message
 /// type has a channel id in a message frame.
-const CHANNEL_BIT_MASK: u16 = 0x8000;
+pub(crate) const CHANNEL_BIT_MASK: u16 = 0x8000;
 
 /// The EXTENSION_TYPE_MASK disables the MSB so the u16 representation of the
 /// extension type in a message frame has the same value as the u15 representation.
