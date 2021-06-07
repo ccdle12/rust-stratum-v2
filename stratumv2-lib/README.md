@@ -47,7 +47,7 @@ found in `src/noise`, since the `noise protocol` is a precursor to subsequent St
 
 Creating a Stratum V2 `Message`:
 
-```
+```rust
 use crate::impl_message;
 
 impl_message!(
@@ -89,7 +89,7 @@ This macro will generate the standard tests for a Stratum V2 `Message`.
 
 Testing a Stratum V2 `Message`:
 
-```
+```rust
 use crate::impl_message;
 
 impl_message!(
