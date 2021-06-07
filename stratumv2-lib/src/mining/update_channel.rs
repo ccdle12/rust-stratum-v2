@@ -14,7 +14,7 @@ impl_message!(
     /// connected yet.
     nominal_hash_rate f32,
 
-    /// The Max Target that can be acceptd by the connected device or
+    /// The Max Target that can be accepted by the connected device or
     /// multiple devices downstream. In this case, if the max_target of
     /// the channel is smaller than the current max target, the Server MUST
     /// respond with a SetTarget message.
