@@ -22,11 +22,15 @@ impl_message!(
 );
 
 impl UpdateChannel {
-    pub fn new(channel_id: u32, nominal_hash_rate: f32, max_target: U256) -> Result<UpdateChannel> {
+    pub fn new<U: Into<U256>>(
+        channel_id: u32,
+        nominal_hash_rate: f32,
+        max_target: U,
+    ) -> Result<UpdateChannel> {
         Ok(UpdateChannel {
             channel_id,
             nominal_hash_rate,
-            max_target,
+            max_target: max_target.into(),
         })
     }
 }
@@ -37,7 +41,7 @@ mod test {
     use crate::impl_message_tests;
 
     fn make_deserialized_update_channel() -> UpdateChannel {
-        UpdateChannel::new(1, 12.3, U256([0; 32])).unwrap()
+        UpdateChannel::new(1, 12.3, [0; 32]).unwrap()
     }
 
     fn make_serialized_update_channel() -> Vec<u8> {
