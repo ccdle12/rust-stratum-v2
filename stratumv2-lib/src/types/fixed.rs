@@ -121,6 +121,12 @@ impl From<U256> for [u8; 32] {
     }
 }
 
+impl From<[u8; 32]> for U256 {
+    fn from(a: [u8; 32]) -> Self {
+        U256(a)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

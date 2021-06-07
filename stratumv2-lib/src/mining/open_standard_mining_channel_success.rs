@@ -27,17 +27,17 @@ impl_message!(
 );
 
 impl OpenStandardMiningChannelSuccess {
-    pub fn new<T: Into<Vec<u8>>>(
+    pub fn new<T: Into<Vec<u8>>, U: Into<U256>>(
         request_id: u32,
         channel_id: u32,
-        target: U256,
+        target: U,
         extranonce_prefix: T,
         group_channel_id: u32,
     ) -> Result<OpenStandardMiningChannelSuccess> {
         Ok(OpenStandardMiningChannelSuccess {
             request_id,
             channel_id,
-            target,
+            target: target.into(),
             extranonce_prefix: B0_32::new(extranonce_prefix)?,
             group_channel_id,
         })
@@ -51,7 +51,7 @@ mod test {
 
     fn make_deserialized_open_standard_mining_channel_success() -> OpenStandardMiningChannelSuccess
     {
-        OpenStandardMiningChannelSuccess::new(1u32, 2u32, U256([3u8; 32]), [4u8; 4], 5u32).unwrap()
+        OpenStandardMiningChannelSuccess::new(1u32, 2u32, [3u8; 32], [4u8; 4], 5u32).unwrap()
     }
 
     fn make_serialized_open_standard_mining_channel_success() -> Vec<u8> {

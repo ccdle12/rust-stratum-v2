@@ -28,17 +28,17 @@ impl_message!(
 );
 
 impl OpenExtendedMiningChannelSuccess {
-    pub fn new<T: Into<Vec<u8>>>(
+    pub fn new<T: Into<Vec<u8>>, U: Into<U256>>(
         request_id: u32,
         channel_id: u32,
-        target: U256,
+        target: U,
         extranonce_size: u16,
         extranonce_prefix: T,
     ) -> Result<OpenExtendedMiningChannelSuccess> {
         Ok(OpenExtendedMiningChannelSuccess {
             request_id,
             channel_id,
-            target,
+            target: target.into(),
             extranonce_size,
             extranonce_prefix: B0_32::new(extranonce_prefix)?,
         })
@@ -52,7 +52,7 @@ mod test {
 
     fn make_deserialized_open_extended_mining_channel_success() -> OpenExtendedMiningChannelSuccess
     {
-        OpenExtendedMiningChannelSuccess::new(1u32, 2u32, U256([3u8; 32]), 4u16, [5u8; 4]).unwrap()
+        OpenExtendedMiningChannelSuccess::new(1u32, 2u32, [3u8; 32], 4u16, [5u8; 4]).unwrap()
     }
 
     fn make_serialized_open_extended_mining_channel_success() -> Vec<u8> {
