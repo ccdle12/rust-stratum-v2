@@ -37,6 +37,8 @@ from and to a Stratum V2 `Message`.
 - `src/parse` - Contains the Traits and functions to de/serialize all types and
 also contains the de/serialize implementation for all the native types.
 
+## Development
+
 All messages should be constructed using the macro [impl_message](./src/macro_message/message.rs).
 The only exceptions are for `Messages` that don't have a [MessageType](./src/types/message_type.rs) such as the messages
 found in `src/noise`, since the `noise protocol` is a precursor to subsequent Stratum V2 communication.
