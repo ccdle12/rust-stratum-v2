@@ -24,6 +24,7 @@ mod open_standard_mining_channel_success;
 mod setup_connection;
 mod setup_connection_error;
 mod setup_connection_success;
+mod update_channel;
 
 pub use open_extended_mining_channel::OpenExtendedMiningChannel;
 pub use open_extended_mining_channel_error::OpenExtendedMiningChannelError;
@@ -35,3 +36,4 @@ pub use open_standard_mining_channel_success::OpenStandardMiningChannelSuccess;
 pub use setup_connection::{SetupConnection, SetupConnectionFlags};
 pub use setup_connection_error::SetupConnectionError;
 pub use setup_connection_success::{SetupConnectionSuccess, SetupConnectionSuccessFlags};
+pub use update_channel::UpdateChannel;
