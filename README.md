@@ -1,3 +1,5 @@
+![workflow](https://github.com/ccdle12/rust-stratum-v2/actions/workflows/rust.yml/badge.svg)
+
 # Rust Stratum V2
 
 A WIP library implementation of the [Stratum V2 Protocol](https://braiins.com/stratum-v2).
