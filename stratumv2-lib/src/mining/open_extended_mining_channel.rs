@@ -35,18 +35,18 @@ impl_message!(
 );
 
 impl OpenExtendedMiningChannel {
-    pub fn new<T: Into<String>>(
+    pub fn new<T: Into<String>, U: Into<U256>>(
         request_id: u32,
         user_identity: T,
         nominal_hash_rate: f32,
-        max_target: U256,
+        max_target: U,
         min_extranonce_size: u16,
     ) -> Result<OpenExtendedMiningChannel> {
         Ok(OpenExtendedMiningChannel {
             request_id,
             user_identity: STR0_255::new(user_identity)?,
             nominal_hash_rate,
-            max_target,
+            max_target: max_target.into(),
             min_extranonce_size,
         })
     }
@@ -58,7 +58,7 @@ mod test {
     use crate::impl_message_tests;
 
     fn make_deserialized_open_extended_mining_channel() -> OpenExtendedMiningChannel {
-        OpenExtendedMiningChannel::new(1u32, "user id", 3.0f32, U256([4u8; 32]), 5u16).unwrap()
+        OpenExtendedMiningChannel::new(1u32, "user id", 3.0f32, [4u8; 32], 5u16).unwrap()
     }
 
     fn make_serialized_open_extended_mining_channel() -> Vec<u8> {
