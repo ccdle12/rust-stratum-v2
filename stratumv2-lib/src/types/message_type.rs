@@ -2,7 +2,7 @@ use crate::error::{Error, Result};
 
 /// MessageType contains all the variations for the byte representation of
 /// messages used in message frames.
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Eq, Hash)]
 pub enum MessageType {
     // Common messages
     SetupConnection,
