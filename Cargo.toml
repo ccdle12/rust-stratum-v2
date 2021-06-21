@@ -3,6 +3,7 @@
 members = [
     "stratumv2",
     "pool-server",
+    "stratumv2-net-tokio",
 
     # Internal
     "examples",
