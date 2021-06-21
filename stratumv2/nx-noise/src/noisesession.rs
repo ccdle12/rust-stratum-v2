@@ -183,6 +183,7 @@ impl NoiseSession {
         }
 
         if self.mc == 0 {
+            // TMP: This is where the error is raised
             self.hs.read_message_a(in_out)?;
         } else if self.mc == 1 {
             let temp = self.hs.read_message_b(in_out)?;
