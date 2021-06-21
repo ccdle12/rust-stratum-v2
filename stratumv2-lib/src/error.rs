@@ -56,6 +56,9 @@ pub enum Error {
 
     #[error("parsed channel bit `{0}` does not match expected message")]
     UnexpectedChannelBit(bool),
+
+    #[error(transparent)]
+    NoiseError(#[from] noiseexplorer_nx::error::NoiseError),
 }
 
 /// Alias Result type for the library.
