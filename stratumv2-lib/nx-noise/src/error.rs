@@ -13,7 +13,7 @@ pub enum NoiseError {
     MissingneError,
     MissingHsMacError,
     MissingrsError,
-    MissingreError
+    MissingreError,
 }
 
 impl std::fmt::Display for NoiseError {
@@ -22,8 +22,13 @@ impl std::fmt::Display for NoiseError {
         match *self {
             NoiseError::DecryptionError => write!(f, "Unsuccesful decryption."),
             NoiseError::UnsupportedMessageLengthError => write!(f, "Unsupported Message Length."),
-            NoiseError::ExhaustedNonceError => write!(f, "Reached maximum number of messages that can be sent for this session."),
-            NoiseError::DerivePublicKeyFromEmptyKeyError => write!(f, "Unable to derive PublicKey."),
+            NoiseError::ExhaustedNonceError => write!(
+                f,
+                "Reached maximum number of messages that can be sent for this session."
+            ),
+            NoiseError::DerivePublicKeyFromEmptyKeyError => {
+                write!(f, "Unable to derive PublicKey.")
+            }
             NoiseError::InvalidKeyError => write!(f, "Invalid Key."),
             NoiseError::InvalidPublicKeyError => write!(f, "Invalid Public Key."),
             NoiseError::EmptyKeyError => write!(f, "Empty Key."),
@@ -35,5 +40,11 @@ impl std::fmt::Display for NoiseError {
             NoiseError::MissingreError => write!(f, "Invalid message length."),
             NoiseError::Hex(ref e) => e.fmt(f),
         }
+    }
+}
+
+impl Error for NoiseError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        Some(self)
     }
 }
