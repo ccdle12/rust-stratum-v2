@@ -1,5 +1,5 @@
 use honggfuzz::fuzz;
-use stratumv2_lib::{
+use stratumv2::{
     mining,
     parse::{deserialize, Deserializable},
 };

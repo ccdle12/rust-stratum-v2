@@ -1,0 +1,1 @@
+{"rustc":15909092052568712637,"features":"[\"alloc\", \"lazy_static\", \"std\"]","target":10429514197457385088,"profile":9935990280773120926,"path":11552968614904721060,"deps":[],"local":[{"CheckDepInfo":{"dep_info":"debug/.fingerprint/crossbeam-epoch-e58b68149fe4ff88/dep-build-script-build_script_build-e58b68149fe4ff88"}}],"rustflags":[],"metadata":9645960989302628330}

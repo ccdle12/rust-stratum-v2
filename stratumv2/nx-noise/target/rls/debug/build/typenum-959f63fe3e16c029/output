@@ -1,0 +1,2 @@
+cargo:rustc-env=TYPENUM_BUILD_CONSTS=/home/ccdle12/Desktop/projects/personal/rust-projects/rust-stratum-v2/stratumv2-lib/nx-noise/target/rls/debug/build/typenum-959f63fe3e16c029/out/consts.rs
+cargo:rustc-env=TYPENUM_BUILD_OP=/home/ccdle12/Desktop/projects/personal/rust-projects/rust-stratum-v2/stratumv2-lib/nx-noise/target/rls/debug/build/typenum-959f63fe3e16c029/out/op.rs

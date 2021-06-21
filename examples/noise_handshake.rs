@@ -1,7 +1,7 @@
 use rand::rngs::OsRng;
 use std::io;
 use std::time::SystemTime;
-use stratumv2_lib::{
+use stratumv2::{
     bitcoin::util::base58,
     noise::{
         new_noise_initiator, new_noise_responder, AuthorityKeyPair, AuthorityPublicKey,

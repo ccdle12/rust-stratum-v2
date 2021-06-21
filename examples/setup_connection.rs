@@ -1,5 +1,5 @@
 use std::io;
-use stratumv2_lib::{
+use stratumv2::{
     common::SetupConnection,
     frame::{frame, unframe, Frameable, Message},
     mining::{SetupConnectionFlags, SetupConnectionSuccess, SetupConnectionSuccessFlags},

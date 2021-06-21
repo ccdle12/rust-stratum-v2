@@ -1,0 +1,14 @@
+/home/ccdle12/Desktop/projects/personal/rust-projects/rust-stratum-v2/stratumv2-lib/nx-noise/target/rls/debug/deps/csv-80abd094e53fe890.rmeta: /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/lib.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/byte_record.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/cookbook.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/deserializer.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/error.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/reader.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/serializer.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/string_record.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/tutorial.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/writer.rs
+
+/home/ccdle12/Desktop/projects/personal/rust-projects/rust-stratum-v2/stratumv2-lib/nx-noise/target/rls/debug/deps/csv-80abd094e53fe890.d: /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/lib.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/byte_record.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/cookbook.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/deserializer.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/error.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/reader.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/serializer.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/string_record.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/tutorial.rs /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/writer.rs
+
+/home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/lib.rs:
+/home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/byte_record.rs:
+/home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/cookbook.rs:
+/home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/deserializer.rs:
+/home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/error.rs:
+/home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/reader.rs:
+/home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/serializer.rs:
+/home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/string_record.rs:
+/home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/tutorial.rs:
+/home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/csv-1.1.6/src/writer.rs:
