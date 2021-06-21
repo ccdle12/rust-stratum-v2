@@ -1,5 +1,0 @@
-/home/ccdle12/Desktop/projects/personal/rust-projects/rust-stratum-v2/stratumv2-lib/nx-noise/target/rls/debug/deps/oorandom-d66ce553016cf270.rmeta: /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/oorandom-11.1.3/src/lib.rs
-
-/home/ccdle12/Desktop/projects/personal/rust-projects/rust-stratum-v2/stratumv2-lib/nx-noise/target/rls/debug/deps/oorandom-d66ce553016cf270.d: /home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/oorandom-11.1.3/src/lib.rs
-
-/home/ccdle12/.cargo/registry/src/github.com-1ecc6299db9ec823/oorandom-11.1.3/src/lib.rs:
