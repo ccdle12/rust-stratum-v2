@@ -25,6 +25,9 @@ Stratum V2 `Messages` and test macros for `Messages`.
 - `src/mining` - This module contains functions and structs specific to
 ONLY the `mining` sub-protocol.
 
+- `src/network` - This module contains structs and traits to allow an upstream
+project to build a networked implementation.
+
 - `src/noise` - This module contains functions and structs to enable encrypted
 communication using the `Noise Framework` and to validate the certificates of the
 `Mining Pool Server`.
