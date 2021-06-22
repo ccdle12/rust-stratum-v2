@@ -1,13 +1,5 @@
 use crate::{common::SetupConnection, job_negotiation, mining};
 
-/// The main trait for any networked message handlers. The behaviour of the
-/// MessageHandlers `handle_message()` function should receives bytes,
-/// deframe the bytes and delegate the message handling to specific handlers
-/// according to the received message type.
-pub trait MessageHandler {
-    fn handle_message(bytes: &[u8]);
-}
-
 /// A trait that should be applied to upstream devices such as a Mining Pool Server
 /// that can handle [SetupConnection Messages](../common/setup_connection/enum.SetupConnection.html).
 pub trait NewConnReceiver {
