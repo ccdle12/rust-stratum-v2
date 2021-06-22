@@ -8,7 +8,7 @@ use crate::{
 /// to encrypt/decrypt messages.
 pub struct ChannelEncryptor {
     noise_session: NoiseSession,
-    handshake_buf: Vec<u8>,
+    pub handshake_buf: Vec<u8>,
 }
 
 impl ChannelEncryptor {
