@@ -39,3 +39,6 @@ pub mod types;
 /// This module contains functions to verify and generate signatures
 /// for both Client and Server to attest to the authenticty of an Upstream Node.
 pub mod noise;
+
+/// Structs and Traits required for a networked implementation
+pub mod network;
