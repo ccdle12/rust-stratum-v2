@@ -6,12 +6,12 @@ use crate::{
 /// ChannelEncryptor is a stateful struct used for all devices. It handles
 /// and contains the state for a noise handshake and provides an easy interface
 /// to encrypt/decrypt messages.
-pub struct ChannelEncryptor {
+pub struct ConnectionEncryptor {
     noise_session: NoiseSession,
     pub handshake_buf: Vec<u8>,
 }
 
-impl ChannelEncryptor {
+impl ConnectionEncryptor {
     /// Check if the current state of the encryptor is in post-handshake meaning
     /// the channel is encrypting messages.
     pub fn is_channel_encrypted(&self) -> bool {
@@ -31,7 +31,7 @@ impl ChannelEncryptor {
     /// Initialize a ChannelEncryptor as the receiver of an inbound noise handshake
     /// session. This would typically be upstream devices such as Mining Pool Server.
     pub fn new_inbound() -> Self {
-        ChannelEncryptor {
+        ConnectionEncryptor {
             noise_session: new_noise_responder(None),
             handshake_buf: Vec::new(),
         }
@@ -40,7 +40,7 @@ impl ChannelEncryptor {
     /// Initialize a ChannelEncryptor as the initiator of an outbound noise handshake.
     /// This would typically be downstream nodes such as Mining Devices or Mining Proxies.
     pub fn new_outbound() -> Self {
-        ChannelEncryptor {
+        ConnectionEncryptor {
             noise_session: new_noise_initiator(),
             handshake_buf: Vec::new(),
         }
