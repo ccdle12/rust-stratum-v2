@@ -3,6 +3,16 @@ use crate::{
     noise::{new_noise_initiator, new_noise_responder, NoiseSession},
 };
 
+/// The Encryptor trait can be used to apply a noise framework encryption implementation
+/// over a connection.
+pub trait Encryptor {
+    fn is_handshake_complete(&self) -> bool;
+    fn recv_handshake(&mut self, bytes: &mut [u8]) -> Result<Vec<u8>>;
+    fn init_handshake(&mut self) -> Result<Vec<u8>>;
+    fn encrypt_message(bytes: &[u8]) -> Vec<u8>;
+    fn decrypt_message(bytes: &[u8]) -> Vec<u8>;
+}
+
 /// ChannelEncryptor is a stateful struct used for all devices. It handles
 /// and contains the state for a noise handshake and provides an easy interface
 /// to encrypt/decrypt messages.
