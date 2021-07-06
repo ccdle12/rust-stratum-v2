@@ -12,7 +12,9 @@ pub(crate) const CHANNEL_BIT_MASK: u16 = 0x8000;
 const EXTENSION_TYPE_MASK: u16 = 0x7FFF;
 
 /// Used to deserialize a received network frame. The payload would be further
-/// deserialized according to the received MessageTypes.
+/// deserialized according to the received MessageTypes. Message can also be
+/// used to store messages on an outgoing buffer before being processed
+/// and sent over the wire.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Message {
     pub message_type: MessageType,
