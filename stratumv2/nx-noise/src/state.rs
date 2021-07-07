@@ -205,6 +205,13 @@ impl SymmetricState {
 
     pub(crate) fn encrypt_and_hash(&mut self, in_out: &mut [u8]) -> Result<(), NoiseError> {
         let mut temp_mac: [u8; MAC_LENGTH] = [0u8; MAC_LENGTH];
+
+        // This check was added to prevent an overflow bug found in fuzz testing.
+        // info: https://github.com/ccdle12/rust-stratum-v2/issues/190
+        if in_out.len() < MAC_LENGTH {
+            return Err(NoiseError::MissingneError);
+        }
+
         let (plaintext, mac) = in_out.split_at_mut(in_out.len() - MAC_LENGTH);
         self.cs
             .encrypt_with_ad(&self.h.as_bytes()[..], plaintext, &mut temp_mac)?;
@@ -333,6 +340,13 @@ impl HandshakeState {
         self.ss.mix_hash(ne);
         /* No PSK, so skipping mixKey */
         self.ss.mix_key(&self.e.dh(&self.re.as_bytes()));
+
+        // This check was added to prevent an overflow bug found in fuzz testing.
+        // info: https://github.com/ccdle12/rust-stratum-v2/issues/190
+        if in_out.len() < DHLEN + MAC_LENGTH {
+            return Err(NoiseError::MissingneError);
+        }
+
         let (ns, in_out) = in_out.split_at_mut(DHLEN + MAC_LENGTH);
         ns[..DHLEN].copy_from_slice(&self.s.get_public_key().as_bytes()[..]);
         self.ss.encrypt_and_hash(ns)?;
