@@ -8,8 +8,7 @@ bitflags!(
     }
 );
 
-impl_bitflags_serde!(SetupConnectionSuccessFlags, u32);
-
+impl_bitflags_serde!(SetupConnectionSuccessFlags);
 impl_setup_connection_success!(SetupConnectionSuccessFlags);
 
 #[cfg(test)]
