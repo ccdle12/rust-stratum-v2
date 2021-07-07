@@ -40,3 +40,5 @@ jobs:
         run: cd fuzz && cargo hfuzz run network_frame
       - name: Fuzz test Noise
         run: cd fuzz && cargo hfuzz run noise
+      - name: Fuzz test ConnectionEncryptor
+        run: cd fuzz && cargo hfuzz run connection_encryptor
