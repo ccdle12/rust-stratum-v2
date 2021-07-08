@@ -105,6 +105,8 @@ mod test {
 
     #[test]
     fn noise_nx() {
+        // This test contains a simulated lifecycle of the noise handshake
+        // including validating the SignatureNoiseMessage.
         let server_static_keypair = StaticKeyPair::default();
 
         let mut server = new_noise_responder(Some(server_static_keypair.clone()));
@@ -112,11 +114,11 @@ mod test {
 
         let mut read_buf = [0u8; 1024];
 
-        // -> e
+        // -> e - First half of the handshake
         client.send_message(&mut read_buf).unwrap();
         server.recv_message(&mut read_buf).unwrap();
 
-        // <- e...
+        // <- e... - Second half of the handshake
         server.send_message(&mut read_buf).unwrap();
         client.recv_message(&mut read_buf).unwrap();
 
