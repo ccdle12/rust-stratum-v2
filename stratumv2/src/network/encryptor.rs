@@ -1,6 +1,6 @@
 use crate::{
     error::Result,
-    noise::{new_noise_initiator, new_noise_responder, NoiseSession},
+    noise::{new_noise_initiator, new_noise_responder, NoiseSession, StaticKeyPair},
 };
 
 /// The Encryptor trait can be used to apply a noise framework encryption implementation
@@ -20,13 +20,11 @@ pub struct ConnectionEncryptor {
 }
 
 impl ConnectionEncryptor {
-    // TODO: update new_inbound() to new_inbound(Option<StaticKey>) to allow the
-    // caller to read a static key from file.
     /// Initialize a ChannelEncryptor as the receiver of an inbound noise handshake
     /// session. This would typically be upstream devices such as Mining Pool Server.
-    pub fn new_inbound() -> Self {
+    pub fn new_inbound(static_key: Option<StaticKeyPair>) -> Self {
         ConnectionEncryptor {
-            noise_session: new_noise_responder(None),
+            noise_session: new_noise_responder(static_key),
         }
     }
 
@@ -85,7 +83,7 @@ mod test {
     #[test]
     fn basic_handshake() {
         let mut initiator = ConnectionEncryptor::new_outbound();
-        let mut receiver = ConnectionEncryptor::new_inbound();
+        let mut receiver = ConnectionEncryptor::new_inbound(None);
 
         let mut x = initiator.init_handshake().unwrap();
         let mut y = receiver.recv_handshake(&mut x).unwrap();
