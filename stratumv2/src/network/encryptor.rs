@@ -1,6 +1,8 @@
 use crate::{
     error::Result,
-    noise::{new_noise_initiator, new_noise_responder, NoiseSession, StaticKeyPair},
+    noise::{
+        new_noise_initiator, new_noise_responder, NoiseSession, StaticKeyPair, StaticPublicKey,
+    },
 };
 
 /// The Encryptor trait can be used to apply a noise framework encryption implementation
@@ -34,6 +36,12 @@ impl ConnectionEncryptor {
         ConnectionEncryptor {
             noise_session: new_noise_initiator(),
         }
+    }
+
+    /// Returns the StaticPublicKey of the counter party of the noise session.
+    /// This method return None if the noise handshake is not complete.
+    pub fn get_remote_pubkey(&self) -> Option<StaticPublicKey> {
+        self.noise_session.get_remote_static_public_key()
     }
 }
 
