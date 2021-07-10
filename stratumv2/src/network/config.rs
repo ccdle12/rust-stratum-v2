@@ -1,4 +1,4 @@
-/// Config contains the shared configuration for networked devices. This maybe
+/// Config contains the configuration for a networked device. This maybe
 /// separated into Upstream or Downstream configs depending on how each device
 /// requirements begin to diverge. Equally this maybe later moved into an upstream
 /// networked crate if it makes sense to do so.
