@@ -2,7 +2,7 @@
 /// separated into Upstream or Downstream configs depending on how each device
 /// requirements begin to diverge. Equally this maybe later moved into an upstream
 /// networked crate if it makes sense to do so.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Config {
     pub listening_addr: String,
     pub local_network_encryption: bool,
