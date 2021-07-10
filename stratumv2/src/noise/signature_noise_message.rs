@@ -13,7 +13,7 @@ use std::io;
 /// Handshake has completed. The message is used by the Client to reconstruct
 /// the full certificate and validate the remote static public key ("s") has
 /// been signed by the AuthorityKeyPair of the Mining Pool.
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SignatureNoiseMessage {
     pub version: u16,
     pub valid_from: u32,
