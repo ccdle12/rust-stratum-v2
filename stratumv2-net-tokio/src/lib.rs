@@ -53,10 +53,15 @@
 //   - Does the Peer contain a SetupConnection? If not, the message MUST be a SetupConnection, if
 //   not disconnect
 //     - Remove the and delete the Peer, Shutdown the Stream, Delete the Connection
+
+// TODO IMPORTANT!!!!!!!!!!!!!!!!!!!!!!!!
+// 1. Create ServerConfig for Config of Business Logic in stratumv2 level
+// 2. Separate the ConnectionConfig?
+// 3. Move Implementation of MessageHandling to stratumv2 level
 use stratumv2::common::SetupConnection;
 use stratumv2::error::{Error, Result};
 use stratumv2::frame::{frame, unframe, Message};
-use stratumv2::network::{Channel, Config, ConnectionEncryptor, Encryptor, Peer};
+use stratumv2::network::{new_channel_id, Channel, Config, ConnectionEncryptor, Encryptor, Peer};
 use stratumv2::noise::{SignatureNoiseMessage, StaticKeyPair};
 use stratumv2::parse::{deserialize, serialize, Deserializable};
 use stratumv2::types::MessageType;
@@ -73,6 +78,11 @@ use tokio::{
     net::TcpStream,
     sync::{mpsc, Mutex},
 };
+
+// TODO: Move to lib once confirmed
+pub struct ServerConfig {
+    pub mining_flags: stratumv2::mining::SetupConnectionFlags,
+}
 
 type ConnID = u32;
 
@@ -92,6 +102,7 @@ where
     // TODO: 1.
     // - When receiving a new connection, create the object and assign an ID or maybe just a
     // HashSet?
+    // TODO: Refactor to <Connection, Peer<E>>
     pub conns: tokio::sync::Mutex<HashMap<ConnID, (Peer<E>, Connection)>>,
 
     /// Contains the object that tracks and manages the collection of active channels.
@@ -122,16 +133,12 @@ where
     }
 }
 
-// TODO: State about a channel?
+// TODO: This could be a type alias
 /// Channels are different to Peers, because many Peers maybe related to a Channel.
 pub struct ChannelManager {
     /// Contains all the channels that belong to a certain connection according
     /// to Connection ID.
-    // TODO: 3.
-    // - Receive a message on an existing connection, use the connection ID
-    // to find the channels associated with it, if the message is for a certain
-    // channel, look up the channel,
-    channels: std::sync::Mutex<HashMap<ConnID, Vec<Channel>>>,
+    channels: std::sync::Mutex<HashMap<ConnID, HashMap<u32, Channel>>>, // Replace with ChanID
 }
 
 impl ChannelManager {
@@ -145,31 +152,62 @@ impl ChannelManager {
 // TODO: Start implementing trait implementations according to the device.
 pub struct MessageHandler {}
 
+use stratumv2::common::SetupConnectionErrorCode;
+use stratumv2::mining::SetupConnectionError;
+
 impl MessageHandler {
     pub fn new() -> Self {
         MessageHandler {}
     }
 
     // TODO: Extract this to a common trait since its synchronous
-    pub fn handle<E: Encryptor>(&self, msg: &[u8], peer: &mut Peer<E>) -> Result<()> {
+    pub fn handle<E: Encryptor>(
+        &self,
+        msg: &[u8],
+        peer: &mut Peer<E>,
+        server_config: &ServerConfig,
+        channel_manager: &ChannelManager,
+    ) -> Result<()> {
         println!("IN HANDLE: {:?}", &msg);
-        // TODO:
-        // 1. Deframe
         let deframed = deserialize::<Message>(&msg)?;
 
+        println!("MESSAGE RECEIVED: {:?}", deframed.message_type);
         match deframed.message_type {
             MessageType::SetupConnection => {
+                // TODO:
+                // self.handle_setup_conn(&SetupConnection);
                 let setup_conn = unframe::<SetupConnection>(&deframed)?;
 
-                // TODO: Pass the deframed message and Peer to an handler
-                // for new connection.
                 match &setup_conn {
                     SetupConnection::Mining(m) => {
                         println!("RECEIVED SETUPCONN: {:?}", m.min_version);
 
-                        // TODO: Need to check the supported feature flags of
-                        // the server.
-                        //
+                        // If after XOR the server_config with the message is greater
+                        // than 0, then we have unsupported flags.
+                        if !(server_config.mining_flags ^ m.flags).is_empty() {
+                            println!("mismatched flags");
+                            let all_flags = stratumv2::mining::SetupConnectionFlags::all();
+                            let non_supported_flags = all_flags ^ server_config.mining_flags;
+                            println!("{:?}", non_supported_flags);
+
+                            // TODO:
+                            // Add a SetupConnectionError message and return so that nothing else
+                            // is processed
+                            let setup_conn_err = SetupConnectionError::new(
+                                non_supported_flags,
+                                SetupConnectionErrorCode::UnsupportedFeatureFlags,
+                            )?;
+
+                            // TODO:
+                            // This is part of the setup conneciton msg handling
+                            {
+                                let mut msg_buffer = peer.pending_msg_buffer.lock().unwrap();
+                                let msg = frame(&setup_conn_err)?;
+                                msg_buffer.push(msg);
+                            }
+
+                            return Ok(());
+                        }
                         // TODO: Need to check the protocol version supported
                         // by the server.
                         //
@@ -177,6 +215,110 @@ impl MessageHandler {
                         peer.setup_conn_msg = Some(setup_conn);
                     }
                     _ => println!("moop"),
+                }
+            }
+            MessageType::OpenStandardMiningChannel => {
+                // TODO: Call the handler impl
+                // self.handle_open_standard_mining_channel(&OpenStandardMiningChannel, self.channel_manager, conn_id);
+                use stratumv2::mining::OpenStandardMiningChannel;
+                let mining_chan = unframe::<OpenStandardMiningChannel>(&deframed)?;
+
+                // TODO:
+                // 2. Check that the generated channel id doesn't already exist
+                let channel_id = new_channel_id();
+                let new_channel = Channel::StandardMiningChannel {
+                    id: channel_id,
+                    channel: mining_chan,
+                };
+
+                {
+                    let mut conn_chan_map = channel_manager.channels.lock().unwrap();
+
+                    let channels = conn_chan_map.get_mut(&0); // TODO: Should be the ConnID or maybe the peer
+                    if channels.is_none() {
+                        // TODO: Refactor to make it more legible
+                        // This channel_map is a hashmap collection of channels mapped to an ID,
+                        // this collection is than mapped to a connection.
+                        let mut channel_map = HashMap::new();
+                        channel_map.insert(channel_id, new_channel.clone());
+
+                        conn_chan_map.insert(
+                            0, // TODO: Should be the Conn ID or maybe even the peer
+                            channel_map,
+                        );
+                    } else {
+                        channels.unwrap().insert(channel_id, new_channel.clone());
+                    }
+                }
+
+                use stratumv2::mining::OpenStandardMiningChannelSuccess;
+                if let Channel::StandardMiningChannel { id, ref channel } = new_channel {
+                    let open_channel_success = OpenStandardMiningChannelSuccess::new(
+                        channel.request_id,
+                        id,
+                        [0u8; 32], // TODO: The source of this needs to be taken from somewhere
+                        [4u8; 4],  // TODO: Placeholder for extranonce_prefix
+                        5u32,      // TODO: Placeholder for group_channel_id
+                    )
+                    .unwrap();
+
+                    // TODO: Send the OpenStandardMiningChannelSuccess
+                    let mut msg_buffer = peer.pending_msg_buffer.lock().unwrap();
+                    let msg = frame(&open_channel_success)?;
+                    msg_buffer.push(msg);
+                };
+
+                // TODO: Purely for debugging
+                {
+                    let mut channels_map = channel_manager.channels.lock().unwrap();
+                    println!("AFTER INIT CHANNELS: {:?}", channels_map.get_mut(&0));
+                }
+            }
+            MessageType::UpdateChannel => {
+                use stratumv2::mining::UpdateChannel;
+                let update_chan = unframe::<UpdateChannel>(&deframed)?;
+
+                {
+                    let mut channels_map = channel_manager.channels.lock().unwrap();
+
+                    // TODO: This is looking up by CONNID NOT channel id, atm the
+                    // conn id is just default to 0
+                    let channels = channels_map.get_mut(&0);
+
+                    macro_rules! update_channel {
+                        ($update_chan:expr, $id:expr, $channel:expr) => {
+                            if $update_chan.channel_id == *$id {
+                                $channel.nominal_hash_rate = update_chan.nominal_hash_rate;
+                                $channel.max_target = update_chan.max_target;
+                            }
+                        };
+                    }
+
+                    println!("update_chane.channel_id: {:?}", update_chan.channel_id);
+                    println!("CHECKING IF CHANNELS IS SOME");
+                    if let Some(c) = channels {
+                        let chan = c.get_mut(&update_chan.channel_id);
+
+                        // TODO: Get channel by channel_id
+                        if let Some(x) = chan {
+                            println!("FOUND CHANNEL: {:?}", x);
+                            match x {
+                                Channel::StandardMiningChannel { id, channel } => {
+                                    update_channel!(update_chan, id, channel)
+                                }
+                                Channel::ExtendedMiningChannel { id, channel } => {
+                                    update_channel!(update_chan, id, channel)
+                                }
+                            }
+                        }
+                    } else {
+                        println!("CHANENLS IS NONE,");
+                    }
+                }
+                // TODO: Purely for debugging
+                {
+                    let mut channels_map = channel_manager.channels.lock().unwrap();
+                    println!("AFTER UPDATE CHANNELS: {:?}", channels_map.get_mut(&0));
                 }
             }
             _ => (()),
@@ -216,6 +358,8 @@ async fn process_inbound(
     addr: SocketAddr,
     conn_manager: Arc<ConnectionManager<ConnectionEncryptor>>,
     config: &Config,
+    // TMP:
+    server_config: &ServerConfig,
 ) {
     // TMP:
     // NOTE: Bounded channel of 100 is arbitrary.
@@ -255,7 +399,7 @@ async fn process_inbound(
             result = stream.read(&mut buf) => match result {
                 Ok(_) => {
                     println!("SERVER: Reading from stream");
-                    handle_read_stream(&mut buf, conn_manager.clone(), conn_id, &config).await;
+                    handle_read_stream(&mut buf, conn_manager.clone(), conn_id, &config, &server_config).await;
                 },
                 Err(_) => { println!("BREAK"); break}
             },
@@ -286,6 +430,8 @@ async fn handle_read_stream<E: Encryptor>(
     conn_manager: Arc<ConnectionManager<E>>,
     conn_id: ConnID,
     config: &Config,
+    // TMP:
+    server_config: &ServerConfig,
 ) {
     // TODO: 1. Call the peer manager, message handler to handle the message in bytes synchronously
     let mut conns = conn_manager.conns.lock().await;
@@ -313,29 +459,27 @@ async fn handle_read_stream<E: Encryptor>(
     // TODO: Currently this will disconnect on any handling error, this maybe
     // too harsh. We might need to separate either ignoring minor errors or
     // disconnecting on egregious errors.
-    if let Err(_) = conn_manager.msg_handler.handle(&buf, &mut peer) {
+    if let Err(_) = conn_manager.msg_handler.handle(
+        &buf,
+        &mut peer,
+        &server_config,
+        &conn_manager.channel_manager,
+    ) {
         println!("send err");
         conn.tx_err.send(0u8).await.unwrap();
         return;
     };
 
     // TODO: Move to another function?
-    let msg = peer.get_pending_msgs();
+    let msgs = peer.get_pending_msgs();
     println!("after geting pending msgs");
-    if msg.len() > 0 {
+    if msgs.len() > 0 {
         // TODO: Maybe I should serialize it here and encrypt?
         // TODO: Match each message and decide how to handle
-        for m in msg {
-            match &m.message_type {
-                MessageType::SetupConnection => {
-                    let response = serialize(&m).unwrap();
-
-                    // TODO: Handle any updates to the Connection? or Peer?
-                    // TODO: Encrypt
-                    conn.tx_msg.send(response).await.unwrap();
-                }
-                _ => (),
-            }
+        for m in msgs {
+            let res = serialize(&m).unwrap();
+            // TODO: Encrypt
+            conn.tx_msg.send(res).await.unwrap();
         }
     }
 
@@ -423,10 +567,21 @@ mod test {
         // TODO: Extract TcpListener bind + accept + process task into main()
         let listener = TcpListener::bind(&config.listening_addr).await.unwrap(); // TODO: Handle unwrap.
 
+        // TODO: Continue to refactor this
+        let server_config = ServerConfig {
+            mining_flags: stratumv2::mining::SetupConnectionFlags::REQUIRES_STANDARD_JOBS,
+        };
         let mut peer_manager = Arc::new(ConnectionManager::new());
         tokio::spawn(async move {
             let (stream, socket_addr) = listener.accept().await.unwrap(); // TODO: Handle unwrap by ignoring?
-            process_inbound(stream, socket_addr, peer_manager.clone(), &config).await;
+            process_inbound(
+                stream,
+                socket_addr,
+                peer_manager.clone(),
+                &config,
+                &server_config,
+            )
+            .await;
         });
 
         // Simulate a downstream client connection and sending a mesage.
@@ -461,8 +616,7 @@ mod test {
         let new_conn = SetupConnection::new_mining(
             2,
             2,
-            SetupConnectionFlags::REQUIRES_STANDARD_JOBS
-                | SetupConnectionFlags::REQUIRES_VERSION_ROLLING,
+            SetupConnectionFlags::all(),
             "0.0.0.0",
             8545,
             "Bitmain",
@@ -475,6 +629,77 @@ mod test {
         let serialized = serialize(&frame(&new_conn).unwrap()).unwrap();
         client.try_write(&serialized).unwrap();
 
+        let mut buf = [0u8; 1024];
+        client.read(&mut buf).await;
+        println!(
+            "BUFFER IN CLIENT 3 It should be the response to SetupConnection: {:?}",
+            buf
+        );
+        let der = deserialize::<Message>(&buf).unwrap();
+        assert_eq!(der.message_type, MessageType::SetupConnectionError);
+        println!("Der Message: {:?}", der);
+        let setup_conn_err = unframe::<SetupConnectionError>(&der).unwrap();
+        println!("Setup Conn Err: {:?}", setup_conn_err);
+
+        // TODO: Open two new channels
+        use stratumv2::mining::OpenStandardMiningChannel;
+        let chan1 = OpenStandardMiningChannel::new(0, "miner1", 0.0, [0u8; 32]).unwrap();
+        let chan2 = OpenStandardMiningChannel::new(1, "miner2", 0.0, [1u8; 32]).unwrap();
+
+        // // TODO: Send channel1
+        println!("-----------------------------------------------------------");
+        println!("SENDING CHANNEL1");
+        let serialized = serialize(&frame(&chan1).unwrap()).unwrap();
+        client.try_write(&serialized).unwrap();
+        let mut buf = [0u8; 1024];
+        client.read(&mut buf).await;
+
+        println!("BUFFER IN RESPONSE FROM SETTING UP CHANNEL 1: {:?}", buf);
+        use stratumv2::mining::OpenStandardMiningChannelSuccess;
+        let der = deserialize::<Message>(&buf).unwrap();
+        assert_eq!(
+            der.message_type,
+            MessageType::OpenStandardMiningChannelSuccess
+        );
+        println!("Der Message: {:?}", der);
+        let open_mining_channel_success =
+            unframe::<OpenStandardMiningChannelSuccess>(&der).unwrap();
+        println!(
+            "OpenStandardMiningChannelSuccess: {:?}",
+            open_mining_channel_success
+        );
+
+        // // TODO: Send channel2
+        println!("-----------------------------------------------------------");
+        println!("SENDING CHANNEL2");
+        let serialized = serialize(&frame(&chan2).unwrap()).unwrap();
+        client.try_write(&serialized).unwrap();
+        let mut buf = [0u8; 1024];
+        client.read(&mut buf).await;
+
+        println!("BUFFER IN RESPONSE FROM SETTING UP CHANNEL 2: {:?}", buf);
+        let der = deserialize::<Message>(&buf).unwrap();
+        assert_eq!(
+            der.message_type,
+            MessageType::OpenStandardMiningChannelSuccess
+        );
+        println!("Der Message: {:?}", der);
+        let open_mining_channel_success =
+            unframe::<OpenStandardMiningChannelSuccess>(&der).unwrap();
+        println!(
+            "OpenStandardMiningChannelSuccess: {:?}",
+            open_mining_channel_success
+        );
+
+        // TODO: Send an update so that we can look up and edit an existing channel
+        println!("-----------------------------------------------------------");
+        println!("SENDING CHANNEL UPDATE");
+        use stratumv2::mining::UpdateChannel;
+        let update_chan =
+            UpdateChannel::new(open_mining_channel_success.channel_id, 1.1, [8u8; 32]).unwrap();
+
+        let serialized = serialize(&frame(&update_chan).unwrap()).unwrap();
+        client.try_write(&serialized).unwrap();
         let mut buf = [0u8; 1024];
         client.read(&mut buf).await;
     }
