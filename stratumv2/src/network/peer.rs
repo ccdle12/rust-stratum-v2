@@ -22,7 +22,7 @@ pub struct Peer<E: Encryptor> {
     /// counterparty on this connection. This would typically messages queued
     /// by message handlers receiving and processing a message and requiring
     /// to send a response.
-    pending_msg_buffer: Mutex<Vec<Message>>,
+    pub pending_msg_buffer: Mutex<Vec<Message>>,
 }
 
 impl<E> Peer<E>
