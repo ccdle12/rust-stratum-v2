@@ -1,3 +1,5 @@
+use crate::mining::{OpenExtendedMiningChannel, OpenStandardMiningChannel};
+
 use rand::Rng;
 
 /// ChanID is a type assigned to identify channels on a connection.
@@ -12,10 +14,16 @@ pub fn new_channel_id() -> ChanID {
 
 /// Represents a Channel opened on a connection. The Channel holds stateful
 /// information about the Channel for both Upstream and Downstream devices.
-pub struct Channel {
-    /// The unique ID assigned to a channel for both Upstream and Downstream
-    /// devices.
-    pub chan_id: ChanID,
+#[derive(Debug, Clone)]
+pub enum Channel {
+    StandardMiningChannel {
+        id: ChanID,
+        channel: OpenStandardMiningChannel,
+    },
+    ExtendedMiningChannel {
+        id: ChanID,
+        channel: OpenExtendedMiningChannel,
+    },
 }
 
 #[cfg(test)]
