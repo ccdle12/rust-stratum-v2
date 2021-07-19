@@ -1,5 +1,37 @@
 use crate::noise::{SignatureNoiseMessage, StaticKeyPair};
 
+/// NoiseConfig contains the configuration for devices to assign a pre-defined
+/// StaticKeyPair and SignatureNoiseMessage signed by the Certificate Authority
+/// of the Mining Pool. This Config would usually only be used by an Upstream Server
+/// (Mining Pool Server).
+#[derive(Clone)]
+pub struct NoiseConfig {
+    /// The SignatureNoiseMessage is intended to be read from disk so that a
+    /// Mining Pool Server can send this message at the end of a noise handshake.
+    /// If the SignatureNoiseMessage does not exist on disk, the intention is
+    /// that after generating it for the first time, it will be stored in the
+    /// datadir of the device.
+    pub sig_noise_msg: SignatureNoiseMessage,
+
+    /// The StaticKeyPair is the keypair used by the Upstream Device
+    /// (Mining Pool Server or Mining Proxy) for all noise sessions. If the
+    /// Upstream Device is a Mining Pool Server, then the StaticKeyPair will
+    /// be used to generate the SignatureNoiseMessage. The intention is for
+    /// the StaticKeyPair to be read from disk. If it is not available on disk,
+    /// then after generating it for the first time, it will be persisted
+    /// in the datadir of the device.
+    pub static_key: StaticKeyPair,
+}
+
+impl NoiseConfig {
+    pub fn new(sig_noise_msg: SignatureNoiseMessage, static_key: StaticKeyPair) -> Self {
+        NoiseConfig {
+            sig_noise_msg,
+            static_key,
+        }
+    }
+}
+
 /// Config contains the configuration for a networked device. This maybe
 /// separated into Upstream or Downstream configs depending on how each device
 /// requirements begin to diverge. Equally this maybe later moved into an upstream
