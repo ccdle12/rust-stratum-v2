@@ -32,6 +32,29 @@ impl NoiseConfig {
     }
 }
 
+/// NetworkConfig contains the configuration networking for all networked devices.
+/// This maybe separated into Upstream or Downstream configs depending on how
+/// each device requirements begin to diverge. Equally this maybe later moved
+/// into an upstream networked crate if it makes sense to do so.
+#[derive(Clone)]
+pub struct NetworkConfig {
+    /// The public networked listening address of this device.
+    pub listening_addr: String,
+
+    /// TODO: A flag determining whether this device will accept insecure communication
+    /// on a local network.
+    pub local_network_encryption: bool,
+}
+
+impl NetworkConfig {
+    pub fn new(listening_addr: String, local_network_encryption: bool) -> Self {
+        NetworkConfig {
+            listening_addr,
+            local_network_encryption,
+        }
+    }
+}
+
 /// Config contains the configuration for a networked device. This maybe
 /// separated into Upstream or Downstream configs depending on how each device
 /// requirements begin to diverge. Equally this maybe later moved into an upstream
