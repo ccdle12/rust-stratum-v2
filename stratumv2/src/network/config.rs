@@ -1,3 +1,6 @@
+//! This module contains the different configurations for the different areas used
+//! in StratumV2. The motivation is for hte caller to pick and choose which config
+//! structs are required for their networked implementation.
 use crate::noise::{SignatureNoiseMessage, StaticKeyPair};
 
 /// NoiseConfig contains the configuration for devices to assign a pre-defined
