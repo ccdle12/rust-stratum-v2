@@ -61,7 +61,10 @@
 use stratumv2::common::SetupConnection;
 use stratumv2::error::{Error, Result};
 use stratumv2::frame::{frame, unframe, Message};
-use stratumv2::network::{new_channel_id, Channel, Config, ConnectionEncryptor, Encryptor, Peer};
+use stratumv2::network::{
+    new_channel_id, Channel, ConnectionEncryptor, Encryptor, NetworkConfig, NoiseConfig, Peer,
+    ServerConfig,
+};
 use stratumv2::noise::{SignatureNoiseMessage, StaticKeyPair};
 use stratumv2::parse::{deserialize, serialize, Deserializable};
 use stratumv2::types::MessageType;
@@ -80,8 +83,14 @@ use tokio::{
 };
 
 // TODO: Move to lib once confirmed
-pub struct ServerConfig {
-    pub mining_flags: stratumv2::mining::SetupConnectionFlags,
+// pub struct ServerConfig {
+// pub mining_flags: stratumv2::mining::SetupConnectionFlags,
+// }
+
+pub struct Config {
+    pub network_config: NetworkConfig,
+    pub noise_config: NoiseConfig,
+    pub server_config: ServerConfig,
 }
 
 type ConnID = u32;
@@ -377,7 +386,7 @@ async fn process_inbound(
     // let static_key = StaticKeyPair::default();
     // TMP:
 
-    let encryptor = ConnectionEncryptor::new_inbound(Some(config.static_key.clone()));
+    let encryptor = ConnectionEncryptor::new_inbound(Some(config.noise_config.static_key.clone()));
     let peer = Peer::new(encryptor);
 
     {
@@ -445,7 +454,14 @@ async fn handle_read_stream<E: Encryptor>(
     let mut peer = peer;
 
     // NOTE: Getting past this means we're in the handshake state.
-    match handle_noise_handshake(&mut buf, &mut peer.encryptor, conn, &config.sig_noise_msg).await {
+    match handle_noise_handshake(
+        &mut buf,
+        &mut peer.encryptor,
+        conn,
+        &config.noise_config.sig_noise_msg,
+    )
+    .await
+    {
         Err(_e) => {
             conn.tx_err.send(0).await.unwrap();
             return;
@@ -562,15 +578,24 @@ mod test {
 
         // TODO: This should be split with UpstreamConfig and DownstreamConfig
         // TODO: Maybe wrap this in an Arc?
-        let config = Config::new(addr.clone(), false, sig_noise_msg, static_key.clone());
+        // let config = Config::new(addr.clone(), false, sig_noise_msg, static_key.clone());
+        let noise_config = NoiseConfig::new(sig_noise_msg, static_key.clone());
+        let network_config = NetworkConfig::new(addr.clone(), false);
+        let server_config =
+            ServerConfig::new(stratumv2::mining::SetupConnectionFlags::REQUIRES_STANDARD_JOBS);
+
+        let config = Config {
+            noise_config,
+            network_config,
+            server_config,
+        };
 
         // TODO: Extract TcpListener bind + accept + process task into main()
-        let listener = TcpListener::bind(&config.listening_addr).await.unwrap(); // TODO: Handle unwrap.
+        let listener = TcpListener::bind(&config.network_config.listening_addr)
+            .await
+            .unwrap(); // TODO: Handle unwrap.
 
         // TODO: Continue to refactor this
-        let server_config = ServerConfig {
-            mining_flags: stratumv2::mining::SetupConnectionFlags::REQUIRES_STANDARD_JOBS,
-        };
         let mut peer_manager = Arc::new(ConnectionManager::new());
         tokio::spawn(async move {
             let (stream, socket_addr) = listener.accept().await.unwrap(); // TODO: Handle unwrap by ignoring?
