@@ -82,11 +82,6 @@ use tokio::{
     sync::{mpsc, Mutex},
 };
 
-// TODO: Move to lib once confirmed
-// pub struct ServerConfig {
-// pub mining_flags: stratumv2::mining::SetupConnectionFlags,
-// }
-
 pub struct Config {
     pub network_config: NetworkConfig,
     pub noise_config: NoiseConfig,
@@ -367,8 +362,6 @@ async fn process_inbound(
     addr: SocketAddr,
     conn_manager: Arc<ConnectionManager<ConnectionEncryptor>>,
     config: &Config,
-    // TMP:
-    server_config: &ServerConfig,
 ) {
     // TMP:
     // NOTE: Bounded channel of 100 is arbitrary.
@@ -408,7 +401,7 @@ async fn process_inbound(
             result = stream.read(&mut buf) => match result {
                 Ok(_) => {
                     println!("SERVER: Reading from stream");
-                    handle_read_stream(&mut buf, conn_manager.clone(), conn_id, &config, &server_config).await;
+                    handle_read_stream(&mut buf, conn_manager.clone(), conn_id, &config).await;
                 },
                 Err(_) => { println!("BREAK"); break}
             },
@@ -439,8 +432,6 @@ async fn handle_read_stream<E: Encryptor>(
     conn_manager: Arc<ConnectionManager<E>>,
     conn_id: ConnID,
     config: &Config,
-    // TMP:
-    server_config: &ServerConfig,
 ) {
     // TODO: 1. Call the peer manager, message handler to handle the message in bytes synchronously
     let mut conns = conn_manager.conns.lock().await;
@@ -478,7 +469,7 @@ async fn handle_read_stream<E: Encryptor>(
     if let Err(_) = conn_manager.msg_handler.handle(
         &buf,
         &mut peer,
-        &server_config,
+        &config.server_config,
         &conn_manager.channel_manager,
     ) {
         println!("send err");
@@ -596,17 +587,10 @@ mod test {
             .unwrap(); // TODO: Handle unwrap.
 
         // TODO: Continue to refactor this
-        let mut peer_manager = Arc::new(ConnectionManager::new());
+        let peer_manager = Arc::new(ConnectionManager::new());
         tokio::spawn(async move {
             let (stream, socket_addr) = listener.accept().await.unwrap(); // TODO: Handle unwrap by ignoring?
-            process_inbound(
-                stream,
-                socket_addr,
-                peer_manager.clone(),
-                &config,
-                &server_config,
-            )
-            .await;
+            process_inbound(stream, socket_addr, peer_manager.clone(), &config).await;
         });
 
         // Simulate a downstream client connection and sending a mesage.
