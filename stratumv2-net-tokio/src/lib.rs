@@ -62,8 +62,8 @@ use stratumv2::common::SetupConnection;
 use stratumv2::error::{Error, Result};
 use stratumv2::frame::{frame, unframe, Message};
 use stratumv2::network::{
-    new_channel_id, Channel, ConnectionEncryptor, Encryptor, NetworkConfig, NoiseConfig, Peer,
-    ServerConfig,
+    new_channel_id, Channel, ChannelManager, ConnectionEncryptor, Encryptor, NetworkConfig,
+    NoiseConfig, Peer, ServerConfig,
 };
 use stratumv2::noise::{SignatureNoiseMessage, StaticKeyPair};
 use stratumv2::parse::{deserialize, serialize, Deserializable};
@@ -133,22 +133,6 @@ where
             conns: Mutex::new(HashMap::new()),
             channel_manager: ChannelManager::new(),
             msg_handler: MessageHandler::new(),
-        }
-    }
-}
-
-// TODO: This could be a type alias
-/// Channels are different to Peers, because many Peers maybe related to a Channel.
-pub struct ChannelManager {
-    /// Contains all the channels that belong to a certain connection according
-    /// to Connection ID.
-    channels: std::sync::Mutex<HashMap<ConnID, HashMap<u32, Channel>>>, // Replace with ChanID
-}
-
-impl ChannelManager {
-    pub fn new() -> Self {
-        ChannelManager {
-            channels: std::sync::Mutex::new(HashMap::new()),
         }
     }
 }
