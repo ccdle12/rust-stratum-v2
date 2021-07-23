@@ -1,9 +1,19 @@
-use crate::{common::SetupConnection, job_negotiation, mining};
+use crate::{
+    common::SetupConnection,
+    error::Result,
+    job_negotiation, mining,
+    network::{Encryptor, Peer},
+};
 
 /// A trait that should be applied to upstream devices such as a Mining Pool Server
 /// that can handle [SetupConnection Messages](../common/setup_connection/enum.SetupConnection.html).
-pub trait NewConnReceiver {
-    fn handle_new_conn(new_conn: SetupConnection);
+pub trait NewConnReceiver<E: Encryptor> {
+    fn handle_new_conn(
+        &self,
+        server_flags: &mining::SetupConnectionFlags,
+        new_conn: SetupConnection,
+        peer: &mut Peer<E>,
+    ) -> Result<()>;
 }
 
 /// A trait that should be applied to downstream devices such as Mining Devices
