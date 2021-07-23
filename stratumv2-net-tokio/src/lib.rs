@@ -158,7 +158,60 @@ pub struct MessageHandler {}
 
 use stratumv2::common::SetupConnectionErrorCode;
 use stratumv2::mining::SetupConnectionError;
+use stratumv2::network::NewConnReceiver;
 
+impl<E: stratumv2::network::Encryptor> NewConnReceiver<E> for MessageHandler {
+    fn handle_new_conn(
+        &self,
+        server_flags: &stratumv2::mining::SetupConnectionFlags,
+        new_conn: SetupConnection,
+        peer: &mut Peer<E>,
+    ) -> Result<()> {
+        match &new_conn {
+            SetupConnection::Mining(m) => {
+                println!("RECEIVED SETUPCONN: {:?}", m.min_version);
+
+                // If after XOR the server_config with the message is greater
+                // than 0, then we have unsupported flags.
+                if !(*server_flags ^ m.flags).is_empty() {
+                    println!("mismatched flags");
+                    let all_flags = stratumv2::mining::SetupConnectionFlags::all();
+                    let non_supported_flags = all_flags ^ *server_flags;
+                    println!("{:?}", non_supported_flags);
+
+                    // TODO:
+                    // Add a SetupConnectionError message and return so that nothing else
+                    // is processed
+                    let setup_conn_err = SetupConnectionError::new(
+                        non_supported_flags,
+                        SetupConnectionErrorCode::UnsupportedFeatureFlags,
+                    )?;
+
+                    // TODO:
+                    // This is part of the setup conneciton msg handling
+                    {
+                        let mut msg_buffer = peer.pending_msg_buffer.lock().unwrap();
+                        let msg = frame(&setup_conn_err)?;
+                        msg_buffer.push(msg);
+                    }
+
+                    return Ok(());
+                }
+
+                // TODO: Need to check the protocol version supported
+                // by the server.
+                //
+                // TODO: This should be the last step.
+                peer.setup_conn_msg = Some(new_conn);
+            }
+            _ => println!("moop"),
+        }
+
+        Ok(())
+    }
+}
+// TODO: MessageHandler that creates its own handle but can then delegate
+// to its trait handlers
 impl MessageHandler {
     pub fn new() -> Self {
         MessageHandler {}
@@ -178,50 +231,18 @@ impl MessageHandler {
         println!("MESSAGE RECEIVED: {:?}", deframed.message_type);
         match deframed.message_type {
             MessageType::SetupConnection => {
-                // TODO:
-                // self.handle_setup_conn(&SetupConnection);
                 let setup_conn = unframe::<SetupConnection>(&deframed)?;
-
-                match &setup_conn {
-                    SetupConnection::Mining(m) => {
-                        println!("RECEIVED SETUPCONN: {:?}", m.min_version);
-
-                        // If after XOR the server_config with the message is greater
-                        // than 0, then we have unsupported flags.
-                        if !(server_config.mining_flags ^ m.flags).is_empty() {
-                            println!("mismatched flags");
-                            let all_flags = stratumv2::mining::SetupConnectionFlags::all();
-                            let non_supported_flags = all_flags ^ server_config.mining_flags;
-                            println!("{:?}", non_supported_flags);
-
-                            // TODO:
-                            // Add a SetupConnectionError message and return so that nothing else
-                            // is processed
-                            let setup_conn_err = SetupConnectionError::new(
-                                non_supported_flags,
-                                SetupConnectionErrorCode::UnsupportedFeatureFlags,
-                            )?;
-
-                            // TODO:
-                            // This is part of the setup conneciton msg handling
-                            {
-                                let mut msg_buffer = peer.pending_msg_buffer.lock().unwrap();
-                                let msg = frame(&setup_conn_err)?;
-                                msg_buffer.push(msg);
-                            }
-
-                            return Ok(());
-                        }
-                        // TODO: Need to check the protocol version supported
-                        // by the server.
-                        //
-                        // TODO: This should be the last step.
-                        peer.setup_conn_msg = Some(setup_conn);
-                    }
-                    _ => println!("moop"),
-                }
+                self.handle_new_conn(&server_config.mining_flags, setup_conn, peer)?;
+                // self.server_msg_handler.handle_new_conn(&server_config.mining_flags, setup_conn,
+                // peer)?;
             }
             MessageType::OpenStandardMiningChannel => {
+                // TODO: Extracting out to its own message handler function
+                // -- Required args:
+                // --- 1. OpenStandardMiningChannel
+                // --- 2. ChannelManager
+                // --- 3. Peer object
+                //
                 // TODO: Call the handler impl
                 // self.handle_open_standard_mining_channel(&OpenStandardMiningChannel, self.channel_manager, conn_id);
                 use stratumv2::mining::OpenStandardMiningChannel;
@@ -279,6 +300,11 @@ impl MessageHandler {
                 }
             }
             MessageType::UpdateChannel => {
+                // TODO: Extracting out to its own message handler function
+                // -- Required args:
+                // --- 1. mining::UpdateChannel message
+                // --- 2. ChannelManager
+                // --- 3. Peer object? (If requires a response?)
                 use stratumv2::mining::UpdateChannel;
                 let update_chan = unframe::<UpdateChannel>(&deframed)?;
 
