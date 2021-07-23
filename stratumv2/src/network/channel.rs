@@ -36,6 +36,14 @@ pub struct ChannelManager {
     pub channels: Mutex<HashMap<u32, HashMap<ChanID, Channel>>>,
 }
 
+impl ChannelManager {
+    pub fn new() -> Self {
+        ChannelManager {
+            channels: Mutex::new(HashMap::new()),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
