@@ -3,11 +3,11 @@ use std::io;
 use std::time::SystemTime;
 use stratumv2::{
     bitcoin::util::base58,
+    codec::{deserialize, serialize, Deserializable, Serializable},
     noise::{
         new_noise_initiator, new_noise_responder, AuthorityKeyPair, AuthorityPublicKey,
         CertificateFormat, NoiseSession, SignatureNoiseMessage, SignedCertificate, StaticKeyPair,
     },
-    parse::{deserialize, serialize, Deserializable, Serializable},
     types::unix_timestamp::{system_unix_time_to_u32, unix_u32_now},
 };
 use tokio::net::{TcpListener, TcpStream};

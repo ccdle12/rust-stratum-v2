@@ -1,9 +1,8 @@
 use std::io;
 use stratumv2::{
+    codec::{deserialize, frame, serialize, unframe, Frameable, Message},
     common::SetupConnection,
-    frame::{frame, unframe, Frameable, Message},
     mining::{SetupConnectionFlags, SetupConnectionSuccess, SetupConnectionSuccessFlags},
-    parse::{deserialize, serialize},
     types::MessageType,
 };
 use tokio::net::{TcpListener, TcpStream};
