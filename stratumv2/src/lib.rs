@@ -16,10 +16,6 @@ pub mod common;
 /// Errors returned in the library.
 pub mod error;
 
-/// Frame contains implementations necessary to construct, serialize and deserialize
-/// networked messages.
-pub mod frame;
-
 /// Job Negotiation is a sub protocol of Stratum V2.
 pub mod job_negotiation;
 mod macro_message;
@@ -27,9 +23,9 @@ mod macro_message;
 /// Mining is the main sub protocol of Stratum V2.
 pub mod mining;
 
-/// Parse contains serialization and deserialization trait definition and implementation
-/// for all basic types.
-pub mod parse;
+/// Codec contains all the functionality to serialize, deserialize and frame network messages.
+/// This also includes the required Serializable, Deserializable and Frameable traits.
+pub mod codec;
 
 /// Types used in all Stratum V2 Protocols.
 pub mod types;
