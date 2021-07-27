@@ -151,28 +151,28 @@ impl<E: stratumv2::network::Encryptor> NewConnReceiver<E> for MessageHandler {
         new_conn: SetupConnection,
         peer: &mut Peer<E>,
     ) -> Result<()> {
+        let server_flags = *server_flags;
         match &new_conn {
             SetupConnection::Mining(m) => {
                 println!("RECEIVED SETUPCONN: {:?}", m.min_version);
 
+                let msg_contains_unsupported_flags =
+                    |server_flags: &stratumv2::mining::SetupConnectionFlags,
+                     msg: &stratumv2::mining::SetupConnection| {
+                        !(*server_flags ^ msg.flags).is_empty()
+                    };
+
                 // If after XOR the server_config with the message is greater
                 // than 0, then we have unsupported flags.
-                if !(*server_flags ^ m.flags).is_empty() {
-                    println!("mismatched flags");
+                if msg_contains_unsupported_flags(&server_flags, &m) {
                     let all_flags = stratumv2::mining::SetupConnectionFlags::all();
-                    let non_supported_flags = all_flags ^ *server_flags;
-                    println!("{:?}", non_supported_flags);
+                    let non_supported_flags = all_flags ^ server_flags;
 
-                    // TODO:
-                    // Add a SetupConnectionError message and return so that nothing else
-                    // is processed
                     let setup_conn_err = SetupConnectionError::new(
                         non_supported_flags,
                         SetupConnectionErrorCode::UnsupportedFeatureFlags,
                     )?;
 
-                    // TODO:
-                    // This is part of the setup conneciton msg handling
                     {
                         let mut msg_buffer = peer.pending_msg_buffer.lock().unwrap();
                         let msg = frame(&setup_conn_err)?;
@@ -185,15 +185,18 @@ impl<E: stratumv2::network::Encryptor> NewConnReceiver<E> for MessageHandler {
                 // TODO: Need to check the protocol version supported
                 // by the server.
                 //
+                // TODO: This needs to send a sucess
+                //
                 // TODO: This should be the last step.
                 peer.setup_conn_msg = Some(new_conn);
             }
-            _ => println!("moop"),
+            _ => (),
         }
 
         Ok(())
     }
 }
+
 // TODO: MessageHandler that creates its own handle but can then delegate
 // to its trait handlers
 impl MessageHandler {
