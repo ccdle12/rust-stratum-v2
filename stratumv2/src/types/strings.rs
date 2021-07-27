@@ -1,5 +1,5 @@
+use crate::codec::{ByteParser, Deserializable, Serializable};
 use crate::error::{Error, Result};
-use crate::parse::{ByteParser, Deserializable, Serializable};
 use std::io;
 
 /// An internal macro that implements a STR0 type that is restricted according to a MAX_LENGTH.
@@ -186,7 +186,7 @@ impl_sized_STR0!(STR0_255, 255);
 #[cfg(test)]
 mod str0_32_tests {
     use super::*;
-    use crate::parse::{deserialize, serialize};
+    use crate::codec::{deserialize, serialize};
 
     impl_sized_STR0_tests!(STR0_32, 32);
 
@@ -205,7 +205,7 @@ mod str0_32_tests {
 #[cfg(test)]
 mod str0_255_tests {
     use super::*;
-    use crate::parse::{deserialize, serialize};
+    use crate::codec::{deserialize, serialize};
 
     impl_sized_STR0_tests!(STR0_255, 255);
 }

@@ -3,6 +3,7 @@ pub(crate) mod error_code;
 mod fixed;
 pub(crate) mod flags;
 mod message_type;
+mod primitives;
 mod strings;
 pub mod unix_timestamp;
 

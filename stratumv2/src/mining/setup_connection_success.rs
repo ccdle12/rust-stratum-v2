@@ -16,9 +16,8 @@ impl_setup_connection_success!(SetupConnectionSuccessFlags);
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::frame::{frame, unframe, Message};
+    use crate::codec::{deserialize, frame, serialize, unframe, Message};
     use crate::impl_setup_connection_success_tests;
-    use crate::parse::{deserialize, serialize};
 
     #[test]
     fn flags_serialize() {

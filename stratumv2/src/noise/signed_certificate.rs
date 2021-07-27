@@ -1,7 +1,7 @@
+use crate::codec::Serializable;
 use crate::error::{Error, Result};
 use crate::noise::types::AuthorityKeyPair;
 use crate::noise::types::{Signature, StaticPublicKey};
-use crate::parse::Serializable;
 use ed25519_dalek::Signer;
 use std::io;
 

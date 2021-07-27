@@ -1,7 +1,7 @@
+use crate::codec::Serializable;
 use crate::error::{Error, Result};
 use crate::noise::signature_noise_message::SignatureNoiseMessage;
 use crate::noise::types::{AuthorityPublicKey, StaticPublicKey};
-use crate::parse::Serializable;
 use crate::types::unix_timestamp::unix_u32_now;
 use bitcoin::util::base58;
 use ed25519_dalek::Verifier;

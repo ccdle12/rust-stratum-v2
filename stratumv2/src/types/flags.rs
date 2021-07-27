@@ -1,6 +1,6 @@
 pub mod macro_prelude {
+    pub use crate::codec::{ByteParser, Deserializable, Serializable};
     pub use crate::error::{Error, Result};
-    pub use crate::parse::{ByteParser, Deserializable, Serializable};
 }
 
 /// Implemenation of all the ser/de traits for bitflags.

@@ -16,13 +16,13 @@ pub use types::{
 #[cfg(test)]
 mod test {
     use crate::{
+        codec::{deserialize, Serializable},
         error::Error,
         noise::certificate_format::CertificateFormat,
         noise::noise_session::{new_noise_initiator, new_noise_responder},
         noise::signature_noise_message::SignatureNoiseMessage,
         noise::signed_certificate::{authority_sign_cert, SignedCertificate},
         noise::types::{AuthorityKeyPair, StaticKeyPair, StaticPublicKey},
-        parse::{deserialize, Serializable},
         types::unix_timestamp::system_unix_time_to_u32,
         types::unix_timestamp::unix_u32_now,
     };

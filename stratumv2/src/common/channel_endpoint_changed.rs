@@ -1,8 +1,7 @@
 use crate::{
+    codec::{ByteParser, Deserializable, Frameable, Serializable},
     error::Result,
-    frame::Frameable,
     impl_message,
-    parse::{ByteParser, Deserializable, Serializable},
     types::MessageType,
 };
 use std::io;
