@@ -1,7 +1,7 @@
 use honggfuzz::fuzz;
 use stratumv2::{
+    codec::{deserialize, Deserializable},
     mining,
-    parse::{deserialize, Deserializable},
 };
 
 fn main() {

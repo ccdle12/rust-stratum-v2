@@ -1,6 +1,5 @@
 use honggfuzz::fuzz;
-use stratumv2::frame::Message;
-use stratumv2::parse::{deserialize, Deserializable};
+use stratumv2::codec::{deserialize, Deserializable, Message};
 
 fn main() {
     fuzz!(|data: &[u8]| {
