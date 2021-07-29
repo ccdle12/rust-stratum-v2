@@ -1,8 +1,7 @@
+use crate::codec::{ByteParser, Deserializable, Frameable, Serializable};
 use crate::error::{Error, Result};
-use crate::frame::Frameable;
 use crate::job_negotiation;
 use crate::mining;
-use crate::parse::{ByteParser, Deserializable, Serializable};
 use crate::types::MessageType;
 // use crate::template_distribution;
 // use crate::job_distribution;
@@ -230,9 +229,7 @@ impl Frameable for SetupConnection {
 #[cfg(test)]
 macro_rules! impl_setup_connection_tests {
     ($protocol:expr, $fn:expr, $flags:ident) => {
-        use crate::frame::frame;
-        use crate::parse;
-        use crate::types::U24;
+        use crate::{codec, types::U24};
         use std::collections::HashMap;
 
         fn default_setup_conn(
@@ -304,7 +301,7 @@ macro_rules! impl_setup_connection_tests {
         #[test]
         fn serialize() {
             let conn = default_setup_conn(false, HashMap::new()).unwrap();
-            let result = parse::serialize(&conn).unwrap();
+            let result = codec::serialize(&conn).unwrap();
 
             // Check the serialized connection is the correct length.
             assert_eq!(result.len(), 75);
@@ -313,17 +310,17 @@ macro_rules! impl_setup_connection_tests {
             assert_eq!(result[0], $protocol.into());
 
             // Check the flags were serialized correctly.
-            assert_eq!(result[5..9], parse::serialize(&$flags::all()).unwrap());
+            assert_eq!(result[5..9], codec::serialize(&$flags::all()).unwrap());
 
             // Sanity check - deserializing back to the struct does not cause
             // errors.
-            assert!(parse::deserialize::<SetupConnection>(&result).is_ok());
+            assert!(codec::deserialize::<SetupConnection>(&result).is_ok());
         }
 
         #[test]
         fn serialize_empty_flags() {
             let conn = default_setup_conn(true, HashMap::new()).unwrap();
-            let result = parse::serialize(&conn).unwrap();
+            let result = codec::serialize(&conn).unwrap();
 
             // Check the optional flags still serialize but to empty values.
             assert_eq!(result[5..9], [0u8; 4]);
@@ -332,9 +329,9 @@ macro_rules! impl_setup_connection_tests {
         #[test]
         fn frame_message() {
             let conn = default_setup_conn(false, HashMap::new()).unwrap();
-            let network_message = frame(&conn).unwrap();
+            let network_message = codec::frame(&conn).unwrap();
 
-            let result = parse::serialize(&network_message).unwrap();
+            let result = codec::serialize(&network_message).unwrap();
             assert_eq!(result.len(), 81);
 
             // Check the extension type is empty.
@@ -345,7 +342,7 @@ macro_rules! impl_setup_connection_tests {
 
             // Check that the correct message length was used.
             assert_eq!(
-                parse::deserialize::<U24>(&result[3..6]).unwrap(),
+                codec::deserialize::<U24>(&result[3..6]).unwrap(),
                 network_message.payload.len() as u32
             );
         }

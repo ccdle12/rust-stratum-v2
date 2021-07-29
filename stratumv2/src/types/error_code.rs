@@ -1,6 +1,6 @@
 pub mod macro_prelude {
+    pub use crate::codec::{ByteParser, Deserializable, Serializable};
     pub use crate::error::{Error, Result};
-    pub use crate::parse::{ByteParser, Deserializable, Serializable};
     pub use crate::types::STR0_255;
     pub use std::convert::TryFrom;
     pub use std::fmt;

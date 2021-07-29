@@ -1,5 +1,5 @@
+use crate::codec::{ByteParser, Deserializable, Serializable};
 use crate::error::{Error, Result};
-use crate::parse::{ByteParser, Deserializable, Serializable};
 use crate::types::U24;
 use std::io;
 
@@ -217,7 +217,7 @@ impl_sized_B0!(B0_16M, U24);
 #[cfg(test)]
 mod b0_31_tests {
     use super::*;
-    use crate::parse::{deserialize, serialize};
+    use crate::codec::{deserialize, serialize};
 
     impl_sized_B0_tests!(B0_31, u8, 31);
 
@@ -236,7 +236,7 @@ mod b0_31_tests {
 #[cfg(test)]
 mod b0_32_tests {
     use super::*;
-    use crate::parse::{deserialize, serialize};
+    use crate::codec::{deserialize, serialize};
 
     impl_sized_B0_tests!(B0_32, u8, 32);
 
@@ -255,7 +255,7 @@ mod b0_32_tests {
 #[cfg(test)]
 mod b0_255_tests {
     use super::*;
-    use crate::parse::{deserialize, serialize};
+    use crate::codec::{deserialize, serialize};
 
     impl_sized_B0_tests!(B0_255, u8);
 }
@@ -263,7 +263,7 @@ mod b0_255_tests {
 #[cfg(test)]
 mod b0_64_k_tests {
     use super::*;
-    use crate::parse::{deserialize, serialize};
+    use crate::codec::{deserialize, serialize};
 
     impl_sized_B0_tests!(B0_64K, u16);
 }
@@ -271,7 +271,7 @@ mod b0_64_k_tests {
 #[cfg(test)]
 mod b0_16_m_tests {
     use super::*;
-    use crate::parse::{deserialize, serialize};
+    use crate::codec::{deserialize, serialize};
 
     impl_sized_B0_tests!(B0_16M, U24);
 }

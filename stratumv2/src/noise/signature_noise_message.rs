@@ -1,11 +1,11 @@
 use crate::{
+    codec::{ByteParser, Deserializable, Serializable},
     error::Result,
     noise::{
         signed_certificate::{authority_sign_cert, SignedCertificate},
         types::AuthorityKeyPair,
         types::Signature,
     },
-    parse::{ByteParser, Deserializable, Serializable},
 };
 use std::io;
 

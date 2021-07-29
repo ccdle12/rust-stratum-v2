@@ -1,7 +1,6 @@
 pub mod macro_prelude {
+    pub use crate::codec::{ByteParser, Deserializable, Frameable, Serializable};
     pub use crate::error::Result;
-    pub use crate::frame::Frameable;
-    pub use crate::parse::{ByteParser, Deserializable, Serializable};
     pub use crate::types::MessageType;
     pub use std::io;
 }
@@ -56,8 +55,7 @@ macro_rules! impl_message {
 
 #[cfg(test)]
 pub mod test_macro_prelude {
-    pub use crate::frame::{frame, unframe, Frameable, Message};
-    pub use crate::parse::{deserialize, serialize};
+    pub use crate::codec::{deserialize, frame, serialize, unframe, Frameable, Message};
 }
 
 #[cfg(test)]
@@ -117,7 +115,7 @@ macro_rules! impl_message_tests {
 
             let mut extension_type = $struct_name::message_type().ext_type();
             if $struct_name::message_type().channel_bit() {
-                extension_type |= crate::frame::CHANNEL_BIT_MASK;
+                extension_type |= crate::codec::CHANNEL_BIT_MASK;
             }
             let message_type = $struct_name::message_type().msg_type();
             let message_length = serialized_message.len();

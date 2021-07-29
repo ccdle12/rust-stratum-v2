@@ -1,37 +1,47 @@
-use crate::error::{Error, Result};
+use crate::{
+    codec::{ByteParser, Deserializable, Serializable},
+    error::Result,
+};
 use std::io;
 
-/// A custom iterator-like struct. It's used to extract segments
-/// from a slice using by providing an offset to return the bytes from start
-/// to step.
-pub struct ByteParser<'a> {
-    bytes: &'a [u8],
-    start: usize,
-}
-
-impl<'a> ByteParser<'a> {
-    pub fn new(bytes: &'a [u8], start: usize) -> ByteParser {
-        ByteParser { bytes, start }
-    }
-
-    pub fn next_by(&mut self, step: usize) -> Result<&'a [u8]> {
-        let offset = self.start + step;
-
-        let b = self.bytes.get(self.start..offset);
-        if b.is_none() {
-            return Err(Error::ParseError("out of bounds error".into()));
-        }
-
-        self.start = offset;
-        Ok(b.unwrap())
+impl Serializable for bool {
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        let buffer = if *self { vec![1u8] } else { vec![0u8] };
+        writer.write(&buffer)?;
+        Ok(buffer.len())
     }
 }
 
-/// Trait for deserializing bytes to most Stratum V2 messages.
-pub trait Deserializable {
-    fn deserialize(parser: &mut ByteParser) -> Result<Self>
-    where
-        Self: std::marker::Sized;
+impl Serializable for u8 {
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        let buffer = self.to_le_bytes();
+        writer.write(&buffer)?;
+        Ok(buffer.len())
+    }
+}
+
+impl Serializable for u16 {
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        let buffer = self.to_le_bytes();
+        writer.write(&buffer)?;
+        Ok(buffer.len())
+    }
+}
+
+impl Serializable for u32 {
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        let buffer = self.to_le_bytes();
+        writer.write(&buffer)?;
+        Ok(buffer.len())
+    }
+}
+
+impl Serializable for f32 {
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
+        let buffer = self.to_le_bytes();
+        writer.write(&buffer)?;
+        Ok(buffer.len())
+    }
 }
 
 // TODO: The specs states that any bits OUTSIDE of the LSB MUST NOT be interpreted
@@ -85,71 +95,9 @@ impl Deserializable for f32 {
     }
 }
 
-/// Helper utility function to deserialize a byte-stream into a type that
-/// implements the Serializable trait and returns the deserialized result.
-pub fn deserialize<T: Deserializable>(bytes: &[u8]) -> Result<T> {
-    let mut parser = ByteParser::new(bytes, 0);
-    T::deserialize(&mut parser)
-}
-
-/// Trait for encoding and serializing messages and objects according to the
-/// Stratum V2 protocol.
-pub trait Serializable {
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize>;
-}
-
-impl Serializable for bool {
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let buffer = if *self { vec![1u8] } else { vec![0u8] };
-        writer.write(&buffer)?;
-        Ok(buffer.len())
-    }
-}
-
-impl Serializable for u8 {
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let buffer = self.to_le_bytes();
-        writer.write(&buffer)?;
-        Ok(buffer.len())
-    }
-}
-
-impl Serializable for u16 {
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let buffer = self.to_le_bytes();
-        writer.write(&buffer)?;
-        Ok(buffer.len())
-    }
-}
-
-impl Serializable for u32 {
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let buffer = self.to_le_bytes();
-        writer.write(&buffer)?;
-        Ok(buffer.len())
-    }
-}
-
-impl Serializable for f32 {
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<usize> {
-        let buffer = self.to_le_bytes();
-        writer.write(&buffer)?;
-        Ok(buffer.len())
-    }
-}
-
-/// Helper utility function to serialize a type that implements the Serializable
-/// trait and returns the serialized result.
-pub fn serialize<T: Serializable>(val: &T) -> Result<Vec<u8>> {
-    let mut buffer = vec![];
-    val.serialize(&mut buffer)?;
-
-    Ok(buffer)
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::codec::{deserialize, serialize};
 
     #[test]
     fn u8_serde() {
@@ -208,16 +156,5 @@ mod tests {
         assert_eq!(deserialize::<bool>(&vec![3u8]).unwrap(), true);
         assert_eq!(deserialize::<bool>(&vec![4u8]).unwrap(), false);
         assert_eq!(deserialize::<bool>(&vec![u8::MAX]).unwrap(), true);
-    }
-
-    #[test]
-    fn parser_next() {
-        let bytes: [u8; 4] = [0, 1, 2, 3];
-
-        let mut parser = ByteParser::new(&bytes, 1);
-        assert_eq!(parser.next_by(2).unwrap(), &[1, 2]);
-        assert!(matches!(parser.next_by(2), Err(Error::ParseError { .. })));
-        assert_eq!(parser.next_by(1).unwrap(), &[3]);
-        assert!(matches!(parser.next_by(1), Err(Error::ParseError { .. })));
     }
 }

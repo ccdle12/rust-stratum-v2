@@ -1,4 +1,4 @@
-use crate::{common::SetupConnection, frame::Message, network::Encryptor};
+use crate::{codec::Message, common::SetupConnection, network::Encryptor};
 use std::{mem, sync::Mutex};
 
 // TODO: Come up with a better name than Peer.

@@ -1,5 +1,5 @@
+use crate::codec::{ByteParser, Deserializable, Serializable};
 use crate::error::{Error, Result};
-use crate::parse::{ByteParser, Deserializable, Serializable};
 use std::convert::{TryFrom, TryInto};
 use std::io;
 
@@ -129,7 +129,7 @@ impl From<[u8; 32]> for U256 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parse::{deserialize, serialize};
+    use crate::codec::{deserialize, serialize};
 
     fn make_encoded_u24(value: u32) -> Vec<u8> {
         value.to_le_bytes()[..3].to_vec()

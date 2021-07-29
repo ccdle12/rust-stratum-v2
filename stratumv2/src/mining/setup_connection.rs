@@ -24,8 +24,8 @@ impl_setup_connection!(SetupConnectionFlags);
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::codec::{deserialize, serialize};
     use crate::impl_setup_connection_tests;
-    use crate::parse::{deserialize, serialize};
 
     #[test]
     fn flags_serialize() {

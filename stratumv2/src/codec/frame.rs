@@ -1,5 +1,5 @@
+use crate::codec::{serialize, ByteParser, Deserializable, Serializable};
 use crate::error::{Error, Result};
-use crate::parse::{serialize, ByteParser, Deserializable, Serializable};
 use crate::types::{MessageType, U24};
 use std::io;
 
@@ -103,8 +103,8 @@ pub fn unframe<T: Frameable>(message: &Message) -> Result<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::codec::{deserialize, serialize};
     use crate::impl_message;
-    use crate::parse::{deserialize, serialize};
 
     impl_message!(TestMessage1, x u8);
 

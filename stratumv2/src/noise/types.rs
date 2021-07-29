@@ -1,5 +1,5 @@
+use crate::codec::{ByteParser, Deserializable, Serializable};
 use crate::error::Result;
-use crate::parse::{ByteParser, Deserializable, Serializable};
 use rand::rngs::OsRng;
 use std::convert::TryInto;
 use std::io;
