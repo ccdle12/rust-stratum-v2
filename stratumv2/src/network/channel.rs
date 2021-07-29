@@ -1,4 +1,5 @@
 use crate::mining::{OpenExtendedMiningChannel, OpenStandardMiningChannel};
+use std::{collections::HashMap, sync::Mutex};
 
 use rand::Rng;
 
@@ -24,6 +25,23 @@ pub enum Channel {
         id: ChanID,
         channel: OpenExtendedMiningChannel,
     },
+}
+
+// TODO: Replace the u32 with a ConnID type.
+/// Holds a collection of [Channels](./enum.Channel.html) according to the ChanID and linked to a
+/// ConnID, representing the networked connection.
+pub struct ChannelManager {
+    /// Contains multiple channels that belong to a certain connection according
+    /// to the Connection ID.
+    pub channels: Mutex<HashMap<u32, HashMap<ChanID, Channel>>>,
+}
+
+impl ChannelManager {
+    pub fn new() -> Self {
+        ChannelManager {
+            channels: Mutex::new(HashMap::new()),
+        }
+    }
 }
 
 #[cfg(test)]
