@@ -1,6 +1,6 @@
 use crate::codec::{ByteParser, Deserializable, Serializable};
 use crate::error::{Error, Result};
-use std::convert::TryFrom;
+use std::convert::{TryFrom, TryInto};
 use std::io;
 
 /// U24 is an unsigned integer type of 24-bits in little endian. This will
@@ -15,7 +15,6 @@ impl U24 {
     pub const BITS: u32 = 24;
 
     pub fn new(value: u32) -> Result<U24> {
-        use std::convert::TryInto;
         value.try_into()
     }
 }
