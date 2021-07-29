@@ -58,15 +58,15 @@
 // 1. Create ServerConfig for Config of Business Logic in stratumv2 level
 // 2. Separate the ConnectionConfig?
 // 3. Move Implementation of MessageHandling to stratumv2 level
+use stratumv2::codec::{deserialize, serialize, Deserializable};
+use stratumv2::codec::{frame, unframe, Message};
 use stratumv2::common::SetupConnection;
 use stratumv2::error::{Error, Result};
-use stratumv2::frame::{frame, unframe, Message};
 use stratumv2::network::{
     new_channel_id, Channel, ChannelManager, ConnectionEncryptor, Encryptor, NetworkConfig,
     NoiseConfig, Peer, ServerConfig,
 };
 use stratumv2::noise::{SignatureNoiseMessage, StaticKeyPair};
-use stratumv2::parse::{deserialize, serialize, Deserializable};
 use stratumv2::types::MessageType;
 
 use std::collections::HashMap;
@@ -540,12 +540,12 @@ async fn handle_noise_handshake<E: Encryptor>(
 mod test {
     use super::*;
     use bitcoin::util::base58;
+    use stratumv2::codec::frame;
+    use stratumv2::codec::serialize;
     use stratumv2::common::SetupConnection;
-    use stratumv2::frame::frame;
     use stratumv2::mining::SetupConnectionFlags;
     use stratumv2::noise::CertificateFormat;
     use stratumv2::noise::{generate_authority_keypair, SignatureNoiseMessage, SignedCertificate};
-    use stratumv2::parse::serialize;
     use stratumv2::types::{unix_u32_now, unix_u32_one_year_from_now};
     use tokio::{net::TcpListener, test};
 
