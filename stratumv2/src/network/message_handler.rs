@@ -5,9 +5,8 @@ use crate::{
     network::{Encryptor, Peer},
 };
 
-/// A trait that should be applied to upstream devices such as a Mining Pool Server
-/// that can handle [SetupConnection Messages](../common/setup_connection/enum.SetupConnection.html).
-pub trait NewConnReceiver<E: Encryptor> {
+/// A trait that should be applied to a message handler for a Mining Pool Server.
+pub trait ServerMsgHandler<E: Encryptor> {
     fn handle_new_conn(
         &self,
         server_flags: &mining::SetupConnectionFlags,
