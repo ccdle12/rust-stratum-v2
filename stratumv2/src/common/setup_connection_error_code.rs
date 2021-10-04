@@ -12,8 +12,8 @@ pub enum SetupConnectionErrorCode {
     /// the server does not support.
     UnsupportedProtocol,
 
-    // TODO: What is the difference between protocol version mismatch
-    // and unsupported protocol?
+    /// Indicates the server has received a protocol version that is not currently
+    /// supported by the server.
     ProtocolVersionMismatch,
 }
 
