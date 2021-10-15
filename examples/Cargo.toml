@@ -5,7 +5,11 @@ publish = false
 edition = "2018"
 
 [dependencies]
-stratumv2 = { version = "0.1.0", path = "../stratumv2" }
+stratumv2-codec = { version = "0.1.0", path = "../stratumv2-codec"}
+stratumv2-serde = { version = "0.1.0", path = "../stratumv2-serde"}
+stratumv2-mining = { version = "0.1.0", path = "../stratumv2-messages/mining"}
+stratumv2-common-messages = { version = "0.1.0", path = "../stratumv2-messages/common"}
+stratumv2-noise = { version = "0.1.0", path = "../stratumv2-noise"}
 rand = "0.7.3"
 
 [dev-dependencies]

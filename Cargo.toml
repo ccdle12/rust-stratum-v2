@@ -1,8 +1,14 @@
 [workspace]
 
 members = [
-    "stratumv2",
-
-    # Internal
     "examples",
+    "stratumv2-messages/mining",
+    "stratumv2-messages/job-negotiation",
+    "stratumv2-messages/sdk",
+    "stratumv2-messages/common",
+    "stratumv2-codec",
+    "stratumv2-serde",
+    "stratumv2-noise",
+    "stratumv2-network",
+    "stratumv2-noise/nx-noise",
 ]

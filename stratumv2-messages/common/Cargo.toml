@@ -1,0 +1,17 @@
+[package]
+name = "stratumv2-common-messages"
+version = "0.1.0"
+authors = [
+    "Christopher Coverdale <chris.coverdale24@gmail.com>",
+    "Christopher Patton <chpatton013@gmail.com>",
+]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+stratumv2-serde = { version = "0.1.0", path = "../../stratumv2-serde" }
+stratumv2-messages-sdk = { version = "0.1.0", path = "../sdk" }
+stratumv2-codec = { version = "0.1.0", path = "../../stratumv2-codec" }
+stratumv2-mining = { version = "0.1.0", path = "../mining" }
+stratumv2-job-negotiation = { version = "0.1.0", path = "../job-negotiation" }

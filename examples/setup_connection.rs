@@ -1,10 +1,14 @@
 use std::io;
-use stratumv2::{
-    codec::{deserialize, frame, serialize, unframe, Frameable, Message},
-    common::SetupConnection,
-    mining::{SetupConnectionFlags, SetupConnectionSuccess, SetupConnectionSuccessFlags},
-    types::MessageType,
-};
+// use stratumv2::{
+// codec::{deserialize, frame, serialize, unframe, Frameable, Message},
+// common::SetupConnection,
+// mining::{SetupConnectionFlags, SetupConnectionSuccess, SetupConnectionSuccessFlags},
+// types::MessageType,
+// };
+use stratumv2_codec::{frame, unframe, Frameable, Message};
+use stratumv2_common_messages::SetupConnection;
+use stratumv2_mining::{SetupConnectionFlags, SetupConnectionSuccess, SetupConnectionSuccessFlags};
+use stratumv2_serde::{deserialize, serialize, types::MessageType};
 use tokio::net::{TcpListener, TcpStream};
 
 // Addreses and ports for the example.
@@ -68,7 +72,7 @@ impl<'a> Pool<'a> {
             Ok((socket, _)) => loop {
                 match socket.try_read(&mut buffer) {
                     Ok(_) => {
-                        &self.handle_recv_bytes(&buffer).await;
+                        let _ = &self.handle_recv_bytes(&buffer).await;
                         break;
                     }
                     Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
@@ -134,7 +138,7 @@ impl<'a> Miner<'a> {
                 match socket.try_read(&mut buffer) {
                     Ok(_) => {
                         println!("Miner: received message from Pool");
-                        &self.handle_recv_bytes(&buffer).await;
+                        let _ = &self.handle_recv_bytes(&buffer).await;
                         break;
                     }
                     Err(e) if e.kind() == io::ErrorKind::WouldBlock => {

@@ -1,0 +1,15 @@
+[package]
+name = "stratumv2-network"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rand = "0.7.3"
+thiserror = "1.0.24"
+stratumv2-mining = { version = "0.1.0", path = "../stratumv2-messages/mining" }
+stratumv2-job-negotiation = { version = "0.1.0", path = "../stratumv2-messages/job-negotiation" }
+stratumv2-common-messages = { version = "0.1.0", path = "../stratumv2-messages/common" }
+stratumv2-noise = { version = "0.1.0", path = "../stratumv2-noise" }
+stratumv2-codec = { version = "0.1.0", path = "../stratumv2-codec" }

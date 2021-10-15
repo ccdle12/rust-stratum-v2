@@ -1,17 +1,14 @@
 use rand::rngs::OsRng;
-use std::io;
-use std::time::SystemTime;
-use stratumv2::{
-    bitcoin::util::base58,
-    codec::{deserialize, serialize, Deserializable, Serializable},
-    noise::{
-        new_noise_initiator, new_noise_responder, AuthorityKeyPair, AuthorityPublicKey,
-        CertificateFormat, NoiseSession, SignatureNoiseMessage, SignedCertificate, StaticKeyPair,
-    },
+use std::{io, time::SystemTime};
+use stratumv2_noise::{bitcoin::util::base58, *};
+use stratumv2_serde::{
+    deserialize, serialize,
     types::unix_timestamp::{system_unix_time_to_u32, unix_u32_now},
 };
-use tokio::net::{TcpListener, TcpStream};
-use tokio::time::{sleep, Duration};
+use tokio::{
+    net::{TcpListener, TcpStream},
+    time::{sleep, Duration},
+};
 
 const POOL_ADDR: &str = "127.0.0.1:8085";
 const MINER_ADDR: &str = "127.0.0.1:8545";
@@ -19,7 +16,8 @@ const MINER_ADDR: &str = "127.0.0.1:8545";
 #[tokio::main]
 async fn main() {
     let authority_keypair = AuthorityKeyPair::generate(&mut OsRng {});
-    let authority_public_key = base58::encode_slice(&authority_keypair.public.to_bytes());
+    let authority_public_key =
+        base58::encode_slice(&authority_keypair.get_inner().unwrap().public.to_bytes());
 
     tokio::spawn(async move {
         Pool::new(&POOL_ADDR, &authority_keypair).listen().await;
@@ -44,7 +42,6 @@ struct Pool<'a> {
     /// Listening address of the Mining Pool to accept incoming connections.
     listening_addr: &'a str,
     authority_keypair: &'a AuthorityKeyPair,
-    // TODO: Pass the static keypair on constructor as option
     static_keypair: StaticKeyPair,
     noise_session: NoiseSession,
 }
@@ -57,7 +54,7 @@ impl<'a> Pool<'a> {
             listening_addr,
             authority_keypair,
             static_keypair: static_keypair.clone(),
-            noise_session: new_noise_responder(Some(static_keypair)),
+            noise_session: NoiseSession::new_noise_responder(Some(static_keypair)),
         }
     }
 
@@ -70,7 +67,7 @@ impl<'a> Pool<'a> {
             Ok((socket, _)) => loop {
                 match socket.try_read(&mut buffer) {
                     Ok(_) => {
-                        &self.handle_recv_bytes(&mut buffer).await;
+                        let _ = &self.handle_recv_bytes(&mut buffer).await;
                         break;
                     }
                     Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
@@ -84,12 +81,10 @@ impl<'a> Pool<'a> {
     }
 
     async fn handle_recv_bytes(&mut self, buffer: &mut [u8]) {
-        // Receive the noise handshake messages and return.
         self.noise_session.recv_message(buffer).unwrap();
         self.send_message(&TcpStream::connect(&MINER_ADDR).await.unwrap(), buffer)
             .await;
 
-        // Construct and send the SignatureNoiseMessage.
         let valid_from = unix_u32_now().unwrap();
         let not_valid_after =
             system_unix_time_to_u32(&(SystemTime::now() + Duration::from_secs(5))).unwrap();
@@ -98,7 +93,7 @@ impl<'a> Pool<'a> {
         let cert = SignedCertificate::new(0, valid_from, not_valid_after, &key).unwrap();
 
         let signature_noise_msg =
-            SignatureNoiseMessage::from_auth_key(&self.authority_keypair, &cert).unwrap();
+            SignatureNoiseMessage::from_auth_key(self.authority_keypair, &cert).unwrap();
 
         let serialized_msg = serialize(&signature_noise_msg).unwrap();
 
@@ -109,7 +104,6 @@ impl<'a> Pool<'a> {
             .await;
     }
 
-    // TODO: Update this to use Frameable trait.
     async fn send_message(&mut self, stream: &TcpStream, msg: &mut [u8]) {
         self.noise_session.send_message(msg).unwrap();
         stream.try_write(&msg).unwrap();
@@ -130,7 +124,7 @@ impl<'a> Miner<'a> {
         Miner {
             listening_addr,
             authority_public_key,
-            noise_session: new_noise_initiator(),
+            noise_session: NoiseSession::new_noise_initiator(),
         }
     }
 
@@ -143,7 +137,7 @@ impl<'a> Miner<'a> {
                 Ok((socket, _)) => loop {
                     match socket.try_read(&mut buffer) {
                         Ok(_) => {
-                            &self.handle_recv_bytes(&mut buffer).await;
+                            let _ = &self.handle_recv_bytes(&mut buffer).await;
                             break;
                         }
                         Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
@@ -171,10 +165,14 @@ impl<'a> Miner<'a> {
 
             println!(
                 "Is the SignatureNoiseMessage valid? - {:?}",
-                CertificateFormat::new(&self.authority_public_key, &remote_static_key, &msg)
-                    .unwrap()
-                    .verify()
-                    .is_ok()
+                CertificateFormat::<AuthorityPublicKey>::new(
+                    &self.authority_public_key,
+                    &remote_static_key,
+                    &msg
+                )
+                .unwrap()
+                .verify()
+                .is_ok()
             );
         } else {
             self.noise_session.recv_message(buffer).unwrap();
