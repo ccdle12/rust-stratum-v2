@@ -402,10 +402,39 @@ impl Keypair {
     pub fn default() -> Self {
         let hacl_keypair: (curve25519::SecretKey, curve25519::PublicKey) =
             curve25519::keypair(rand::thread_rng());
-        Self {
-            private_key: PrivateKey::from_hacl_secret_key(hacl_keypair.0),
-            public_key: PublicKey::from_hacl_public_key(hacl_keypair.1),
+
+        // TMP:
+        let (secret, public) = curve25519::keypair(rand::thread_rng());
+        // println!("DEBUG: {:#04x}", secret.0);
+        println!("DEBUG: SECRET");
+        for s in secret.0.iter() {
+            print!("{:#04x}, ", s);
         }
+
+        println!("DEBUG: PUBLIC");
+        for p in public.0.iter() {
+            print!("{:#04x}, ", p);
+        }
+
+        let secret_key = [
+            0xd5, 0x42, 0x38, 0x34, 0x95, 0xac, 0xf3, 0x9e, 0x95, 0x07, 0xf9, 0xe8, 0x59, 0x76,
+            0xea, 0xd4, 0x27, 0xf3, 0x0a, 0x1e, 0xd5, 0x2c, 0x56, 0x56, 0x33, 0x06, 0x35, 0x2c,
+            0x85, 0x88, 0x54, 0xdd,
+        ];
+
+        let public_key = [
+            0x7b, 0x4e, 0xb7, 0x9a, 0xa6, 0xdc, 0xce, 0x98, 0xa8, 0x7a, 0xcf, 0xf9, 0xc5, 0x9c,
+            0xcf, 0xbc, 0xca, 0x62, 0x46, 0x95, 0x0a, 0x25, 0x5e, 0x7b, 0x5a, 0xfc, 0xc4, 0x8e,
+            0x64, 0x2f, 0x25, 0x27,
+        ];
+
+        Self {
+            // private_key: PrivateKey::from_hacl_secret_key(hacl_keypair.0),
+            // public_key: PublicKey::from_hacl_public_key(hacl_keypair.1),
+            private_key: PrivateKey::from_hacl_secret_key(curve25519::SecretKey(secret_key)),
+            public_key: PublicKey::from_hacl_public_key(curve25519::PublicKey(public_key)),
+        }
+        // TMP:
     }
 
     pub(crate) fn dh(&self, public_key: &[u8; DHLEN]) -> [u8; DHLEN] {
@@ -437,6 +466,12 @@ impl Keypair {
     pub fn get_public_key(&self) -> PublicKey {
         self.public_key
     }
+}
+
+#[test]
+fn gen_private_key_test() {
+    let keypair = Keypair::default();
+    assert_eq!(1, 2);
 }
 
 #[test]
